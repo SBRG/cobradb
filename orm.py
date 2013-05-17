@@ -2,7 +2,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref, Query
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy import create_engine, Column, String, Float, ForeignKey
+from sqlalchemy import create_engine, Column, String, Float, ForeignKey, Boolean
 
 from warnings import warn
 
@@ -10,9 +10,11 @@ engine = create_engine('sqlite:///:memory:', echo=False)
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 
+
 class Reaction(Base):
     __tablename__ = "reactions"
     id = Column(String(200), primary_key=True)
+    reversibility = Column(Boolean)
     # the reaction_metabolites are indexed by metabolite
     _reaction_metabolites = relationship("_ReactionMetabolites",
         backref="reaction",
@@ -53,9 +55,7 @@ class Reaction(Base):
             else:
                 reactant_dict[id] = coefficient_to_string(abs(coefficient))
         reactant_string = " + ".join(['%s %s' % (coefficient_str, metabolite) for metabolite, coefficient_str in reactant_dict.items()])
-        if self.upper_bound <= 0:
-            arrow = ' <- '
-        elif self.lower_bound >= 0:
+        if not self.reversibility:
             arrow = ' -> '                
         else:
             arrow = ' <=> '
@@ -67,6 +67,7 @@ class Reaction(Base):
 class Metabolite(Base):
     __tablename__ = "metabolites"
     id = Column(String(200), primary_key=True)
+    name = Column(String(200))
     _reaction_metabolites = relationship("_ReactionMetabolites",
         backref="metabolite")
     #formula = Column(String(400))
@@ -89,16 +90,35 @@ class Metabolite(Base):
         return str(self)
 
 
+class Compartment(Base):
+    __tablename__ = "compartments"
+    id = Column(String(20), primary_key=True)
+
+
 class _ReactionMetabolites(Base):
-    __tablename__ = "reaction_metabolites"
+    __tablename__ = "reaction_matrix"
     reaction_id = Column(String(200),
         ForeignKey("reactions.id"), primary_key=True)
     metabolite_id = Column(String(200),
         ForeignKey("metabolites.id"), primary_key=True)
     stoichiometry = Column(Float)
+    compartment_id = Column(String(20), ForeignKey("compartments.id"), primary_key=True)
+    compartment = relationship(Compartment)
     def __repr__(self):
         return "(%s, %s) %f" % \
             (self.reaction_id, self.metabolite_id, self.stoichiometry)
 
+
+
 Base.metadata.create_all(engine)
 
+if __name__ == "__main__":
+    c = Compartment()
+    c.id = "cytosol"
+    g6p = Metabolite()
+    g6p.id = "g6p"
+    f6p = Metabolite()
+    f6p.id = "f6p"
+    r = Reaction()
+    r.id = "pgi"
+    from IPython import embed; embed()
