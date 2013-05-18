@@ -63,11 +63,11 @@ class Reaction(Base):
         reaction_string = reactant_string + arrow + product_string
         return reaction_string
 
-
 class Metabolite(Base):
-    __tablename__ = "metabolites"
+    __tablename__ = "metabolite"
     id = Column(String(200), primary_key=True)
     name = Column(String(200))
+    is_non_metabolite = Column(Boolean)
     _reaction_metabolites = relationship("_ReactionMetabolites",
         backref="metabolite")
     #formula = Column(String(400))
@@ -89,9 +89,21 @@ class Metabolite(Base):
     def __repr__(self):
         return str(self)
 
+class Chemical_Element(Base):
+    __tablename__ = "chemical_element"
+    id = Column(String(2),primary_key=True)
+    element_name = Column(String(50))
+    atomic_mass = Column(Float)
+    
+class Metabolite_Chemical_Formulat(Base):
+    __tablename__ = "metabolite_chemical_formula"
+    metabolite = relationship(Metabolite,primary_key=True)
+    chemical_element = relationship(Chemical_Element,primary_key=True)
+    stoichiometry = Column(Integer)
+
 
 class Compartment(Base):
-    __tablename__ = "compartments"
+    __tablename__ = "compartment"
     id = Column(String(20), primary_key=True)
 
 
