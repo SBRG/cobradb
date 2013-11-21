@@ -1,0 +1,6 @@
+DROP SCHEMA IF EXISTS ecoli CASCADE;
+CREATE SCHEMA ecoli;
+Set search_path to ecoli;
+
+
+CREATE SEQUENCE ids START 1;

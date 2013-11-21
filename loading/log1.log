@@ -1,0 +1,34 @@
+NOTICE:  drop cascades to 29 other objects
+DETAIL:  drop cascades to sequence ids
+drop cascades to table genome_region
+drop cascades to table component_types
+drop cascades to table component
+drop cascades to table dna_types
+drop cascades to table dna
+drop cascades to table rna_types
+drop cascades to table rna
+drop cascades to table protein_types
+drop cascades to table metabolite_types
+drop cascades to table metabolite
+drop cascades to table binding_site_motif
+drop cascades to table tu
+drop cascades to table tu_component
+drop cascades to table tss
+drop cascades to table complex
+drop cascades to table complex_components
+drop cascades to table genome
+drop cascades to table data_source
+drop cascades to table environment_types
+drop cascades to table environments
+drop cascades to table in_vivo_environments
+drop cascades to table in_silico_environments
+drop cascades to table strains
+drop cascades to table protocols
+drop cascades to table dataset_types
+drop cascades to table datasets
+drop cascades to table gcrma_normalization
+drop cascades to table fpkm
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE SEQUENCE

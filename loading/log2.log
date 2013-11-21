@@ -1,0 +1,94 @@
+SET
+NOTICE:  table "component_types" does not exist, skipping
+DROP TABLE
+NOTICE:  table "component" does not exist, skipping
+DROP TABLE
+NOTICE:  table "genome_region" does not exist, skipping
+DROP TABLE
+NOTICE:  table "genes" does not exist, skipping
+DROP TABLE
+NOTICE:  table "proteins" does not exist, skipping
+DROP TABLE
+NOTICE:  table "gene_id_protein_id" does not exist, skipping
+DROP TABLE
+NOTICE:  table "motifs" does not exist, skipping
+DROP TABLE
+NOTICE:  table "binding_sites" does not exist, skipping
+DROP TABLE
+NOTICE:  table "binding_site_motif" does not exist, skipping
+DROP TABLE
+NOTICE:  table "tu" does not exist, skipping
+DROP TABLE
+NOTICE:  table "tu_components" does not exist, skipping
+DROP TABLE
+NOTICE:  table "tss" does not exist, skipping
+DROP TABLE
+NOTICE:  table "complex" does not exist, skipping
+DROP TABLE
+NOTICE:  table "complex_components" does not exist, skipping
+DROP TABLE
+NOTICE:  table "operons" does not exist, skipping
+DROP TABLE
+NOTICE:  table "operon_components" does not exist, skipping
+DROP TABLE
+NOTICE:  table "pathways" does not exist, skipping
+DROP TABLE
+NOTICE:  table "regulatory_network" does not exist, skipping
+DROP TABLE
+NOTICE:  table "genome" does not exist, skipping
+DROP TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "genome_region_pkey" for table "genome_region"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "genome_region_leftpos_rightpos_strand_key" for table "genome_region"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "component_types_pkey" for table "component_types"
+CREATE TABLE
+INSERT 0 4
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "component_pkey" for table "component"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dna_types_pkey" for table "dna_types"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dna_pkey" for table "dna"
+ERROR:  there is no unique constraint matching given keys for referenced table "component"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "rna_types_pkey" for table "rna_types"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "rna_pkey" for table "rna"
+ERROR:  there is no unique constraint matching given keys for referenced table "component"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "protein_types_pkey" for table "protein_types"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "protein_pkey" for table "protein"
+ERROR:  relation "gene" does not exist
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "metabolite_types_pkey" for table "metabolite_types"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "metabolite_pkey" for table "metabolite"
+ERROR:  there is no unique constraint matching given keys for referenced table "component"
+INSERT 0 2
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dna_binding_site_pkey" for table "dna_binding_site"
+ERROR:  relation "dna" does not exist
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "gene_pkey" for table "gene"
+ERROR:  relation "dna" does not exist
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "binding_site_motif_pkey" for table "binding_site_motif"
+CREATE TABLE
+INSERT 0 4
+ERROR:  syntax error at or near "gene_ID"
+LINE 4:     gene_ID INT, FOREIGN KEY (gene_ID) REFERENCES gene(dna_I...
+            ^
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "rrna_pkey" for table "rrna"
+ERROR:  relation "gene" does not exist
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "trna_pkey" for table "trna"
+ERROR:  relation "rna" does not exist
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "stable_rna_pkey" for table "stable_rna"
+ERROR:  relation "rna" does not exist
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tu_pkey" for table "tu"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tu_component_pkey" for table "tu_component"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tss_pkey" for table "tss"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "complex_pkey" for table "complex"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "complex_components_pkey" for table "complex_components"
+CREATE TABLE
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "gene_protein_pkey" for table "gene_protein"
+ERROR:  relation "genes" does not exist
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "genome_pkey" for table "genome"
+CREATE TABLE
