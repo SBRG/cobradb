@@ -1,4 +1,4 @@
 PrototypeDB
 ===========
 
-First steps towards an integrated OM database
+First steps towards an integrated OM(E) database
