@@ -8,14 +8,15 @@ from sqlalchemy.orm.session import Session as _SA_Session
 from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
     String, Float, ForeignKey, and_, or_, not_, distinct, select
 from sqlalchemy.ext.declarative import declarative_base
-import trnlib.settings as settings
+import PrototypeDB.lib.settings as settings
 import pymongo
 
-Base = declarative_base()
+
 
 engine = create_engine("postgresql://%s:%s@%s/%s" %
     (settings.user, settings.password, settings.host, settings.dev_database))
-metadata = MetaData(bind=engine, schema=settings.schema)
+Base = declarative_base(bind=engine)
+#metadata = MetaData(bind=engine, schema=settings.schema)
 
 connection = pymongo.Connection()
 bigg_database = connection.bigg_database
@@ -63,10 +64,7 @@ def get_or_create(session, class_type, **kwargs):
     these constraints"""
     result = session.query(class_type).filter_by(**kwargs).first()
     if result is None:
-        result = class_type()
-        for key, value in kwargs.iteritems():
-            setattr(result, key, value)
-        session.add(result)
+        session.add(class_type(**kwargs))
         session.commit()
     return result
 
