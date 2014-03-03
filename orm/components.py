@@ -38,8 +38,9 @@ class Component(Base):
     name = Column(String(100))
     type = Column(String(10), nullable=False)
 
-    __mapper_args__ = { 'polymorphic_on': type}
-
+    __mapper_args__ = {'polymorphic_identity': 'component', 
+                       'polymorphic_on': type
+                       }
 
     def __init__(self, name):
         self.name = name
@@ -177,9 +178,7 @@ class Metabolite(Component):
             (self.id, self.name)     
     
 
-Base.metadata.drop_all()
 Base.metadata.create_all()
-    
 
 
 

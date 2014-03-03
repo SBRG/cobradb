@@ -12,14 +12,13 @@ import PrototypeDB.lib.settings as settings
 import pymongo
 
 
-
 engine = create_engine("postgresql://%s:%s@%s/%s" %
     (settings.user, settings.password, settings.host, settings.dev_database))
 Base = declarative_base(bind=engine)
-#metadata = MetaData(bind=engine, schema=settings.schema)
+metadata = MetaData(bind=engine, schema=settings.schema)
 
 connection = pymongo.Connection()
-bigg_database = connection.bigg_database
+omics_database = connection.omics_database
 
 
 def make_table(table_name):
@@ -47,12 +46,15 @@ class _Session(_SA_Session):
 
     The Session will automatically set the search_path to settings.schema
     """
+    
+    
     def __init__(self, *args, **kwargs):
         super(_Session, self).__init__(*args, **kwargs)
         self.execute("set search_path to %s;" % (settings.schema))
         self.commit()
         self.get_or_create = MethodType(get_or_create, self)
         #self.search_by_synonym = MethodType(search_by_synonym, self)
+
 
     def __repr__(self):
         return "OME session %d" % (self.__hash__())
@@ -66,18 +68,9 @@ def get_or_create(session, class_type, **kwargs):
     if result is None:
         session.add(class_type(**kwargs))
         session.commit()
+        result = session.query(class_type).filter_by(**kwargs).first()
     return result
 
-
-def load_tables(module_name=None):
-    if module_name == 'data':
-        system("%s < %sdatabase/schemas/ome_data.sql > psql.log 2>&1" % (settings.psql_full, settings.trn_directory))
-        connection = pymongo.Connection()
-        genome_data = connection.bigg_database.genome_data
-        genome_data.drop()
-    elif module_name == 'models':
-        system("%s < %sdatabase/schemas/ome_models.sql > psql.log 2>&1" % (settings.psql_full, settings.trn_directory))
-        
         
 Session = sessionmaker(bind=engine, class_=_Session)
 
