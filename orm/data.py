@@ -7,6 +7,7 @@ from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
     String, Float, ForeignKey, select
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.schema import UniqueConstraint
+from pymongo import ASCENDING, DESCENDING
 
 import simplejson as json
 
@@ -275,6 +276,12 @@ class RNASeqExperiment(DataSet):
         return data_set
     
     
+chip_peak_association_table = Table('chip_peak_association', Base.metadata,
+    Column('chip_experiment_id', Integer, ForeignKey('chip_experiment.id')),
+    Column('chip_peak_id', Integer, ForeignKey('chip_peak.id'))
+)
+    
+    
 class ChIPExperiment(DataSet):
     __tablename__ = 'chip_experiment'
     
@@ -283,7 +290,9 @@ class ChIPExperiment(DataSet):
     antibody = Column(String(20))
     protocol_type = Column(String(20))
     target = Column(String(20))
-
+    
+    #terrrible hack right here
+    file_name = Column(String(100))
     
     __mapper_args__ = { 'polymorphic_identity': 'chip_experiment' }
     
@@ -302,20 +311,69 @@ class ChIPExperiment(DataSet):
         return dataset
     
     def __init__(self, name, replicate, strain, environment, data_source,\
-                       antibody, protocol_type, target):
+                       antibody, protocol_type, target, file_name):
         super(ChIPExperiment, self).__init__(name, replicate, strain, environment, data_source)
         self.antibody = antibody
         self.protocol_type = protocol_type
         self.target = target
+        self.file_name = file_name
 
+
+class ChIPPeak(DataSet):
+    __tablename__ = 'chip_peak'
+    
+    id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    method = Column(String(30))
+    parameters = Column(String(100))
+    chip_experiments = relationship("ChIPExperiment", secondary=chip_peak_association_table,\
+                         backref="peaks")
+    __mapper_args__ = { 'polymorphic_identity': 'chip_peak' }
+
+    def __init__(self, name, method=None, parameters=None):
+        super(ChIPPeak, self).__init__(name)
+        self.method = method
+        self.parameters = parameters
+
+
+class GenomeData():
+    __tablename__ = 'genome_data'
+    
+    data_set_id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    leftpos = Column(Integer, primary_key=True)
+    rightpos = Column(Integer, primary_key=True)
+    value = Column(Float)
+    strand = Column(String(1))
+    type = Column(String(20))
+    
+    __mapper_args__ = {'polymorphic_identity': 'genome_data',
+                       'polymorphic_on': type}
+
+    def __init__(self, data_set_id, leftpos, rightpos, value, strand):
+        self.data_set_id = data_set_id
+        self.leftpos = leftpos
+        self.rightpos = rightpos
+        self.value = value
+        self.strand = strand
+
+
+class ChIPPeakData(GenomeData):
+    __tablename__ = 'chip_peak_data'
+    
+    pval = Column(Float)
+    
+    __mapper_args__ = { 'polymorphic_identity': 'chip_peak_data' }
+
+    def __init__(self, data_set_id, leftpos, rightpos, value, strand, pval):
+        super(ChIPPeakData, self).__init__(name, data_set_id, leftpos, rightpos, value, strand)
+        self.pval = pval
 
 
 def _load_data(collection,data):
     collection.insert(data)
     
     
-def load_genome_data(file_path, dataset_id):
-    genome_data = bigg_database.genome_data
+def load_genome_data(file_path, data_set_id, bulk_file_load=False, loading_cutoff=0):
+    genome_data = omics_database.genome_data
     if file_path[-3:] == 'gff':
         entries = []
         for cntr,line in enumerate(open(file_path,'r').readlines()):
@@ -323,28 +381,30 @@ def load_genome_data(file_path, dataset_id):
             if line[0] == '#': continue
             data = line.rstrip('\n').split('\t')
             
+            #filter out low read count data
+            if float(data[5]) < loading_cutoff: continue
+            
             entries.append({
-                "leftpos": int(data[3]),
-                "rightpos": int(data[4]),
+                "position": int(data[3]),
                 "value": float(data[5]),
                 "strand": data[6],
-                "dataset_id": dataset_id})
+                "data_set_id": data_set_id})
             
-            if cntr%10 == 0:
+            if cntr%10000 == 0:
                 genome_data.insert(entries)
                 entries = []
                 
-    from pymongo import ASCENDING, DESCENDING
-    genome_data.create_index([("leftpos", ASCENDING), ("rightpos", ASCENDING)])
+    if not bulk_file_load: 
+        genome_data.create_index([("data_set_id", ASCENDING), ("position", ASCENDING)])
    
    
-def query_genome_data(dataset_ids,leftpos,rightpos,strand,value=0):
-    genome_data = bigg_database.genome_data
+def query_genome_data(data_set_ids,leftpos=0,rightpos=1000,strand=['+','-'],value=0):
+    genome_data = omics_database.genome_data
     return genome_data.find({"$and": 
-                            [{"leftpos" : {"$gte": leftpos}}, 
-                             {"rightpos": {"$lte": rightpos}}, 
+                            [{"position" : {"$gte": leftpos}}, 
+                             {"position": {"$lte": rightpos}}, 
                              {"strand": {"$in" : strand }},
-                             {"dataset_id": {"$in" : dataset_ids}}
+                             {"data_set_id": {"$in" : data_set_ids}}
                          ]})
     
     
