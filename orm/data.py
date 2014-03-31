@@ -4,7 +4,7 @@ from PrototypeDB.orm.base import *
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
-    String, Float, ForeignKey, select
+    String, Float, ForeignKey, ForeignKeyConstraint, select
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.schema import UniqueConstraint
 from pymongo import ASCENDING, DESCENDING
@@ -147,31 +147,6 @@ class Protocol(Base):
     def __repr__(self):
         return "Protocol (#%d, %s):  %s" % \
             (self.id, self.name, self.location)
-
-
-class DataSource(Base):
-    __tablename__ = 'data_source'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100))
-    lab = Column(String(100))
-    institution = Column(String(100))
-    data_sets = relationship("DataSet")
-
-    
-    def __repr__(self):
-        return "Data Source %s (#%d)" % (self.name, self.id)
-    
-    def __repr__dict__(self):
-        return {"name":self.name,"wid":self.id,"values":{"lab":self.lab,"institution":self.institution}}
-    
-    def __repr__json__(self):
-        return json.dumps(self.__repr__dict__())
-    
-    def __init__(self, name, lab, institution):
-        self.name = name
-        self.lab = lab
-        self.institution = institution
     
 
 class DataSet(Base):
@@ -276,9 +251,9 @@ class RNASeqExperiment(DataSet):
         return data_set
     
     
-chip_peak_association_table = Table('chip_peak_association', Base.metadata,
+chip_peak_analysis_association = Table('chip_peak_analysis_association', Base.metadata,
     Column('chip_experiment_id', Integer, ForeignKey('chip_experiment.id')),
-    Column('chip_peak_id', Integer, ForeignKey('chip_peak.id'))
+    Column('chip_peak_analysis_id', Integer, ForeignKey('chip_peak_analysis.id'))
 )
     
     
@@ -319,23 +294,27 @@ class ChIPExperiment(DataSet):
         self.file_name = file_name
 
 
-class ChIPPeak(DataSet):
-    __tablename__ = 'chip_peak'
+class ChIPPeakAnalysis(DataSet):
+    __tablename__ = 'chip_peak_analysis'
     
     id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
     method = Column(String(30))
     parameters = Column(String(100))
-    chip_experiments = relationship("ChIPExperiment", secondary=chip_peak_association_table,\
+    chip_experiments = relationship("ChIPExperiment", secondary=chip_peak_analysis_association,\
                          backref="peaks")
-    __mapper_args__ = { 'polymorphic_identity': 'chip_peak' }
+    __mapper_args__ = { 'polymorphic_identity': 'chip_peak_analysis' }
+
+    def __repr__(self):
+        return "ChIP Peak Analysis (#%d, %s): %s %s" % \
+                (self.id, self.name, self.method, self.parameters)
 
     def __init__(self, name, method=None, parameters=None):
-        super(ChIPPeak, self).__init__(name)
+        super(ChIPPeakAnalysis, self).__init__(name)
         self.method = method
         self.parameters = parameters
 
 
-class GenomeData():
+class GenomeData(Base):
     __tablename__ = 'genome_data'
     
     data_set_id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
@@ -359,14 +338,26 @@ class GenomeData():
 class ChIPPeakData(GenomeData):
     __tablename__ = 'chip_peak_data'
     
+    data_set_id = Column(Integer, primary_key=True)
+    peak_analysis = relationship("ChIPPeakAnalysis")
+    leftpos = Column(Integer, primary_key=True)
+    rightpos = Column(Integer, primary_key=True)
+    eventpos = Column(Integer)
     pval = Column(Float)
     
+    __table_args__ = (ForeignKeyConstraint([data_set_id, leftpos, rightpos],
+                                           [GenomeData.data_set_id, GenomeData.leftpos, GenomeData.rightpos]),{})
     __mapper_args__ = { 'polymorphic_identity': 'chip_peak_data' }
 
-    def __init__(self, data_set_id, leftpos, rightpos, value, strand, pval):
-        super(ChIPPeakData, self).__init__(name, data_set_id, leftpos, rightpos, value, strand)
+    def __repr__(self):
+        return "ChIP Peak: %d-%d %d %s" % \
+            (self.leftpos, self.rightpos, self.value, self.peak_analysis.name)
+    
+    def __init__(self, data_set_id, leftpos, rightpos, value, strand, eventpos, pval):
+        super(ChIPPeakData, self).__init__(data_set_id, leftpos, rightpos, value, strand)
         self.pval = pval
-
+        self.eventpos = eventpos
+    
 
 def _load_data(collection,data):
     collection.insert(data)

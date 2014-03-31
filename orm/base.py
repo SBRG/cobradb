@@ -3,7 +3,7 @@
 from types import MethodType
 from os import system
 
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import Session as _SA_Session
 from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
     String, Float, ForeignKey, and_, or_, not_, distinct, select
@@ -20,6 +20,50 @@ metadata = MetaData(bind=engine, schema=settings.schema)
 connection = pymongo.Connection()
 omics_database = connection.omics_database
 
+
+class id2otherid(Base):
+    __tablename__ = "id2otherid"
+    
+    id = Column(Integer, primary_key=True)
+    other_id = Column(String(100), primary_key=True)
+    type = Column(String(25))
+    data_source_id = Column(Integer, ForeignKey('data_source.id'))
+    data_source = relationship("DataSource")
+    
+    def __repr__(self):
+        return "%s in (%s)" % (self.otherid, str(self.data_source))
+    
+    def __init__(self, id, other_id, type, data_source_id):
+        self.id = id
+        self.other_id = other_id
+        self.type = type
+        self.data_source_id = data_source_id
+        
+
+class DataSource(Base):
+    __tablename__ = 'data_source'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+    lab = Column(String(100))
+    institution = Column(String(100))
+    data_sets = relationship("DataSet")
+
+    
+    def __repr__(self):
+        return "Data Source %s (#%d)" % (self.name, self.id)
+    
+    def __repr__dict__(self):
+        return {"name":self.name,"wid":self.id,"values":{"lab":self.lab,"institution":self.institution}}
+    
+    def __repr__json__(self):
+        return json.dumps(self.__repr__dict__())
+    
+    def __init__(self, name, lab=None, institution=None):
+        self.name = name
+        self.lab = lab
+        self.institution = institution
+        
 
 def make_table(table_name):
     """function to create a table with the default parameters"""

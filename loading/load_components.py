@@ -11,7 +11,7 @@ import cPickle as pickle
 
 from sqlalchemy import text
 
-from ome.lib import settings, timing
+from PrototypeDB.lib import settings, timing
 
 ####Auxiliary functions####
 
@@ -227,10 +227,10 @@ def load_genome(genome_filepath=None):
 
 
 @timing
-def load_genes(session, ecocyc_ID=None):
+def load_genes(base,components):
+    session = base.Session()
     ##First load annotation file containing merger of ecocyc and NCBI
-    if ecocyc_ID is None:
-        ecocyc_ID = session.get_or_create(Dataset, name="ecocyc").id
+    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
     genes = open(settings.data_directory + '/annotation/ec_annotation_from_Ecocyc_2010July19_wpseudo.gff','r')
     noncoding_genes = get_nc_RNA()
     for line in genes:
@@ -241,25 +241,13 @@ def load_genes(session, ecocyc_ID=None):
         bnum = info[0]
         if bnum == '':
             continue
-        if session.query(Gene).filter(Gene.bnum == bnum).first() is not None:
+        if session.query(components.Gene).filter(components.Gene.locus_id == bnum).first() is not None:
             continue  # already exists
-        new_gene = Gene()
-        new_gene.bnum = bnum
-        new_gene.name = info[1]
-        new_gene.info = info[2]
-        new_gene.noncoding = bnum in noncoding_genes
-        new_gene.leftpos = int(vals[3])
-        new_gene.rightpos = int(vals[4])
-        new_gene.strand = vals[6]
-        session.add(new_gene)
-        session.commit()
-        id_entry = id2otherid()
-        id_entry.id = new_gene.id
-        id_entry.otherid = bnum
-        id_entry.type = "gene"
-        id_entry.dataset_id = ecocyc_ID
-        session.add(id_entry)
-        session.commit()
+        gene = session.get_or_create(components.Gene, name=info[1], leftpos=int(vals[3]), rightpos=int(vals[4]), strand=vals[6], locus_id=bnum)
+        gene.noncoding = bnum in noncoding_genes
+    
+        id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=bnum,\
+                                              type='gene', data_source_id=ecocyc_ID)
 
     genes = parseEco_dat('genes.dat')
 
@@ -276,26 +264,21 @@ def load_genes(session, ecocyc_ID=None):
         except: name = ''
         try: synonyms = genes[g]['SYNONYMS']
         except: synonyms = []
-        my_gene = session.query(Gene).filter(Gene.bnum == bnum).first()
-        if my_gene is None:
+        gene = session.query(components.Gene).filter(components.Gene.locus_id == bnum).first()
+        if gene is None:
             continue  # not found
         if name not in synonyms and name != '':
             synonyms.append(name)
         if ID not in synonyms:
             synonyms.append(ID)
         for synonym in synonyms:
-            if session.query(id2otherid).filter_by(
-                    id=my_gene.id, otherid=synonym).first() is not None:
+            if session.query(base.id2otherid).filter_by(
+                        id=gene.id, other_id=synonym).first() is not None:
                 continue  # already exists
-            id_entry = id2otherid()
-            id_entry.otherid = synonym
-            id_entry.id = my_gene.id
-            id_entry.type = "gene"
-            id_entry.dataset_id = ecocyc_ID
-            session.add(id_entry)
-        session.commit()
+            id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=synonym,\
+                                              type='gene', data_source_id=ecocyc_ID)
 
-
+        
 @timing
 def load_proteins(session, ecocyc_ID=None):
     if ecocyc_ID is None:
@@ -389,17 +372,19 @@ def load_promoters(ome, ecocyc_ID=None):
 
 
 @timing
-def load_transunits(ome, ecocyc_ID=None):
-    if ecocyc_ID is None:
-        ecocyc_ID = session.get_or_create(Dataset, name="ecocyc").id
-    transunits = parseEco_dat('transunits.dat')
+def load_transcription_units(base, components):
+    session = base.Session()
+    ##First load annotation file containing merger of ecocyc and NCBI
+    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
+    
+    transcription_units = parseEco_dat('transunits.dat')
 
-    for t in transunits:
+    for t in transcription_units:
         try: 
-            ID = transunits[t]['UNIQUE-ID'][0]
-            components = transunits[t]['COMPONENTS']
+            ID = transcription_units[t]['UNIQUE-ID'][0]
+            components = transcription_units[t]['COMPONENTS']
         except: continue
-        try: name = transunits[t]['COMMON-NAME'][0]
+        try: name = transcription_units[t]['COMMON-NAME'][0]
         except: name = ''
 
         start_strand_bnum = get_start_strand_bnum(ome, components)
@@ -432,11 +417,17 @@ def load_transunits(ome, ecocyc_ID=None):
 
 
 @timing
-def load_bindsites(ome, ecocyc_ID=None):
-    if ecocyc_ID is None:
-        ecocyc_ID = session.get_or_create(Dataset, name="ecocyc").id
-    bindsites = parseEco_dat('dnabindsites.dat')
+def load_bindsites(base, components):
+    session = base.Session()
+    conn = base.engine.connect()
+    
+    ##First load annotation file containing merger of ecocyc and NCBI
+    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
+    dna_binding_bound_component_insert = data.dna_binding_bound_component_association.insert()
 
+    binding_sites = parseEco_dat('dnabindsites.dat')
+    regulation = parseEco_dat('regulation.dat')
+    
     ##commented out code is for adding support for binding sites without a defined position
     #ome.execute("DROP TABLE tu_bind_sites CASCADE;")
     #ome.execute("CREATE TABLE tu_bind_sites ( " + \
@@ -444,38 +435,44 @@ def load_bindsites(ome, ecocyc_ID=None):
     #            "binding_site_id INT, FOREIGN KEY (binding_site_id) REFERENCES binding_sites(id) ON DELETE CASCADE, " + \
     #            "PRIMARY KEY(tu_id, binding_site_id));")
 
-    for b in bindsites:
+    for b in binding_sites:
         try: 
-            ID = bindsites[b]['UNIQUE-ID'][0]
-            centerpos = float(bindsites[b]['ABS-CENTER-POS'][0])
+            ID = binding_sites[b]['UNIQUE-ID'][0]
+            centerpos = float(binding_sites[b]['ABS-CENTER-POS'][0])
             #component_of = bindsites[b]['COMPONENT-OF']
         except: continue
-
+                    
+        """
+        Going to try and find what is bound at each binding site, could be a
+        protein, protein_complex, protein_ligand_complex, or a 
+        protein_complex_ligand_complex for now... All of these complexes will
+        be represented by the complex class regardless.
+        """
+        try: 
+            for regulation_id in binding_sites[b]['INVOLVED-IN-REGULATION']:
+                try:
+                    regulator_id = regulation[regulation_id]['REGULATOR']
+                    if ome.query(components.Complex).count() == 0: 
+                        load_proteins(base, components)
+                        continue
+                    db_id = ome.query(base.IDSynonyms).filter(base.IDSynonyms.synonym == regulator_id).id
+                    conn.execute(dna_binding_bound_component_insert, chip_experiment_id=experiment_id, chip_peak_analysis_id=peak_analysis.id)
+                except: None
+        except: None
+                        
         try:
-            length = int(bindsites[b]['SITE-LENGTH'][0])
-            left = math.floor(centerpos-(length/2))
-            right = math.floor(centerpos+(length/2))
+            length = int(binding_sites[b]['SITE-LENGTH'][0])
+            leftpos = math.floor(centerpos-(length/2))
+            rightpos = math.floor(centerpos+(length/2))
         except: 
-            left = centerpos
-            right = centerpos
+            leftpos = centerpos
+            rightpos = centerpos
 
 
         strand = ''
-
-        result = ome.execute("INSERT INTO binding_sites(leftpos, rightpos, strand) VALUES " + \
-                        "(%i, %i, '%s') RETURNING id;"%(left, right, strand))
-        binding_site_id = result.fetchone()[0]
-
-        ome.execute("INSERT INTO id2otherID(id, otherID, type, dataset_id) VALUES " + \
-                        "(%i, '%s', '%s', %i);"%(binding_site_id, ID, 'binding_site', ecocyc_ID))
         
-        make_citations(ome, bindsites[b], binding_site_id)
-
-
-        #for c in component_of: 
-        #    id_and_type = find_id_and_type(c)
-            #ome.execute("INSERT INTO tu_bind_sites(tu_id, binding_site_id) VALUES " + \
-            #            "(%i, %i);"%(id_and_type[0], binding_site_id))
+        binding_site = ome.get_or_create(components.DnaBindingSite, name=id, leftpos=leftpos, rightpos=rightpos,\
+                                         strand=strand, bound_component_id=None)
 
 
     ome.commit()
@@ -623,15 +620,15 @@ if __name__ == "__main__":
 
 
     # can now use omeORM
-    from ome.orm import base,components
+    from PrototypeDB.orm import base,components
     session = base.Session()
     # find ecocyc
-    ecocyc_ID = session.get_or_create(Dataset, name="ecocyc").id
+    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
 
 
     # components can now be loaded into the database
-    load_genome()
-    #load_genes(session, ecocyc_ID)
+    #load_genome()
+    load_genes(session, ecocyc_ID)
     #load_proteins(session, ecocyc_ID)
     #load_chemicals(session, ecocyc_ID)
     #load_promoters(session, ecocyc_ID)
