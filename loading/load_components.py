@@ -39,7 +39,7 @@ def getAttributes(file_name):
 
 
 def parseEco_dat(file_name):
-    file = open(settings.data_directory + '/annotation/15.1/data/'+file_name,'r')
+    file = open(settings.data_directory + '/annotation/17.1/data/'+file_name,'r')
     master_dict = {}
     attributes = {}
     unique_id = ''
@@ -65,7 +65,7 @@ def parseEco_dat(file_name):
 
 
 def parseEco_col(file_name):
-    file = open(settings.data_directory + '/annotation/15.1/data/'+file_name,'r')
+    file = open(settings.data_directory + '/annotation/17.1/data/'+file_name,'r')
 
     master_dict = {}
     attributes = {}
@@ -241,7 +241,7 @@ def load_genes(base,components):
         bnum = info[0]
         if bnum == '':
             continue
-        if session.query(components.Gene).filter(components.Gene.locus_id == bnum).first() is not None:
+        if session.query(components.Gene).filter(components.Gene.name == info[1]).first() is not None:
             continue  # already exists
         gene = session.get_or_create(components.Gene, name=info[1], leftpos=int(vals[3]), rightpos=int(vals[4]), strand=vals[6], locus_id=bnum)
         gene.noncoding = bnum in noncoding_genes
@@ -278,21 +278,74 @@ def load_genes(base,components):
             id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=synonym,\
                                               type='gene', data_source_id=ecocyc_ID)
 
+def scrub_ecocyc_entry(entry, args=['UNIQUE-ID','COMMON-NAME','TYPES'],extra_args=[]):
+    try:
+        return {arg: entry[arg] for arg in args+extra_args}
+    except:
+        return None
+            
+
         
 @timing
-def load_proteins(session, ecocyc_ID=None):
-    if ecocyc_ID is None:
-        ecocyc_ID = session.get_or_create(Dataset, name="ecocyc").id
-    proteins = parseEco_dat('proteins.dat')
+def load_proteins(base, components):
+    session = base.Session()
+    ##First load annotation file containing merger of ecocyc and NCBI
+    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
+    ecocyc_proteins = parseEco_dat('proteins.dat')
+    #ecocyc_protein_
     protein_sequences = parseEco_fsa('protseq.fsa')
-    for p in proteins:
-        try:
-            ID = proteins[p]['UNIQUE-ID'][0]
-            types = proteins[p]['TYPES']
-            name = proteins[p]['COMMON-NAME'][0].replace('\'','[prime]')
-            geneID = proteins[p]['GENE'][0]
-        except:
-            continue
+    
+    
+    def get_or_create_ecocyc_protein(protein_entry):
+        vals = scrub_ecocyc_entry(protein_entry)
+        if vals is None: return None
+    
+        return session.get_or_create(components.Protein, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
+
+    
+    def get_or_create_ecocyc_protein_complex(protein_complex_entry):
+        vals = scrub_ecocyc_entry(protein_complex_entry,extra_args=['COMPONENTS'])
+        if vals is None: return None
+        
+        protein_complex = session.get_or_create(components.Complex, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
+        
+        for component in vals['COMPONENTS']:
+            try: ecocyc_proteins[component]
+            except: continue
+
+            component_vals = scrub_ecocyc_entry(ecocyc_proteins[component],extra_args=['COMPONENTS'])
+            if component_vals is None: continue
+            
+            if 'Protein-Complexes' in component_vals['TYPES']: 
+                complex_component = get_or_create_ecocyc_protein_complex(ecocyc_proteins[component])
+            elif 'Polypeptides' in vals['TYPES']:
+                complex_component = get_or_create_ecocyc_protein(ecocyc_proteins[component])   
+            else: continue      
+                
+            session.get_or_create(components.ComplexComposition, complex_id=protein_complex.id,\
+                                                                     component_id=complex_component.id,\
+                                                                     stoichiometry=1.)
+        return protein_complex
+    
+    
+    for unique_id,entry in ecocyc_proteins.iteritems():    
+        
+        vals = scrub_ecocyc_entry(entry)
+        if vals is None: continue
+        
+        if 'Protein-Complexes' in vals['TYPES']:
+            get_or_create_ecocyc_protein_complex(entry)
+            
+        elif 'Polypeptides' in vals['TYPES']:
+            get_or_create_ecocyc_protein(entry)    
+            
+            #print values['COMMON-NAME'][0]
+            
+            
+            
+    
+             
+        """
         short_name = name.split()
         # TODO ensure no protein exists already
         new_protein = Protein()
@@ -322,7 +375,7 @@ def load_proteins(session, ecocyc_ID=None):
             session.add(id_entry)
         make_citations(session, proteins[p], new_protein.id)
         session.commit()
-
+        """
 
 @timing
 def load_chemicals(ome, ecocyc_ID=None):

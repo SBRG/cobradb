@@ -37,6 +37,8 @@ class Component(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     type = Column(String(10))
+   
+    __table_args__ = (UniqueConstraint('name'),{})
     
     __mapper_args__ = {'polymorphic_identity': 'component', 
                        'polymorphic_on': type
@@ -54,7 +56,7 @@ class DNA(Component):
     __tablename__ = 'dna'
 
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-    dna_type = Column(String(20))
+    type = Column(String(20))
     leftpos = Column(Integer)
     rightpos = Column(Integer)
     strand = Column(String(1))
@@ -66,13 +68,13 @@ class DNA(Component):
     #genome_region = relationship("GenomeRegion")
     
     __mapper_args__ = { 'polymorphic_identity': 'dna',
-                        'polymorphic_on': dna_type
+                        'polymorphic_on': type
                       }
     
     
     def __init__(self, dna_type='dna', name=None, leftpos=None, rightpos=None, strand=None):
         super(DNA, self).__init__(name)
-        self.dna_type = dna_type
+        self.type = type
         self.leftpos = leftpos
         self.rightpos = rightpos
         self.strand = strand
@@ -89,9 +91,9 @@ class Gene(DNA):
     
     id = Column(Integer, ForeignKey('dna.id'), primary_key=True)
     locus_id = Column(String(10))
-    name = Column(String(10))
     info = Column(String(200))
     long_name = Column(String(100))
+    
     
     def __init__(self, name, leftpos, rightpos, strand, locus_id, info=None, long_name=None):
         super(Gene, self).__init__('gene', name, leftpos, rightpos, strand)
@@ -106,6 +108,7 @@ class DnaBindingSite(DNA):
     __mapper_args__ = { 'polymorphic_identity': 'binding_site' }
     
     id = Column(Integer, ForeignKey('dna.id'), primary_key=True)
+    
     #bound_components = relationship("Component", secondary=dna_binding_bound_component_association,\
     #                                backref="dna_binding_site")
     
@@ -113,7 +116,6 @@ class DnaBindingSite(DNA):
     def __init__(self, name, leftpos, rightpos, strand):
         super(DnaBindingSite, self).__init__('binding_site', name, leftpos, rightpos, strand)
         
-
    
 class ComplexComposition(Base):
     __tablename__ = 'complex_composition'
@@ -121,6 +123,8 @@ class ComplexComposition(Base):
     complex_id = Column(Integer, ForeignKey('complex.id'), primary_key=True)
     component_id = Column(Integer, ForeignKey('component.id'), primary_key=True)
     stoichiometry = Column(Integer)
+
+    __table_args__ = (UniqueConstraint('complex_id','component_id'),{})
 
     def __init__(self, complex_id, component_id, stoichiometry):
         self.complex_id = complex_id
@@ -134,7 +138,8 @@ class Complex(Component):
     __mapper_args__ = {'polymorphic_identity': 'complex'}
     
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-
+    
+    long_name = Column(String(200)) 
     children = relationship("Component", secondary="complex_composition",\
                             primaryjoin = id == ComplexComposition.complex_id,\
                             backref="parent")
@@ -160,19 +165,23 @@ class Complex(Component):
         
         return session.query(Component).join(included_components, Component.id == included_components.c.component_id).all()
         
-    #all_children = get_all_children(self)
         
-    def __init__(self, name):
+    def __repr__(self):
+        return "Complex (#%d):  %s" % \
+            (self.id, self.long_name)
+                
+        
+    def __init__(self, name, long_name=None):
         super(Complex, self).__init__(name)
+        self.long_name = long_name
 
     
-   
 class RNA(Component):
     __tablename__ = 'rna'
      
     __mapper_args__ = { 'polymorphic_identity': 'rna' }
      
-    component_id = Column(Integer, ForeignKey('component.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('component.id'), primary_key=True)
     rna_type = Column(String(20))
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
     
@@ -192,7 +201,7 @@ class TU(RNA):
 
     __mapper_args__ = { 'polymorphic_identity': 'tu' }
     
-    component_id = Column(Integer, ForeignKey('rna.component_id'), primary_key=True)
+    component_id = Column(Integer, ForeignKey('rna.id'), primary_key=True)
     tss = Column(Integer)
     genes = Column(String(10))
     name = Column(String(10))
@@ -208,9 +217,8 @@ class Protein(Component):
      
     __mapper_args__ = { 'polymorphic_identity': 'protein' }
      
-    component_id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-    name = Column(String(10))
-    long_name = Column(String(100))
+    id = Column(Integer, ForeignKey('component.id'), primary_key=True)
+    long_name = Column(String(200))
     #gene = Column(String(10))
     
     def __init__(self, name, long_name=None):
@@ -219,7 +227,7 @@ class Protein(Component):
     
     def __repr__(self):
         return "Protein (#%d, %s)" % \
-            (self.id, self.name)             
+            (self.id, self.long_name)             
      
      
 class Metabolite(Component):
@@ -227,9 +235,8 @@ class Metabolite(Component):
      
     __mapper_args__ = { 'polymorphic_identity': 'metabolite' }
      
-    component_id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-    metabolite_type = Column(String(20))
-    name = Column(String(10))
+    id = Column(Integer, ForeignKey('component.id'), primary_key=True)
+
     long_name = Column(String(100))
     formula = Column(String(100))
     
@@ -243,7 +250,7 @@ class Metabolite(Component):
             (self.id, self.name)     
     
 
-Base.metadata.create_all()
+
 
 
 

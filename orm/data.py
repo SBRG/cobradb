@@ -113,7 +113,7 @@ class InVivoEnvironment(Environment):
     electron_acceptor = Column(String(100))
     temperature = Column(Float)
     
-    UniqueConstraint('carbon_source','nitrogen_source','electron_acceptor','temperature')
+    __table_args__ = (UniqueConstraint('carbon_source','nitrogen_source','electron_acceptor','temperature'),{})
     
     __mapper_args__ = { 'polymorphic_identity': 'in_vivo' }    
     
@@ -144,6 +144,8 @@ class Protocol(Base):
     name = Column(String(100))
     location = Column(String(100))
     
+    __table_args__ = (UniqueConstraint('name', name='name'),{})
+    
     def __repr__(self):
         return "Protocol (#%d, %s):  %s" % \
             (self.id, self.name, self.location)
@@ -168,6 +170,8 @@ class DataSet(Base):
     
     __mapper_args__ = {'polymorphic_identity': 'data_set',
                        'polymorphic_on': type}
+    
+    __table_args__ = (UniqueConstraint('name'),{})
     
     def __repr__(self):
         return "Data Set (#%d):  %s" % \

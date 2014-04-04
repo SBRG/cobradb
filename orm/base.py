@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import Session as _SA_Session
 from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
     String, Float, ForeignKey, and_, or_, not_, distinct, select
+from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 import PrototypeDB.lib.settings as settings
 import pymongo
@@ -30,8 +31,10 @@ class id2otherid(Base):
     data_source_id = Column(Integer, ForeignKey('data_source.id'))
     data_source = relationship("DataSource")
     
+    __table_args__ = (UniqueConstraint('id','other_id'),{})
+
     def __repr__(self):
-        return "%s in (%s)" % (self.otherid, str(self.data_source))
+        return "%s in (%s)" % (self.other_id, str(self.data_source))
     
     def __init__(self, id, other_id, type, data_source_id):
         self.id = id
@@ -49,6 +52,7 @@ class DataSource(Base):
     institution = Column(String(100))
     data_sets = relationship("DataSet")
 
+    __table_args__ = (UniqueConstraint('name'),{})
     
     def __repr__(self):
         return "Data Source %s (#%d)" % (self.name, self.id)
@@ -105,16 +109,41 @@ class _Session(_SA_Session):
 
 
 def get_or_create(session, class_type, **kwargs):
-    """gets an object using filter_by on the kwargs. If no such object
+    """gets an object using filter_by on the unique kwargs. If no such object
     is found in the database, a new one will be created which satisfies
-    these constraints"""
-    result = session.query(class_type).filter_by(**kwargs).first()
-    if result is None:
+    these constraints. This is why every class that wants to use this
+    method to be instantiated needs to have a UniqueConstraint defined."""
+    
+    for constraint in list(class_type.__table_args__):
+        if constraint.__class__.__name__ == 'UniqueConstraint':
+            unique_cols = constraint.columns.keys()
+   
+    try:
+        result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).one()
+    except:
         session.add(class_type(**kwargs))
         session.commit()
         result = session.query(class_type).filter_by(**kwargs).first()
     return result
 
+
+def update(session, object, **kwargs):
+    """Ideally this would only search on the primary key columns so
+    that an update could be made in one call. However, its not currently
+    clear how to do that so necessary to pass in the actual object and
+    update following a call to get_or_create() There is probably some
+    way to do this with class_mapper but its hard right now
+    """
+    #result = session.query(class_type).filter_by(**kwargs).first()
+    #result = session.query(class_type).filter_by(name=kwargs['name']).first()
+    #if result is None: return
+    
+    for key,value in kwargs.iteritems(): 
+        setattr(object,key,value) 
+    session.add(object)
+    session.commit()
+    
+    return object
         
 Session = sessionmaker(bind=engine, class_=_Session)
 
