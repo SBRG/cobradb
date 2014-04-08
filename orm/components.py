@@ -9,34 +9,37 @@ from sqlalchemy.schema import UniqueConstraint,PrimaryKeyConstraint
 import simplejson as json
 
 
+class Gene(GenomeRegion):
+    __tablename__ = 'gene'
 
-class GenomeRegion(Base):
-    __tablename__ = 'genome_region'
-    __table_args__ = (UniqueConstraint('leftpos','rightpos','strand'),)
-
+    id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
+    locus_id = Column(String(10))
+    name = Column(String(10))
+    info = Column(String(200))
+    long_name = Column(String(100))
     
-    id = Column(Integer, primary_key=True)
-    leftpos = Column(Integer, nullable=False)
-    rightpos = Column(Integer, nullable=False)
-    strand = Column(String(1), nullable=False)
-    
+    __mapper_args__ = { 'polymorphic_identity': 'gene' }
     
     def __repr__(self):
-        return "GenomeRegion (#%d): %d-%d (%s strand)" % \
-                (self.id, self.leftpos, self.rightpos, self.strand)
-                
-    def __init__(self, leftpos, rightpos, strand):
-        self.leftpos = leftpos
-        self.rightpos = rightpos
-        self.strand = strand
-        
-        
+        return "Gene (#%d, %s, %s) %d-%d %s"% \
+            (self.id, self.locus_id, self.name, self.leftpos, self.rightpos,\
+                                 self.strand)   
+    
+    
+    def __init__(self, name, leftpos, rightpos, strand, locus_id, info=None, long_name=None):
+        super(Gene, self).__init__(leftpos, rightpos, strand)
+        self.name = name
+        self.locus_id = locus_id
+        self.info = info
+        self.long_name = long_name
+
+
 class Component(Base):
     __tablename__ = 'component'
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
-    type = Column(String(10))
+    type = Column(String(20))
    
     __table_args__ = (UniqueConstraint('name'),{})
     
@@ -57,15 +60,9 @@ class DNA(Component):
 
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
     type = Column(String(20))
-    leftpos = Column(Integer)
-    rightpos = Column(Integer)
-    strand = Column(String(1))
-    """The way to have this as genome_region would require altering the get_or_create()
-    function to take in multiple class types and automatically join them when doing
-    the filtering. This seems like overkill for now and its also not clear if genome_region
-    should exist by itself"""
-    #genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
-    #genome_region = relationship("GenomeRegion")
+
+    genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
+    genome_region = relationship("GenomeRegion", backref="dna")
     
     __mapper_args__ = { 'polymorphic_identity': 'dna',
                         'polymorphic_on': type
@@ -74,33 +71,16 @@ class DNA(Component):
     
     def __init__(self, dna_type='dna', name=None, leftpos=None, rightpos=None, strand=None):
         super(DNA, self).__init__(name)
-        self.type = type
-        self.leftpos = leftpos
-        self.rightpos = rightpos
-        self.strand = strand
-    
+        session = Session()
+        self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
+                                              rightpos=rightpos, strand=strand).id
+        session.close()
+        
     def __repr__(self):
         return "DNA (#%d, %s) %d-%d %s"% \
-            (self.id, self.name, self.leftpos, self.rightpos, self.strand)   
+            (self.id, self.name, self.genome_region.leftpos, self.genome_region.rightpos,\
+                                 self.genome_region.strand)   
     
-    
-class Gene(DNA):
-    __tablename__ = 'gene'
-
-    __mapper_args__ = { 'polymorphic_identity': 'gene' }
-    
-    id = Column(Integer, ForeignKey('dna.id'), primary_key=True)
-    locus_id = Column(String(10))
-    info = Column(String(200))
-    long_name = Column(String(100))
-    
-    
-    def __init__(self, name, leftpos, rightpos, strand, locus_id, info=None, long_name=None):
-        super(Gene, self).__init__('gene', name, leftpos, rightpos, strand)
-        self.locus_id = locus_id
-        self.info = info
-        self.long_name = long_name
-
 
 class DnaBindingSite(DNA):
     __tablename__ = 'dna_binding_site'
@@ -108,13 +88,14 @@ class DnaBindingSite(DNA):
     __mapper_args__ = { 'polymorphic_identity': 'binding_site' }
     
     id = Column(Integer, ForeignKey('dna.id'), primary_key=True)
+    centerpos = Column(Integer)
+    width = Column(Integer)
     
-    #bound_components = relationship("Component", secondary=dna_binding_bound_component_association,\
-    #                                backref="dna_binding_site")
     
-    
-    def __init__(self, name, leftpos, rightpos, strand):
+    def __init__(self, name, leftpos, rightpos, strand, centerpos, width):
         super(DnaBindingSite, self).__init__('binding_site', name, leftpos, rightpos, strand)
+        self.centerpos = centerpos
+        self.width = width
         
    
 class ComplexComposition(Base):
@@ -230,24 +211,26 @@ class Protein(Component):
             (self.id, self.long_name)             
      
      
-class Metabolite(Component):
-    __tablename__ = 'metabolite'
+class SmallMolecule(Component):
+    __tablename__ = 'small_molecule'
      
-    __mapper_args__ = { 'polymorphic_identity': 'metabolite' }
+    __mapper_args__ = { 'polymorphic_identity': 'small_molecule' }
      
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
 
     long_name = Column(String(100))
     formula = Column(String(100))
-    
-    def __init__(self, name, metabolite_type):
-        super(Metabolite, self).__init__(name)
-        self.metabolite_type = metabolite_type
+    smiles = Column(String(200))
+    def __init__(self, name, long_name, formula="", smiles=""):
+        super(SmallMolecule, self).__init__(name)
+        self.long_name = long_name
+        self.formula = formula
+        self.smiles = smiles
      
      
     def __repr__(self):
-        return "Metabolite (#%d, %s)" % \
-            (self.id, self.name)     
+        return "Small Molecule (#%d, %s)" % \
+            (self.id, self.long_name)     
     
 
 

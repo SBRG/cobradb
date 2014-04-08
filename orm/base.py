@@ -69,6 +69,31 @@ class DataSource(Base):
         self.institution = institution
         
 
+class GenomeRegion(Base):
+    __tablename__ = 'genome_region'    
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    leftpos = Column(Integer, nullable=False)
+    rightpos = Column(Integer, nullable=False)
+    strand = Column(String(1), nullable=False)
+    type = Column(String(20))
+    
+    __table_args__ = (UniqueConstraint('leftpos','rightpos','strand'),{})
+
+    __mapper_args__ = {'polymorphic_identity': 'genome_region', 
+                       'polymorphic_on': type
+                      }
+    
+    def __repr__(self):
+        return "GenomeRegion (#%d): %d-%d (%s strand)" % \
+                (self.id, self.leftpos, self.rightpos, self.strand)
+                
+    def __init__(self, leftpos, rightpos, strand):
+        self.leftpos = leftpos
+        self.rightpos = rightpos
+        self.strand = strand
+        
+        
 def make_table(table_name):
     """function to create a table with the default parameters"""
     return Table(table_name, metadata, autoload=True)
@@ -123,7 +148,7 @@ def get_or_create(session, class_type, **kwargs):
     except:
         session.add(class_type(**kwargs))
         session.commit()
-        result = session.query(class_type).filter_by(**kwargs).first()
+        result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).one()
     return result
 
 

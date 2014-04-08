@@ -322,35 +322,37 @@ class GenomeData(Base):
     __tablename__ = 'genome_data'
     
     data_set_id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
-    leftpos = Column(Integer, primary_key=True)
-    rightpos = Column(Integer, primary_key=True)
+    genome_region_id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
+    genome_region = relationship("GenomeRegion", backref="data")
     value = Column(Float)
-    strand = Column(String(1))
     type = Column(String(20))
     
+    __table_args__ = (UniqueConstraint('data_set_id','genome_region_id'),{})
+
     __mapper_args__ = {'polymorphic_identity': 'genome_data',
                        'polymorphic_on': type}
 
     def __init__(self, data_set_id, leftpos, rightpos, value, strand):
+        session = Session()
+        self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
+                                              rightpos=rightpos, strand=strand).id
+        session.close()
         self.data_set_id = data_set_id
-        self.leftpos = leftpos
-        self.rightpos = rightpos
         self.value = value
-        self.strand = strand
 
 
 class ChIPPeakData(GenomeData):
     __tablename__ = 'chip_peak_data'
     
     data_set_id = Column(Integer, primary_key=True)
+    genome_region_id = Column(Integer, primary_key=True)
     peak_analysis = relationship("ChIPPeakAnalysis")
-    leftpos = Column(Integer, primary_key=True)
-    rightpos = Column(Integer, primary_key=True)
     eventpos = Column(Integer)
     pval = Column(Float)
     
-    __table_args__ = (ForeignKeyConstraint([data_set_id, leftpos, rightpos],
-                                           [GenomeData.data_set_id, GenomeData.leftpos, GenomeData.rightpos]),{})
+    __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
+                                           ['genome_data.data_set_id', 'genome_data.genome_region_id']),{})
+    
     __mapper_args__ = { 'polymorphic_identity': 'chip_peak_data' }
 
     def __repr__(self):

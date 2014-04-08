@@ -278,13 +278,13 @@ def load_genes(base,components):
             id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=synonym,\
                                               type='gene', data_source_id=ecocyc_ID)
 
+
 def scrub_ecocyc_entry(entry, args=['UNIQUE-ID','COMMON-NAME','TYPES'],extra_args=[]):
     try:
         return {arg: entry[arg] for arg in args+extra_args}
     except:
         return None
             
-
         
 @timing
 def load_proteins(base, components):
@@ -292,7 +292,8 @@ def load_proteins(base, components):
     ##First load annotation file containing merger of ecocyc and NCBI
     ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
     ecocyc_proteins = parseEco_dat('proteins.dat')
-    #ecocyc_protein_
+    ecocyc_ligands = parseEco_dat('compounds.dat')
+    ecocyc_protein_cplxs = parseEco_dat('protligandcplxes.dat')
     protein_sequences = parseEco_fsa('protseq.fsa')
     
     
@@ -301,7 +302,17 @@ def load_proteins(base, components):
         if vals is None: return None
     
         return session.get_or_create(components.Protein, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
-
+    
+    def get_or_create_ecocyc_ligand(ligand_entry):
+        vals = scrub_ecocyc_entry(ligand_entry,extra_args=['SMILES'])
+        if vals is None: return None
+        
+        name = vals['COMMON-NAME'][0].replace('\'','[prime]')
+        markup = re.compile("<.+?>")
+        name = markup.sub("", name)
+        
+        return session.get_or_create(components.SmallMolecule, name=vals['UNIQUE-ID'][0],\
+                                     long_name=name, smiles=vals['SMILES'][0])
     
     def get_or_create_ecocyc_protein_complex(protein_complex_entry):
         vals = scrub_ecocyc_entry(protein_complex_entry,extra_args=['COMPONENTS'])
@@ -310,18 +321,26 @@ def load_proteins(base, components):
         protein_complex = session.get_or_create(components.Complex, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
         
         for component in vals['COMPONENTS']:
-            try: ecocyc_proteins[component]
-            except: continue
-
-            component_vals = scrub_ecocyc_entry(ecocyc_proteins[component],extra_args=['COMPONENTS'])
+            try: component_vals = scrub_ecocyc_entry(ecocyc_proteins[component])
+            except: 
+                try: component_vals = scrub_ecocyc_entry(ecocyc_ligands[component])
+                except: continue
             if component_vals is None: continue
             
             if 'Protein-Complexes' in component_vals['TYPES']: 
                 complex_component = get_or_create_ecocyc_protein_complex(ecocyc_proteins[component])
-            elif 'Polypeptides' in vals['TYPES']:
-                complex_component = get_or_create_ecocyc_protein(ecocyc_proteins[component])   
-            else: continue      
+            
+            elif 'Polypeptides' in component_vals['TYPES']:
+                complex_component = get_or_create_ecocyc_protein(ecocyc_proteins[component]) 
                 
+            else:
+                try:
+                    complex_component = get_or_create_ecocyc_ligand(ecocyc_ligands[component])
+                except:
+                    print component
+                    continue
+            if complex_component is None: continue
+            
             session.get_or_create(components.ComplexComposition, complex_id=protein_complex.id,\
                                                                      component_id=complex_component.id,\
                                                                      stoichiometry=1.)
@@ -339,43 +358,19 @@ def load_proteins(base, components):
         elif 'Polypeptides' in vals['TYPES']:
             get_or_create_ecocyc_protein(entry)    
             
-            #print values['COMMON-NAME'][0]
+                        
+    for unique_id,entry in ecocyc_protein_cplxs.iteritems():    
+        
+        vals = scrub_ecocyc_entry(entry)
+        if vals is None: continue
+        
+        if 'Protein-Complexes' in vals['TYPES'] or 'Protein-Small-Molecule-Complexes' in vals['TYPES']:
+            get_or_create_ecocyc_protein_complex(entry)
             
-            
+        elif 'Polypeptides' in vals['TYPES']:
+            get_or_create_ecocyc_protein(entry)    
             
     
-             
-        """
-        short_name = name.split()
-        # TODO ensure no protein exists already
-        new_protein = Protein()
-        new_protein.name = short_name[0]
-        new_protein.long_name = name
-        try: new_protein.sequence = protein_sequences[ID]
-        except: new_protein.sequence = ''     
-        session.add(new_protein)
-        session.commit()
-        # add in the related genes
-        new_protein.genes.extend(session.query(Gene).filter(
-            id2otherid.otherid==geneID, Gene.id == id2otherid.id).all())
-        # create id2otherid entries
-        synonyms = []
-        if "SYNONYMS" in proteins[p]:
-            for entry in proteins[p]["SYNONYMS"]:
-                if ";" not in entry:
-                    synonyms.append(entry)
-        if ID not in synonyms:
-            synonyms.append(ID)
-        for synonym in synonyms:
-            id_entry = id2otherid()
-            id_entry.id = new_protein.id
-            id_entry.otherid = synonym
-            id_entry.type = "protein"
-            id_entry.dataset_id = ecocyc_ID
-            session.add(id_entry)
-        make_citations(session, proteins[p], new_protein.id)
-        session.commit()
-        """
 
 @timing
 def load_chemicals(ome, ecocyc_ID=None):
@@ -472,13 +467,9 @@ def load_transcription_units(base, components):
 @timing
 def load_bindsites(base, components):
     session = base.Session()
-    conn = base.engine.connect()
-    
     ##First load annotation file containing merger of ecocyc and NCBI
     ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
-    dna_binding_bound_component_insert = data.dna_binding_bound_component_association.insert()
-
-    binding_sites = parseEco_dat('dnabindsites.dat')
+    ecocyc_binding_sites = parseEco_dat('dnabindsites.dat')
     regulation = parseEco_dat('regulation.dat')
     
     ##commented out code is for adding support for binding sites without a defined position
@@ -488,7 +479,7 @@ def load_bindsites(base, components):
     #            "binding_site_id INT, FOREIGN KEY (binding_site_id) REFERENCES binding_sites(id) ON DELETE CASCADE, " + \
     #            "PRIMARY KEY(tu_id, binding_site_id));")
 
-    for b in binding_sites:
+    for unique_id,entry in ecocyc_binding_sites.iteritems():
         try: 
             ID = binding_sites[b]['UNIQUE-ID'][0]
             centerpos = float(binding_sites[b]['ABS-CENTER-POS'][0])
@@ -529,91 +520,6 @@ def load_bindsites(base, components):
 
 
     ome.commit()
-
-
-def load_protein_complexes(ome, ecocyc_ID=None):    
-    if ecocyc_ID is None:
-        ecocyc_ID = session.get_or_create(Dataset, name="ecocyc").id
-    complexes = parseEco_col('protcplxs.col')
-
-    for c in complexes:
-        try: 
-            ID = complexes[c]['UNIQUE-ID'][0]
-            name = complexes[c]['NAME'][0].replace('\'','[prime]')
-            genes = complexes[c]['GENE-NAME']
-            gene_ids = complexes[c]['GENE-ID']
-            subunits_comp = complexes[c]['SUBUNIT-COMPOSITION']
-        except:
-            continue
-
-        result = ome.execute("INSERT INTO complex(name, type) VALUES ('%s', '%s') RETURNING id;"%(name, 'protein_complex'))
-        id = result.fetchone()[0]
-
-        subunits = subunits_comp[0].split(',')
-        for s in subunits:
-            vals = s.split('*')
-
-            id_and_type = find_id_and_type(ome, vals[1])
-            if id_and_type == '':
-                continue
-
-            ome.execute("INSERT INTO complex_components(complex_id, other_id, type, coefficient) VALUES " + \
-                            "(%i, %i, '%s', %i);"%(id, id_and_type[0], id_and_type[1], int(vals[0])))
-
-        ome.execute("INSERT INTO id2otherID(id, otherID, type, dataset_id) VALUES " + \
-                        "(%i, '%s', '%s', %i);"%(id, ID, 'protein_complex', ecocyc_ID))
-
-
-@timing
-def load_protein_ligand_complexes(ome, ecocyc_ID=None):
-    if ecocyc_ID is None:
-        ecocyc_ID = session.get_or_create(Dataset, name="ecocyc").id
-    proteins = parseEco_dat('protligandcplxes.dat')
-
-    for p in proteins:
-        try:
-            ID = proteins[p]['UNIQUE-ID'][0]
-            types = proteins[p]['TYPES']
-            name = proteins[p]['COMMON-NAME'][0].replace('\'','[prime]')
-            components = proteins[p]['COMPONENTS']
-        except: continue
-
-        if types[0] != 'Protein-Small-Molecule-Complexes': continue
-
-        result = ome.execute("INSERT INTO complex(name, type) VALUES ('%s', '%s') RETURNING id;"%(name, 'protein_ligand_complex'))
-        complex_id = result.fetchone()[0]
-        ome.execute("INSERT INTO id2otherid(id, otherid, type, dataset_id) VALUES " + \
-                    "(%i, '%s', '%s', %i);"%(complex_id, ID, 'protein_ligand_complex', ecocyc_ID))
-
-
-        for c in components:
-            result = ome.execute("SELECT g.id FROM genes g, proteins p, gene_id_protein_id gpw, id2otherid w2 " + \
-                        "WHERE gpw.gene_id = g.id AND gpw.protein_id = p.id AND p.id = w2.id " + \
-                        "AND w2.otherid = '%s';"%(c))
-            try: 
-                gene_id = result.fetchone()[0]
-                protein_id = find_id_and_type(ome, c)
-
-
-                ome.execute("INSERT INTO complex_components(complex_id, other_id, type, coefficient) " + \
-                            "VALUES (%i, %i, '%s', %i);"%(complex_id, protein_id, 'protein_complex', 1))
-
-                result = ome.execute("SELECT * from gene_id_protein_id WHERE gene_id = %i AND protein_id = %i;"%(gene_id, protein_id[0]))
-                try: result.fetchone()[0]
-                except:
-                    ome.execute("INSERT INTO gene_id_protein_id(gene_id, protein_id) VALUES " + \
-                                "(%i, %i);"%(gene_id, protein_id[0]))
-
-            except: 
-
-                id_and_type = find_id_and_type(ome, c)
-                if id_and_type == '': 
-                    #print c
-                    continue
-                ome.execute("INSERT INTO complex_components(complex_id, other_id, type, coefficient) " +
-                            "VALUES(%i, %i, '%s', %i);"%(complex_id, id_and_type[0], id_and_type[1], 1))
-        make_citations(ome, proteins[p], complex_id)
-        ome.commit()  
             
                               
 @timing
