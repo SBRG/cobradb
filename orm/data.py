@@ -46,6 +46,8 @@ class Strain(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100))
     
+    __table_args__ = (UniqueConstraint('name'),{})
+    
     def __repr__(self):
         return "Strain: %s" % (self.name)
     
@@ -66,6 +68,7 @@ class Environment(Base):
     name = Column(String(100), unique=True)
     type = Column(String(20))
     
+    __table_args__ = (UniqueConstraint('id'),{})
 
     __mapper_args__ = {'polymorphic_identity':'environment',
                        'polymorphic_on': type
@@ -215,6 +218,7 @@ class ArrayExperiment(DataSet):
     platform = Column(String(10))
     replicate = Column(Integer)
     
+    
     __mapper_args__ = { 'polymorphic_identity': 1 }
     
     def __repr__(self):
@@ -323,9 +327,15 @@ class GenomeData(Base):
     
     data_set_id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
-    genome_region = relationship("GenomeRegion", backref="data")
+    genome_region = relationship('GenomeRegion', backref='data')
     value = Column(Float)
     type = Column(String(20))
+    
+    
+    @hybrid_property
+    def all_data(self):
+        return [x['value'] for x in query_genome_data([self.data_set_id], genome_region.leftpos, genome_region.rightpos)]
+    
     
     __table_args__ = (UniqueConstraint('data_set_id','genome_region_id'),{})
 
@@ -413,6 +423,6 @@ def query_metabolite_data():
     return
       
 
-Base.metadata.create_all()
+
     
     

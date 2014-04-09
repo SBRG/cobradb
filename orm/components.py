@@ -1,6 +1,6 @@
 from PrototypeDB.orm.base import *
 
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
     String, Float, ForeignKey, select
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -34,6 +34,26 @@ class Gene(GenomeRegion):
         self.long_name = long_name
 
 
+class Motif(GenomeRegion):
+    __tablename__ = 'motif'
+    
+    id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
+    pval = Column(Float)
+    
+    bound_component_id = Column(Integer, ForeignKey('component.id'))
+    bound_component = relationship("Component")
+    
+    def __repr__(self):
+        return "Motif (%s) %d-%d %s %5.2f"% \
+            (self.bound_component.name, self.leftpos, self.rightpos,\
+                                 self.strand, self.pval)   
+    
+    def __init__(self, leftpos, rightpos, strand, pval, info=None):
+        super(Motif, self).__init__(leftpos, rightpos, strand)
+        self.pval = pval
+        self.info = info
+
+
 class Component(Base):
     __tablename__ = 'component'
 
@@ -62,7 +82,7 @@ class DNA(Component):
     type = Column(String(20))
 
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
-    genome_region = relationship("GenomeRegion", backref="dna")
+    genome_region = relationship('GenomeRegion', backref=backref('dna', lazy='dynamic'))
     
     __mapper_args__ = { 'polymorphic_identity': 'dna',
                         'polymorphic_on': type

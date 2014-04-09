@@ -370,7 +370,6 @@ def load_proteins(base, components):
         elif 'Polypeptides' in vals['TYPES']:
             get_or_create_ecocyc_protein(entry)    
             
-    
 
 @timing
 def load_chemicals(ome, ecocyc_ID=None):
@@ -470,57 +469,51 @@ def load_bindsites(base, components):
     ##First load annotation file containing merger of ecocyc and NCBI
     ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
     ecocyc_binding_sites = parseEco_dat('dnabindsites.dat')
-    regulation = parseEco_dat('regulation.dat')
+    ecocyc_regulation = parseEco_dat('regulation.dat')
     
-    ##commented out code is for adding support for binding sites without a defined position
-    #ome.execute("DROP TABLE tu_bind_sites CASCADE;")
-    #ome.execute("CREATE TABLE tu_bind_sites ( " + \
-    #            "tu_id INT, FOREIGN KEY (tu_id) REFERENCES TU(id) ON DELETE CASCADE, " + \
-    #            "binding_site_id INT, FOREIGN KEY (binding_site_id) REFERENCES binding_sites(id) ON DELETE CASCADE, " + \
-    #            "PRIMARY KEY(tu_id, binding_site_id));")
-
+    
     for unique_id,entry in ecocyc_binding_sites.iteritems():
-        try: 
-            ID = binding_sites[b]['UNIQUE-ID'][0]
-            centerpos = float(binding_sites[b]['ABS-CENTER-POS'][0])
-            #component_of = bindsites[b]['COMPONENT-OF']
-        except: continue
-                    
-        """
-        Going to try and find what is bound at each binding site, could be a
-        protein, protein_complex, protein_ligand_complex, or a 
-        protein_complex_ligand_complex for now... All of these complexes will
-        be represented by the complex class regardless.
-        """
-        try: 
-            for regulation_id in binding_sites[b]['INVOLVED-IN-REGULATION']:
-                try:
-                    regulator_id = regulation[regulation_id]['REGULATOR']
-                    if ome.query(components.Complex).count() == 0: 
-                        load_proteins(base, components)
-                        continue
-                    db_id = ome.query(base.IDSynonyms).filter(base.IDSynonyms.synonym == regulator_id).id
-                    conn.execute(dna_binding_bound_component_insert, chip_experiment_id=experiment_id, chip_peak_analysis_id=peak_analysis.id)
-                except: None
-        except: None
-                        
-        try:
-            length = int(binding_sites[b]['SITE-LENGTH'][0])
-            leftpos = math.floor(centerpos-(length/2))
-            rightpos = math.floor(centerpos+(length/2))
-        except: 
-            leftpos = centerpos
-            rightpos = centerpos
-
-
-        strand = ''
         
-        binding_site = ome.get_or_create(components.DnaBindingSite, name=id, leftpos=leftpos, rightpos=rightpos,\
-                                         strand=strand, bound_component_id=None)
-
-
-    ome.commit()
+        vals = scrub_ecocyc_entry(entry, args=['UNIQUE-ID','TYPES','ABS-CENTER-POS'])
+        if vals is None: continue
+        
+        if 'DNA-Binding-Sites' in vals['TYPES']:
             
+            try: centerpos = math.floor(float(vals['ABS-CENTER-POS'][0]))
+            except: continue
+            
+            try:
+                length = int(ecocyc_binding_sites[unique_id]['SITE-LENGTH'][0])
+                leftpos = math.floor(centerpos-(length/2))
+                rightpos = math.floor(centerpos+(length/2))
+            except: 
+                length = 0
+                leftpos = centerpos
+                rightpos = centerpos
+            
+            session.get_or_create(components.DnaBindingSite, name=vals['UNIQUE-ID'][0], leftpos=leftpos,\
+                                  rightpos=rightpos, strand='+', centerpos=centerpos, width=length)                  
+
+    
+    for unique_id,entry in ecocyc_regulation.iteritems():
+        vals = scrub_ecocyc_entry(entry, args=['UNIQUE-ID','TYPES','ASSOCIATED-BINDING-SITE','REGULATOR'])
+        if vals is None: continue
+        
+        if 'Transcription-Factor-Binding' in vals['TYPES']:
+            regulator = session.get_or_create(components.Component, name=vals['REGULATOR'][0])
+            
+            binding_site = session.query(components.DnaBindingSite).filter_by(name=vals['ASSOCIATED-BINDING-SITE'][0]).first()
+            if binding_site is None: continue
+        
+            tf_binding_complex = session.get_or_create(components.Complex, name=vals['UNIQUE-ID'][0])
+            
+            session.get_or_create(components.ComplexComposition, complex_id=tf_binding_complex.id,\
+                                                                     component_id=regulator.id,\
+                                                                     stoichiometry=1.)
+            
+            session.get_or_create(components.ComplexComposition, complex_id=tf_binding_complex.id,\
+                                                                     component_id=binding_site.id,\
+                                                                     stoichiometry=1.)
                               
 @timing
 def load_kegg_pathways(session):
