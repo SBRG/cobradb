@@ -241,9 +241,11 @@ class RNASeqExperiment(DataSet):
 
     sequencing_type = Column(String(20))
     machine_ID = Column(String(20))
-    replicate = Column(Integer)
     
-    __mapper_args__ = { 'polymorphic_identity': 2 }
+    #terrrible hack right here
+    file_name = Column(String(100))
+    
+    __mapper_args__ = { 'polymorphic_identity': 'rna_seq_experiment' }          
     
     def __repr__(self):
         return "RNASeqExperiment (#%d, %s):  %s" % \
@@ -258,6 +260,12 @@ class RNASeqExperiment(DataSet):
         
         return data_set
     
+    def __init__(self, name, replicate, strain, environment, data_source,\
+                       sequencing_type, machine_id, file_name):
+        super(RNASeqExperiment, self).__init__(name, replicate, strain, environment, data_source)
+        self.sequencing_type = sequencing_type
+        self.machine_id = machine_id
+        self.file_name = file_name
     
 chip_peak_analysis_association = Table('chip_peak_analysis_association', Base.metadata,
     Column('chip_experiment_id', Integer, ForeignKey('chip_experiment.id')),

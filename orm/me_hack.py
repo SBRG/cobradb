@@ -23,6 +23,20 @@ def make_table(table_name):
     """function to create a table with the default parameters"""
     return Table(table_name, metadata, autoload=True)
 
+
+def get_me_component(chemical_formula):
+    components = []
+    #remove H
+    chemical_formula.pop('H', None)
+    for component in Session().query(Component).all():
+        formula = component.formula
+        try: formula.pop('H', None)
+        except: continue
+        if formula == chemical_formula:
+            components.append(component)
+    return components
+
+
 class Component(Base):
     __table__ = make_table('component')
     
@@ -40,12 +54,14 @@ class Component(Base):
         return "Component (#%d):  %s" % \
             (self.id, self.descriptive_name)
 
+
 class ComponentChemicalFormula(Base):
     __table__ = make_table('component_chemical_formula')
    
     def __repr__(self):
         return "%d: %s %d" % \
             (self.component, self.element, self.stoichiometry) 
+
     
 class ChemicalElement(Base):
     __table__ = make_table('chemical_element')
@@ -53,7 +69,6 @@ class ChemicalElement(Base):
     def __repr__(self):
         return "%s: %s %5.2f" % \
             (self.id, self.element_name, self.atomic_mass)
-
 
 
 class _Session(_SA_Session):
@@ -92,8 +107,5 @@ class _Session(_SA_Session):
 
 Session = sessionmaker(bind=engine, class_=_Session)
 
-
-if __name__ == "__main__":
-    session = Session()
     
     
