@@ -241,15 +241,14 @@ def load_genes(base,components):
         bnum = info[0]
         if bnum == '':
             continue
-        if session.query(components.Gene).filter(components.Gene.name == info[1]).first() is not None:
-            continue  # already exists
+
         gene = session.get_or_create(components.Gene, name=info[1], leftpos=int(vals[3]), rightpos=int(vals[4]), strand=vals[6], locus_id=bnum)
         gene.noncoding = bnum in noncoding_genes
     
         id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=bnum,\
                                               type='gene', data_source_id=ecocyc_ID)
 
-    genes = parseEco_dat('genes.dat')
+    genes = []#parseEco_dat('genes.dat')
 
     for g in genes: 
         try:
@@ -337,7 +336,7 @@ def load_proteins(base, components):
                 try:
                     complex_component = get_or_create_ecocyc_ligand(ecocyc_ligands[component])
                 except:
-                    print component
+                    #TODO: Add in the rest of complex type additions here
                     continue
             if complex_component is None: continue
             
@@ -514,6 +513,7 @@ def load_bindsites(base, components):
             session.get_or_create(components.ComplexComposition, complex_id=tf_binding_complex.id,\
                                                                      component_id=binding_site.id,\
                                                                      stoichiometry=1.)
+
                               
 @timing
 def load_kegg_pathways(session):

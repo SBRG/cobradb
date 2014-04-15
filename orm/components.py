@@ -57,7 +57,7 @@ class Motif(GenomeRegion):
 class Component(Base):
     __tablename__ = 'component'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100))
     type = Column(String(20))
    

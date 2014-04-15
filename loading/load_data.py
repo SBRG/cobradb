@@ -272,3 +272,34 @@ def run_cuffquant(exp):
     exp_file = settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp.file_name
     
     os.system('%s -p %d %s %s' % ('cuffquant', 8, gtf_file, exp_file))
+    
+    
+def run_cuffnorm(exps):
+    gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
+    
+    out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm'
+    os.system('rm -r '+out_path)
+    os.mkdir(out_path)
+    os.chdir(out_path)
+    #bam_dir = settings.dropbox_directory+'/crp/data/RNAseq/bam/'
+    cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
+
+    os.system('cuffnorm -p %d --library-type fr-firststrand -L %s %s %s' % (24,\
+             ','.join([x[1][0][:-2] for x in exps]), gtf_file,\
+             ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exps]))) 
+    
+    
+def run_cuffdiff(exps):
+    gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
+    
+    out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff'
+    os.system('rm -r '+out_path)
+    os.mkdir(out_path)
+    os.chdir(out_path)
+    cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
+    
+    os.system('cuffdiff -p %d --library-type fr-firststrand --upper-quartile-norm --FDR 0.05 -L %s %s %s' % (24,\
+             ','.join([x[1][0][:-2] for x in exps]), gtf_file,\
+             ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exps])))
+
+

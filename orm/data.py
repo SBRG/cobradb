@@ -68,7 +68,7 @@ class Environment(Base):
     name = Column(String(100), unique=True)
     type = Column(String(20))
     
-    __table_args__ = (UniqueConstraint('id'),{})
+    __table_args__ = (UniqueConstraint('name'),{})
 
     __mapper_args__ = {'polymorphic_identity':'environment',
                        'polymorphic_on': type
@@ -169,7 +169,7 @@ class DataSet(Base):
     environment = relationship("Environment")
     
     data_source_id = Column(Integer, ForeignKey('data_source.id'))
-    data_source = relationship("DataSource")
+    data_source = relationship("DataSource", cascade='all,delete')
     
     __mapper_args__ = {'polymorphic_identity': 'data_set',
                        'polymorphic_on': type}
@@ -178,7 +178,7 @@ class DataSet(Base):
     
     def __repr__(self):
         return "Data Set (#%d):  %s" % \
-            (self.id, self.data_source)
+            (self.id, self.name)
     
     def __repr__dict__(self):
         experiment = {"name":self.name,"id":self.id, "type":self.type, "values":{}}
@@ -330,33 +330,86 @@ class ChIPPeakAnalysis(DataSet):
         self.parameters = parameters
 
 
+class AnalysisComposition(Base):
+    __tablename__ = 'analysis_composition'
+    
+    analysis_id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
+    data_set_id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+
+    __table_args__ = (UniqueConstraint('analysis_id','data_set_id'),{})
+
+    def __init__(self, analysis_id, data_set_id):
+        self.analysis_id = analysis_id
+        self.data_set_id = data_set_id
+
+
+class Analysis(DataSet):
+    __tablename__ = 'analysis'
+    
+    id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    type = Column(String(20))
+    children = relationship("DataSet", secondary="analysis_composition",\
+                            primaryjoin = id == AnalysisComposition.analysis_id,\
+                            backref="parent")
+    
+    __mapper_args__ = {'polymorphic_identity': 'analysis',
+                       'polymorphic_on': 'type'}
+    
+    def __init__(self,name):
+        super(Analysis, self).__init__(name)
+    
+    def __repr__(self):
+        return "Analysis (#%d):  %s" % \
+            (self.id, self.name)
+
+ 
+class ExpressionAnalysis(Analysis):
+    __tablename__ = 'expression_analysis'
+    
+    id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
+    
+    __mapper_args__ = {'polymorphic_identity': 'expression_analysis'}
+
+    
+    def __init__(self,name):
+        super(Analysis, self).__init__(name)
+    
+    def __repr__(self):
+        return "Analysis (#%d):  %s" % \
+            (self.id, self.name)
+
+
 class GenomeData(Base):
     __tablename__ = 'genome_data'
     
     data_set_id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    data_set = relationship('DataSet')
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
     genome_region = relationship('GenomeRegion', backref='data')
     value = Column(Float)
     type = Column(String(20))
     
+    __table_args__ = (UniqueConstraint('data_set_id','genome_region_id'),{})
     
     @hybrid_property
     def all_data(self):
         return [x['value'] for x in query_genome_data([self.data_set_id], genome_region.leftpos, genome_region.rightpos)]
     
-    
-    __table_args__ = (UniqueConstraint('data_set_id','genome_region_id'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'genome_data',
                        'polymorphic_on': type}
 
-    def __init__(self, data_set_id, leftpos, rightpos, value, strand):
-        session = Session()
-        self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
-                                              rightpos=rightpos, strand=strand).id
-        session.close()
+    def __repr__(self):
+        return "%s: %5.2f -- %s" % \
+            (self.genome_region, self.value, self.data_set.name, )
+        
+
+    def __init__(self, data_set_id, genome_region_id, value):
         self.data_set_id = data_set_id
+        self.genome_region_id = genome_region_id
         self.value = value
+
+
 
 
 class ChIPPeakData(GenomeData):
@@ -369,7 +422,8 @@ class ChIPPeakData(GenomeData):
     pval = Column(Float)
     
     __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
-                                           ['genome_data.data_set_id', 'genome_data.genome_region_id']),{})
+                                           ['genome_data.data_set_id', 'genome_data.genome_region_id']),\
+                      UniqueConstraint('data_set_id','genome_region_id'),{})
     
     __mapper_args__ = { 'polymorphic_identity': 'chip_peak_data' }
 
@@ -377,8 +431,8 @@ class ChIPPeakData(GenomeData):
         return "ChIP Peak: %d-%d %d %s" % \
             (self.leftpos, self.rightpos, self.value, self.peak_analysis.name)
     
-    def __init__(self, data_set_id, leftpos, rightpos, value, strand, eventpos, pval):
-        super(ChIPPeakData, self).__init__(data_set_id, leftpos, rightpos, value, strand)
+    def __init__(self, data_set_id, genome_region_id, value, eventpos, pval):
+        super(ChIPPeakData, self).__init__(data_set_id, genome_region_id, value)
         self.pval = pval
         self.eventpos = eventpos
     

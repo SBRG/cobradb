@@ -50,7 +50,7 @@ class DataSource(Base):
     name = Column(String(100))
     lab = Column(String(100))
     institution = Column(String(100))
-    data_sets = relationship("DataSet")
+    #data_sets = relationship("DataSet")
 
     __table_args__ = (UniqueConstraint('name'),{})
     
@@ -142,7 +142,9 @@ def get_or_create(session, class_type, **kwargs):
     for constraint in list(class_type.__table_args__):
         if constraint.__class__.__name__ == 'UniqueConstraint':
             unique_cols = constraint.columns.keys()
-   
+    #print class_type.__name__
+    #print unique_cols
+    #print kwargs
     try:
         result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).one()
     except:
@@ -169,6 +171,7 @@ def update(session, object, **kwargs):
     session.commit()
     
     return object
+        
         
 Session = sessionmaker(bind=engine, class_=_Session)
 
