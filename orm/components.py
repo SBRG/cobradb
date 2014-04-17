@@ -14,7 +14,6 @@ class Gene(GenomeRegion):
 
     id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
     locus_id = Column(String(10))
-    name = Column(String(10))
     info = Column(String(200))
     long_name = Column(String(100))
     
@@ -27,8 +26,7 @@ class Gene(GenomeRegion):
     
     
     def __init__(self, name, leftpos, rightpos, strand, locus_id, info=None, long_name=None):
-        super(Gene, self).__init__(leftpos, rightpos, strand)
-        self.name = name
+        super(Gene, self).__init__(leftpos, rightpos, strand, name)
         self.locus_id = locus_id
         self.info = info
         self.long_name = long_name

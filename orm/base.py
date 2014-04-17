@@ -73,6 +73,7 @@ class GenomeRegion(Base):
     __tablename__ = 'genome_region'    
     
     id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(10))
     leftpos = Column(Integer, nullable=False)
     rightpos = Column(Integer, nullable=False)
     strand = Column(String(1), nullable=False)
@@ -88,10 +89,11 @@ class GenomeRegion(Base):
         return "GenomeRegion (#%d): %d-%d (%s strand)" % \
                 (self.id, self.leftpos, self.rightpos, self.strand)
                 
-    def __init__(self, leftpos, rightpos, strand):
+    def __init__(self, leftpos, rightpos, strand, name=None):
         self.leftpos = leftpos
         self.rightpos = rightpos
         self.strand = strand
+        self.name = name
         
         
 def make_table(table_name):

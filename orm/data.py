@@ -159,7 +159,7 @@ class DataSet(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)   
     name = Column(String(100))
-    type = Column(String(20))
+    type = Column(String(40))
     replicate = Column(Integer)
     
     strain_id = Column(Integer, ForeignKey('strain.id'))
@@ -214,15 +214,21 @@ class ArrayExperiment(DataSet):
     __tablename__ = 'array_experiment'
     
     id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
-
     platform = Column(String(10))
-    replicate = Column(Integer)
     
+    #terrrible hack right here
+    file_name = Column(String(100))
     
-    __mapper_args__ = { 'polymorphic_identity': 1 }
+    __mapper_args__ = { 'polymorphic_identity': 'array_experiment' }
     
+    def __init__(self, name, replicate, strain, environment, data_source,\
+                       platform, file_name):
+        super(ArrayExperiment, self).__init__(name, replicate, strain, environment, data_source)
+        self.platform = platform
+        self.file_name = file_name
+        
     def __repr__(self):
-        return "ArrayExperiment (#%d, %s):  %s  %s" % \
+        return "Array Experiment (#%d, %s):  %s  %d" % \
             (self.id, self.name, self.platform, self.replicate)
     
     def __repr__dict__(self):
@@ -267,11 +273,6 @@ class RNASeqExperiment(DataSet):
         self.machine_id = machine_id
         self.file_name = file_name
     
-chip_peak_analysis_association = Table('chip_peak_analysis_association', Base.metadata,
-    Column('chip_experiment_id', Integer, ForeignKey('chip_experiment.id')),
-    Column('chip_peak_analysis_id', Integer, ForeignKey('chip_peak_analysis.id'))
-)
-    
     
 class ChIPExperiment(DataSet):
     __tablename__ = 'chip_experiment'
@@ -310,26 +311,6 @@ class ChIPExperiment(DataSet):
         self.file_name = file_name
 
 
-class ChIPPeakAnalysis(DataSet):
-    __tablename__ = 'chip_peak_analysis'
-    
-    id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
-    method = Column(String(30))
-    parameters = Column(String(100))
-    chip_experiments = relationship("ChIPExperiment", secondary=chip_peak_analysis_association,\
-                         backref="peaks")
-    __mapper_args__ = { 'polymorphic_identity': 'chip_peak_analysis' }
-
-    def __repr__(self):
-        return "ChIP Peak Analysis (#%d, %s): %s %s" % \
-                (self.id, self.name, self.method, self.parameters)
-
-    def __init__(self, name, method=None, parameters=None):
-        super(ChIPPeakAnalysis, self).__init__(name)
-        self.method = method
-        self.parameters = parameters
-
-
 class AnalysisComposition(Base):
     __tablename__ = 'analysis_composition'
     
@@ -341,13 +322,13 @@ class AnalysisComposition(Base):
     def __init__(self, analysis_id, data_set_id):
         self.analysis_id = analysis_id
         self.data_set_id = data_set_id
-
+        
 
 class Analysis(DataSet):
     __tablename__ = 'analysis'
     
     id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
-    type = Column(String(20))
+    type = Column(String(40))
     children = relationship("DataSet", secondary="analysis_composition",\
                             primaryjoin = id == AnalysisComposition.analysis_id,\
                             backref="parent")
@@ -362,20 +343,61 @@ class Analysis(DataSet):
         return "Analysis (#%d):  %s" % \
             (self.id, self.name)
 
- 
-class ExpressionAnalysis(Analysis):
-    __tablename__ = 'expression_analysis'
+
+class ChIPPeak(Analysis):
+    __tablename__ = 'chip_peak_analysis'
     
     id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
+    method = Column(String(30))
+    parameters = Column(String(100))
+
+    __mapper_args__ = { 'polymorphic_identity': 'chip_peak_analysis' }
+
+    def __repr__(self):
+        return "ChIP Peak Analysis (#%d, %s): %s %s" % \
+                (self.id, self.name, self.method, self.parameters)
+
+    def __init__(self, name, method=None, parameters=None):
+        super(ChIPPeak, self).__init__(name)
+        self.method = method
+        self.parameters = parameters
+
+
+class NormalizedExpression(Analysis):
+    __tablename__ = 'normalized_expression'
     
-    __mapper_args__ = {'polymorphic_identity': 'expression_analysis'}
+    id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
+    norm_method = Column(String(40))
+    dispersion_method = Column(String(20))
+    
+    __mapper_args__ = {'polymorphic_identity': 'normalized_expression'}
 
     
     def __init__(self,name):
-        super(Analysis, self).__init__(name)
+        super(NormalizedExpression, self).__init__(name)
     
     def __repr__(self):
-        return "Analysis (#%d):  %s" % \
+        return "Expression Data (#%d):  %s" % \
+            (self.id, self.name)
+    
+
+class DifferentialExpression(Analysis):
+    __tablename__ = 'differential_expression'
+    
+    id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
+    norm_method = Column(String(20))
+    fdr = Column(Float)
+    
+    __mapper_args__ = {'polymorphic_identity': 'differential_expression'}
+
+    def __init__(self, name, norm_method, fdr):
+        super(DifferentialExpression, self).__init__(name)
+        self.norm_method = norm_method
+        self.fdr = fdr
+        
+        
+    def __repr__(self):
+        return "Differential Expression (#%d): %s" % \
             (self.id, self.name)
 
 
@@ -410,14 +432,12 @@ class GenomeData(Base):
         self.value = value
 
 
-
-
 class ChIPPeakData(GenomeData):
     __tablename__ = 'chip_peak_data'
     
     data_set_id = Column(Integer, primary_key=True)
     genome_region_id = Column(Integer, primary_key=True)
-    peak_analysis = relationship("ChIPPeakAnalysis")
+    peak_analysis = relationship('Analysis')
     eventpos = Column(Integer)
     pval = Column(Float)
     

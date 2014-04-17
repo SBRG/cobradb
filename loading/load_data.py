@@ -3,12 +3,14 @@
 # PYTHON_ARGCOMPLETE_OK
 from PrototypeDB.orm import base
 from PrototypeDB.orm import data
+from PrototypeDB.orm import components
 from PrototypeDB.lib import settings
 from os.path import split
 from math import log
 import os
 
 from numpy import zeros, roll
+from sqlalchemy import func
 
 import pysam
 
@@ -253,19 +255,25 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
         #                      loading_cutoff=math.sqrt(variance)/4.)
     
     elif exp_type[0][0:6] == 'RNAseq':
-        experiment = session.get_or_create(data.RNASeqExperiment, name='_'.join(vals[0:7]), replicate=vals[5],\
+        experiment = session.get_or_create(data.RNASeqExperiment, name='_'.join(vals[0:6]), replicate=vals[5],\
                                            strain=strain, data_source=data_source, environment=environment,\
                                            machine_id='miseq', sequencing_type='unpaired',\
                                            file_name=exp_name)
+        
+    elif exp_type[0][0:7] == 'affyexp':
+        experiment = session.get_or_create(data.ArrayExperiment, name='_'.join(vals[0:6]), replicate=vals[5],\
+                                           strain=strain, data_source=data_source, environment=environment,\
+                                           platform=vals[6], file_name=exp_name)
+
 
         #load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10, bulk_file_load=bulk_file_load)
 
 def run_cuffquant(exp):
 
-    os.chdir(settings.dropbox_directory+'/crp/data/RNAseq/cbx')
+    os.chdir(settings.dropbox_directory+'/crp/data/RNAseq/cxb')
     gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
     
-    out_path = settings.dropbox_directory+'/crp/data/RNAseq/cbx/'+exp.name
+    out_path = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'+exp.name
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
     os.chdir(out_path)
@@ -274,32 +282,156 @@ def run_cuffquant(exp):
     os.system('%s -p %d %s %s' % ('cuffquant', 8, gtf_file, exp_file))
     
     
-def run_cuffnorm(exps):
+def run_cuffnorm(exp_sets):
     gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
-    
+    cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
     out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm'
+    
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
     os.chdir(out_path)
-    #bam_dir = settings.dropbox_directory+'/crp/data/RNAseq/bam/'
-    cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
 
-    os.system('cuffnorm -p %d --library-type fr-firststrand -L %s %s %s' % (24,\
-             ','.join([x[1][0][:-2] for x in exps]), gtf_file,\
-             ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exps]))) 
+    os.system('cuffnorm -p %d --library-type fr-firststrand --library-norm-method classic-fpkm -L %s %s %s' % (24,\
+             ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
+             ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets]))) 
     
     
-def run_cuffdiff(exps):
+def run_cuffdiff(exp_sets):
     gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
-    
+    cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
     out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff'
+    
+    
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
     os.chdir(out_path)
-    cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
     
-    os.system('cuffdiff -p %d --library-type fr-firststrand --upper-quartile-norm --FDR 0.05 -L %s %s %s' % (24,\
-             ','.join([x[1][0][:-2] for x in exps]), gtf_file,\
-             ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exps])))
+    os.system('cuffdiff -v -p %d --library-type fr-firststrand --upper-quartile-norm --FDR 0.05 -L %s %s %s' % (24,\
+             ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
+             ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets])))
+    
+    #print 'cuffdiff -p %d --library-type fr-firststrand --upper-quartile-norm --FDR 0.05 -L %s -C %s %s %s' % (24,\
+    #         ','.join([x[0][0][:-2] for x in exp_sets]), out_path+'/contrasts2.txt', gtf_file,\
+    #         ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets]))
+    
 
+def run_gem(exp_sets):
+    dbox_path = settings.dropbox_directory
+    gem_path = settings.home_directory+'/libraries/gem'
+    
+    outdir = '_'.join(exp_sets[0][0].split('_')[0:5]+exp_sets[0][0].split('_')[6:7])    
+    out_path = dbox_path+'/crp/data/ChIP_peaks/gem/'+outdir
+    os.system('rm -r '+out_path)
+    os.mkdir(out_path)
+    os.chdir(out_path)
+    
+    input_files = ' '.join(['--expt'+exp_sets[0][i]+' '+bam_dir+exp_sets[1][i][:-3]+'bam' \
+                            for i in range(len(entry[0]))])
+    
+    os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM --k_min %d --smooth 3 --outNP" %\
+              (gem_path, gem_path, dbox_path+'/crp/data/annotation/ec_mg1655.sizes', dbox_path+'/crp/data/annotation', input_files, 1))
+
+
+def load_cuffnorm():
+    cuffnorm_genes = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm/isoforms.attr_table','r')
+    cuffnorm_genes.readline()
+    cuffnorm_gene_dict = {}
+    for line in cuffnorm_genes.readlines():
+        vals = line.split('\t')
+        cuffnorm_gene_dict[vals[0]] = {'name':vals[4],'leftpos':vals[6].split(':')[1].split('-')[0],\
+                                                  'rightpos':vals[6].split(':')[1].split('-')[1]}
+        
+    cuffnorm_output = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm/isoforms.fpkm_table','r')
+    header = cuffnorm_output.readline().rstrip('\n').split('\t')
+    print header
+    exp_id_map = {i:session.query(data.RNASeqExperiment).filter_by(name=name[:-2]+'_'+str(int(name[-1])+1)).one().id\
+                  for i,name in enumerate(header[1:])} 
+
+    for line in cuffnorm_output.readlines():
+        vals = line.split('\t')
+        
+        try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
+        except: 
+            x = cuffnorm_gene_dict[vals[0]]
+            gene = session.get_or_create(base.GenomeRegion, name=x['name'], leftpos=x['leftpos'],\
+                                                            rightpos=x['rightpos'], strand='+')
+
+        for i,val in enumerate(vals[1:]):
+        
+            try: value = float(val)
+            except: continue
+        
+            session.get_or_create(data.GenomeData, data_set_id=exp_id_map[i-1],\
+                                                   genome_region_id = gene.id,\
+                                                   value=value)
+    
+    
+def load_cuffdiff():
+    cuffdiff_output = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff/gene_exp.diff','r')
+    header = cuffdiff_output.readline()
+    diff_exps = {}
+    for line in cuffdiff_output.readlines():
+        vals = line.split('\t')
+
+        if str(vals[4:6]) not in diff_exps.keys():
+            diff_exp = session.get_or_create(data.DifferentialExpression, name=vals[4]+'\\'+vals[5], norm_method='classic-fpkm',fdr=.05)
+            print vals[4]
+            exp1 = session.query(data.Analysis).filter_by(name=vals[4]).one()
+            exp2 = session.query(data.Analysis).filter_by(name=vals[5]).one()
+            session.get_or_create(data.AnalysisComposition, analysis_id = diff_exp.id, data_set_id = exp1.id)
+            session.get_or_create(data.AnalysisComposition, analysis_id = diff_exp.id, data_set_id = exp2.id)
+            diff_exps[str(vals[4:6])] = diff_exp.id
+
+        try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
+        except: 
+            x = {'name':vals[2], 'leftpos':vals[3].split(':')[1].split('-')[0],\
+                                 'rightpos':vals[3].split(':')[1].split('-')[1]}
+                                                                             
+            gene = session.get_or_create(base.GenomeRegion, name=x['name'], leftpos=x['leftpos'],\
+                                                            rightpos=x['rightpos'], strand='+')
+
+        
+        try: value = float(vals[9])
+        except: continue
+    
+        session.get_or_create(data.GenomeData, data_set_id=diff_exps[str(vals[4:6])],\
+                                               genome_region_id = gene.id,\
+                                               value=value)
+
+
+def load_arraydata(file_path):
+    array_data_file = open(file_path)
+    
+    header = array_data_file.readline().rstrip('\n').split('\t')
+
+    exp_id_map = {}
+    for i,name in enumerate(header[2:]):
+        try: exp_id_map[i] = session.query(data.ArrayExperiment).filter(func.lower(data.ArrayExperiment.name) == name[:-4].lower()).one().id
+        except: 
+            print name
+            continue
+             
+    for line in array_data_file.readlines():
+        vals = line.split('\t')
+        
+        ##This code sucks right now and depend on components or load_cuffdiff/load_cuffnorm 
+        ##above being run first
+        try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
+        except: 
+            try: gene = session.query(base.GenomeRegion).filter_by(name=vals[0]).one()
+            except: 
+                print 'fuck  '+str(vals[1])
+                continue
+        
+        for i,val in enumerate(vals[2:]):
+        
+            try: value = float(val)
+            except: continue
+            try:
+                session.get_or_create(data.GenomeData, data_set_id=exp_id_map[i],\
+                                                       genome_region_id = gene.id,\
+                                                       value=value) 
+            except: None
+        
+    
 
