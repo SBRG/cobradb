@@ -37,6 +37,13 @@ def get_me_component(chemical_formula):
     return components
 
 
+class Compartment(Base):
+    __table__ = make_table('compartment')
+
+    def __repr__(self):
+        return "Compartment (#%d):  %s" % \
+            (self.id, self.compartment_name)        
+
 class Component(Base):
     __table__ = make_table('component')
     

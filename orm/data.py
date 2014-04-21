@@ -432,6 +432,29 @@ class GenomeData(Base):
         self.value = value
 
 
+class DiffExpData(GenomeData):
+    __tablename__ = 'diff_exp_data'
+    
+    data_set_id = Column(Integer, primary_key=True)
+    genome_region_id = Column(Integer, primary_key=True)
+    diff_exp_analysis = relationship('Analysis')
+    pval = Column(Float)
+    
+    __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
+                                           ['genome_data.data_set_id', 'genome_data.genome_region_id']),\
+                      UniqueConstraint('data_set_id','genome_region_id'),{})
+    
+    __mapper_args__ = { 'polymorphic_identity': 'diff_exp_data' }
+
+    def __repr__(self):
+        return "Diff Exp Data: %s %5.2f %5.2f" % \
+            (self.genome_region, self.value, self.pval)
+    
+    def __init__(self, data_set_id, genome_region_id, value, pval):
+        super(DiffExpData, self).__init__(data_set_id, genome_region_id, value)
+        self.pval = pval
+
+
 class ChIPPeakData(GenomeData):
     __tablename__ = 'chip_peak_data'
     
@@ -448,8 +471,8 @@ class ChIPPeakData(GenomeData):
     __mapper_args__ = { 'polymorphic_identity': 'chip_peak_data' }
 
     def __repr__(self):
-        return "ChIP Peak: %d-%d %d %s" % \
-            (self.leftpos, self.rightpos, self.value, self.peak_analysis.name)
+        return "ChIP Peak: %d-%d %5.2f %s" % \
+            (self.genome_region.leftpos, self.genome_region.rightpos, self.value, self.peak_analysis.name)
     
     def __init__(self, data_set_id, genome_region_id, value, eventpos, pval):
         super(ChIPPeakData, self).__init__(data_set_id, genome_region_id, value)

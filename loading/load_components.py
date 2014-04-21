@@ -10,8 +10,10 @@ import cobra
 import cPickle as pickle
 
 from sqlalchemy import text
+from sqlalchemy import or_
 
 from PrototypeDB.lib import settings, timing
+
 
 ####Auxiliary functions####
 
@@ -226,6 +228,97 @@ def load_genome(genome_filepath=None):
     os.remove("tmp_command.sql")
 
 
+def scrub_ecocyc_entry(entry, args=['UNIQUE-ID','COMMON-NAME','TYPES'],extra_args=[]):
+    try:
+        return {arg: entry[arg] for arg in args+extra_args}
+    except:
+        return None
+
+
+def get_or_create_ecocyc_gene(session, base, components, gene_entry):
+    vals = scrub_ecocyc_entry(gene_entry, args=['UNIQUE-ID','ACCESSION-1','LEFT-END-POSITION',\
+                                                'RIGHT-END-POSITION','TRANSCRIPTION-DIRECTION',\
+                                                'COMMON-NAME'])
+    if vals is None: return None
+    
+    gene = session.query(components.Gene).filter(or_(components.Gene.locus_id == vals['ACCESSION-1'][0],\
+                                                     components.Gene.name == vals['COMMON-NAME'][0])).first()
+    if gene is not None:
+        return gene
+    else:
+        return None
+        #session.get_or_create(components.Gene, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0],\
+        #                        leftpos=vals['LEFT-END-POSITION'], rightpos=vals['RIGHT-END-POSITION'],\
+        #                        strand=vals['TRANSCRIPTION-DIRECTION'])
+    """
+    gene = session.get_or_create(components.Gene, )
+    if name not in synonyms and name != '':
+        synonyms.append(name)
+    if ID not in synonyms:
+        synonyms.append(ID)
+    for synonym in synonyms:
+        if session.query(base.id2otherid).filter_by(id=gene.id, other_id=synonym).first() is not None:
+                continue  # already exists
+        id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=synonym,\
+                                              type='gene', data_source_id=ecocyc_ID)
+    """
+    return session.get_or_create(components.Gene, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
+            
+    
+def get_or_create_ecocyc_protein(session, base, components, protein_entry):
+    vals = scrub_ecocyc_entry(protein_entry,extra_args=['GENE'])
+    if vals is None: return None
+    try: gene = get_or_create_ecocyc_gene(session, base, components, ecocyc_genes[vals['GENE'][0]])
+    except: return None
+    if gene is None: return None
+    
+    return session.get_or_create(components.Protein, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0], gene_id=gene.id)
+
+
+def get_or_create_ecocyc_ligand(session, base, components, ligand_entry):
+    vals = scrub_ecocyc_entry(ligand_entry,extra_args=['SMILES'])
+    if vals is None: return None
+    
+    name = vals['COMMON-NAME'][0].replace('\'','[prime]')
+    markup = re.compile("<.+?>")
+    name = markup.sub("", name)
+    
+    return session.get_or_create(components.SmallMolecule, name=vals['UNIQUE-ID'][0],\
+                                 long_name=name, smiles=vals['SMILES'][0])
+
+
+def get_or_create_ecocyc_protein_complex(session, base, components, protein_complex_entry):
+    vals = scrub_ecocyc_entry(protein_complex_entry,extra_args=['COMPONENTS'])
+    if vals is None: return None
+    
+    protein_complex = session.get_or_create(components.Complex, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
+    
+    for component in vals['COMPONENTS']:
+        try: component_vals = scrub_ecocyc_entry(ecocyc_proteins[component])
+        except: 
+            try: component_vals = scrub_ecocyc_entry(ecocyc_ligands[component])
+            except: continue
+        if component_vals is None: continue
+        
+        if 'Protein-Complexes' in component_vals['TYPES']: 
+            complex_component = get_or_create_ecocyc_protein_complex(ecocyc_proteins[component])
+        
+        elif 'Polypeptides' in component_vals['TYPES']:
+            complex_component = get_or_create_ecocyc_protein(ecocyc_proteins[component]) 
+            
+        else:
+            try:
+                complex_component = get_or_create_ecocyc_ligand(ecocyc_ligands[component])
+            except:
+                #TODO: Add in the rest of complex type additions here
+                continue
+        if complex_component is None: continue
+        
+        session.get_or_create(components.ComplexComposition, complex_id=protein_complex.id,\
+                                                                 component_id=complex_component.id,\
+                                                                 stoichiometry=1.)
+    return protein_complex    
+    
 @timing
 def load_genes(base,components):
     session = base.Session()
@@ -248,43 +341,20 @@ def load_genes(base,components):
         id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=bnum,\
                                               type='gene', data_source_id=ecocyc_ID)
 
-    genes = []#parseEco_dat('genes.dat')
-
-    for g in genes: 
-        try:
-            ID = genes[g]['UNIQUE-ID'][0]
-            bnum = genes[g]['ACCESSION-1'][0]
-            start = int(genes[g]['LEFT-END-POSITION'][0])
-            stop = int(genes[g]['RIGHT-END-POSITION'][0])
-            strand = genes[g]['TRANSCRIPTION-DIRECTION'][0]
-        except:
-            continue
-        try: name = genes[g]['COMMON-NAME'][0]
-        except: name = ''
-        try: synonyms = genes[g]['SYNONYMS']
-        except: synonyms = []
-        gene = session.query(components.Gene).filter(components.Gene.locus_id == bnum).first()
-        if gene is None:
-            continue  # not found
-        if name not in synonyms and name != '':
-            synonyms.append(name)
-        if ID not in synonyms:
-            synonyms.append(ID)
-        for synonym in synonyms:
-            if session.query(base.id2otherid).filter_by(
-                        id=gene.id, other_id=synonym).first() is not None:
-                continue  # already exists
-            id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=synonym,\
-                                              type='gene', data_source_id=ecocyc_ID)
-
-
-def scrub_ecocyc_entry(entry, args=['UNIQUE-ID','COMMON-NAME','TYPES'],extra_args=[]):
-    try:
-        return {arg: entry[arg] for arg in args+extra_args}
-    except:
-        return None
-            
+    """
+    for unique_id,entry in ecocyc_genes.iteritems():    
         
+        vals = scrub_ecocyc_entry(entry)
+        if vals is None: continue
+        
+        if 'Protein-Complexes' in vals['TYPES']:
+            get_or_create_ecocyc_protein_complex(entry)
+            
+        elif 'Polypeptides' in vals['TYPES']:
+            get_or_create_ecocyc_protein(entry)         
+    """
+
+ecocyc_genes = parseEco_dat('genes.dat')        
 @timing
 def load_proteins(base, components):
     session = base.Session()
@@ -294,57 +364,8 @@ def load_proteins(base, components):
     ecocyc_ligands = parseEco_dat('compounds.dat')
     ecocyc_protein_cplxs = parseEco_dat('protligandcplxes.dat')
     protein_sequences = parseEco_fsa('protseq.fsa')
-    
-    
-    def get_or_create_ecocyc_protein(protein_entry):
-        vals = scrub_ecocyc_entry(protein_entry)
-        if vals is None: return None
-    
-        return session.get_or_create(components.Protein, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
-    
-    def get_or_create_ecocyc_ligand(ligand_entry):
-        vals = scrub_ecocyc_entry(ligand_entry,extra_args=['SMILES'])
-        if vals is None: return None
-        
-        name = vals['COMMON-NAME'][0].replace('\'','[prime]')
-        markup = re.compile("<.+?>")
-        name = markup.sub("", name)
-        
-        return session.get_or_create(components.SmallMolecule, name=vals['UNIQUE-ID'][0],\
-                                     long_name=name, smiles=vals['SMILES'][0])
-    
-    def get_or_create_ecocyc_protein_complex(protein_complex_entry):
-        vals = scrub_ecocyc_entry(protein_complex_entry,extra_args=['COMPONENTS'])
-        if vals is None: return None
-        
-        protein_complex = session.get_or_create(components.Complex, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
-        
-        for component in vals['COMPONENTS']:
-            try: component_vals = scrub_ecocyc_entry(ecocyc_proteins[component])
-            except: 
-                try: component_vals = scrub_ecocyc_entry(ecocyc_ligands[component])
-                except: continue
-            if component_vals is None: continue
             
-            if 'Protein-Complexes' in component_vals['TYPES']: 
-                complex_component = get_or_create_ecocyc_protein_complex(ecocyc_proteins[component])
-            
-            elif 'Polypeptides' in component_vals['TYPES']:
-                complex_component = get_or_create_ecocyc_protein(ecocyc_proteins[component]) 
-                
-            else:
-                try:
-                    complex_component = get_or_create_ecocyc_ligand(ecocyc_ligands[component])
-                except:
-                    #TODO: Add in the rest of complex type additions here
-                    continue
-            if complex_component is None: continue
-            
-            session.get_or_create(components.ComplexComposition, complex_id=protein_complex.id,\
-                                                                     component_id=complex_component.id,\
-                                                                     stoichiometry=1.)
-        return protein_complex
-    
+
     
     for unique_id,entry in ecocyc_proteins.iteritems():    
         
@@ -352,10 +373,10 @@ def load_proteins(base, components):
         if vals is None: continue
         
         if 'Protein-Complexes' in vals['TYPES']:
-            get_or_create_ecocyc_protein_complex(entry)
+            get_or_create_ecocyc_protein_complex(session, base, components, entry)
             
         elif 'Polypeptides' in vals['TYPES']:
-            get_or_create_ecocyc_protein(entry)    
+            get_or_create_ecocyc_protein(session, base, components, entry)    
             
                         
     for unique_id,entry in ecocyc_protein_cplxs.iteritems():    
@@ -364,10 +385,10 @@ def load_proteins(base, components):
         if vals is None: continue
         
         if 'Protein-Complexes' in vals['TYPES'] or 'Protein-Small-Molecule-Complexes' in vals['TYPES']:
-            get_or_create_ecocyc_protein_complex(entry)
+            get_or_create_ecocyc_protein_complex(session, base, components, entry)
             
         elif 'Polypeptides' in vals['TYPES']:
-            get_or_create_ecocyc_protein(entry)    
+            get_or_create_ecocyc_protein(session, base, components, entry)    
             
 
 @timing
@@ -567,6 +588,7 @@ def load_regulatory_network(ome):
                     "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s');"%(vals[1], vals[2], vals[3], vals[4], vals[5], quality, evidence))
         ome.commit()
     regulatory_network.close()
+
 
 if __name__ == "__main__":
 

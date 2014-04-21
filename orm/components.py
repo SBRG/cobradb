@@ -218,10 +218,12 @@ class Protein(Component):
      
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
     long_name = Column(String(200))
-    #gene = Column(String(10))
+    gene_id = Column(Integer, ForeignKey('gene.id'))
+    gene = relationship('Gene', backref='protein')
     
-    def __init__(self, name, long_name=None):
+    def __init__(self, name, gene_id=None, long_name=None):
         super(Protein, self).__init__(name)
+        self.gene_id = gene_id
         self.long_name = long_name
     
     def __repr__(self):
