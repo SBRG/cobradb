@@ -319,6 +319,11 @@ def get_or_create_ecocyc_protein_complex(session, base, components, protein_comp
                                                                  stoichiometry=1.)
     return protein_complex    
     
+    
+def load_motifs(base, components):
+    motifs = open(settings.data_directory + '/annotation/ec_annotation_from_Ecocyc_2010July19_wpseudo.gff','r')
+ 
+    
 @timing
 def load_genes(base,components):
     session = base.Session()

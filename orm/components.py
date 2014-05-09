@@ -20,8 +20,8 @@ class Gene(GenomeRegion):
     __mapper_args__ = { 'polymorphic_identity': 'gene' }
     
     def __repr__(self):
-        return "Gene (#%d, %s, %s) %d-%d %s"% \
-            (self.id, self.locus_id, self.name, self.leftpos, self.rightpos,\
+        return "Gene: (%s, %s) %d-%d (%s)"% \
+            (self.locus_id, self.name, self.leftpos, self.rightpos,\
                                  self.strand)   
     
     
@@ -72,49 +72,6 @@ class Component(Base):
         return "Component (#%d):  %s" % \
             (self.id, self.name)
 
-
-class DNA(Component):
-    __tablename__ = 'dna'
-
-    id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-    type = Column(String(20))
-
-    genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
-    genome_region = relationship('GenomeRegion', backref=backref('dna', lazy='dynamic'))
-    
-    __mapper_args__ = { 'polymorphic_identity': 'dna',
-                        'polymorphic_on': type
-                      }
-    
-    
-    def __init__(self, dna_type='dna', name=None, leftpos=None, rightpos=None, strand=None):
-        super(DNA, self).__init__(name)
-        session = Session()
-        self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
-                                              rightpos=rightpos, strand=strand).id
-        session.close()
-        
-    def __repr__(self):
-        return "DNA (#%d, %s) %d-%d %s"% \
-            (self.id, self.name, self.genome_region.leftpos, self.genome_region.rightpos,\
-                                 self.genome_region.strand)   
-    
-
-class DnaBindingSite(DNA):
-    __tablename__ = 'dna_binding_site'
-
-    __mapper_args__ = { 'polymorphic_identity': 'binding_site' }
-    
-    id = Column(Integer, ForeignKey('dna.id'), primary_key=True)
-    centerpos = Column(Integer)
-    width = Column(Integer)
-    
-    
-    def __init__(self, name, leftpos, rightpos, strand, centerpos, width):
-        super(DnaBindingSite, self).__init__('binding_site', name, leftpos, rightpos, strand)
-        self.centerpos = centerpos
-        self.width = width
-        
    
 class ComplexComposition(Base):
     __tablename__ = 'complex_composition'
@@ -174,6 +131,49 @@ class Complex(Component):
         super(Complex, self).__init__(name)
         self.long_name = long_name
 
+
+class DNA(Component):
+    __tablename__ = 'dna'
+
+    id = Column(Integer, ForeignKey('component.id'), primary_key=True)
+    type = Column(String(20))
+
+    genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
+    genome_region = relationship('GenomeRegion', backref=backref('dna', lazy='dynamic'))
+    
+    __mapper_args__ = { 'polymorphic_identity': 'dna',
+                        'polymorphic_on': type
+                      }
+    
+    
+    def __init__(self, dna_type='dna', name=None, leftpos=None, rightpos=None, strand=None):
+        super(DNA, self).__init__(name)
+        session = Session()
+        self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
+                                              rightpos=rightpos, strand=strand).id
+        session.close()
+        
+    def __repr__(self):
+        return "DNA (#%d, %s) %d-%d %s"% \
+            (self.id, self.name, self.genome_region.leftpos, self.genome_region.rightpos,\
+                                 self.genome_region.strand)   
+    
+
+class DnaBindingSite(DNA):
+    __tablename__ = 'dna_binding_site'
+
+    __mapper_args__ = { 'polymorphic_identity': 'binding_site' }
+    
+    id = Column(Integer, ForeignKey('dna.id'), primary_key=True)
+    centerpos = Column(Integer)
+    width = Column(Integer)
+    
+    
+    def __init__(self, name, leftpos, rightpos, strand, centerpos, width):
+        super(DnaBindingSite, self).__init__('binding_site', name, leftpos, rightpos, strand)
+        self.centerpos = centerpos
+        self.width = width
+        
     
 class RNA(Component):
     __tablename__ = 'rna'

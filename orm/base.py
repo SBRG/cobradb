@@ -19,8 +19,8 @@ Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine, schema=settings.schema)
 
 connection = pymongo.Connection()
-omics_database = connection.omics_database
-
+#omics_database = connection.omics_database
+omics_database = connection.omics_database2
 
 class id2otherid(Base):
     __tablename__ = "id2otherid"
@@ -86,8 +86,8 @@ class GenomeRegion(Base):
                       }
     
     def __repr__(self):
-        return "GenomeRegion (#%d): %d-%d (%s strand)" % \
-                (self.id, self.leftpos, self.rightpos, self.strand)
+        return "GenomeRegion: %d-%d (%s)" % \
+                (self.leftpos, self.rightpos, self.strand)
                 
     def __init__(self, leftpos, rightpos, strand, name=None):
         self.leftpos = leftpos

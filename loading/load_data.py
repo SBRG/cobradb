@@ -70,6 +70,7 @@ def count_coverage(samfile, flip=False, include_insert=False):
         all_counts[reference] = {}
         # roll shifts by 1, so the first base position (at index 0) is now at
         # index 1
+        print reference
         if flip:
             all_counts[reference]["-"] = roll(plus_strands[i], 1)
             all_counts[reference]["+"] = roll(minus_strands[i], 1)
@@ -219,20 +220,21 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
             counts = all_counts[reference][strand]
             entries = []
             for i in counts.nonzero()[0]:    
-                if float(counts[i]) < loading_cutoff: continue
+                if abs(float(counts[i])) < loading_cutoff: continue
             
                 entries.append({
-                                "position": int(i),
+                                "leftpos": int(i),
+                                "rightpos": int(i),
                                 "value": float(counts[i]),
                                 "strand": strand,
                                 "data_set_id": data_set_id})
             
-                if i%10000 == 0:
+                if i%50000 == 0:
                     genome_data.insert(entries)
                     entries = []
     
     if not bulk_file_load: 
-        genome_data.create_index([("data_set_id", ASCENDING), ("position", ASCENDING)])                
+        genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])                
     
     samfile.close()
 
@@ -242,7 +244,7 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
     strain = session.get_or_create(data.Strain, name=vals[1])
     data_source = session.get_or_create(data.DataSource, name=vals[0], lab=lab, institution=institution)
     environment = session.get_or_create(data.InVivoEnvironment, name='_'.join(vals[2:5]), carbon_source=vals[2],\
-                                    nitrogen_source=vals[3], electron_acceptor=vals[4], temperature=37)
+                                        nitrogen_source=vals[3], electron_acceptor=vals[4], temperature=37)
     exp_type = vals[0].split('-')
     try: vals[6] = vals[6].split('.')[0]
     except: vals[5] = vals[5].split('.')[0]
@@ -254,20 +256,24 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
         #variance = gff_variance(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name)
         #data.load_genome_data(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name, experiment.id, bulk_file_load,\
         #                      loading_cutoff=math.sqrt(variance)/4.)
+        load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
+                           bulk_file_load=bulk_file_load)
+
+    
     
     elif exp_type[0][0:6] == 'RNAseq':
         experiment = session.get_or_create(data.RNASeqExperiment, name='_'.join(vals[0:6]), replicate=vals[5],\
                                            strain=strain, data_source=data_source, environment=environment,\
                                            machine_id='miseq', sequencing_type='unpaired',\
                                            file_name=exp_name)
+        #load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
+        #                   bulk_file_load=bulk_file_load)
         
     elif exp_type[0][0:7] == 'affyexp':
         experiment = session.get_or_create(data.ArrayExperiment, name='_'.join(vals[0:6]), replicate=vals[5],\
                                            strain=strain, data_source=data_source, environment=environment,\
                                            platform=vals[6], file_name=exp_name)
 
-
-        #load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10, bulk_file_load=bulk_file_load)
 
 def run_cuffquant(exp):
 
@@ -292,7 +298,7 @@ def run_cuffnorm(exp_sets):
     os.mkdir(out_path)
     os.chdir(out_path)
 
-    os.system('cuffnorm -p %d --library-type fr-firststrand --library-norm-method classic-fpkm -L %s %s %s' % (24,\
+    os.system('cuffnorm -p %d --library-type fr-firststrand -L %s %s %s' % (24,\
              ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
              ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets]))) 
     
@@ -307,7 +313,7 @@ def run_cuffdiff(exp_sets):
     os.mkdir(out_path)
     os.chdir(out_path)
     
-    os.system('cuffdiff -v -p %d --library-type fr-firststrand --upper-quartile-norm --FDR 0.05 -L %s %s %s' % (24,\
+    os.system('cuffdiff -v -p %d --library-type fr-firststrand --FDR 0.05 -L %s %s %s' % (24,\
              ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
              ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets])))
     
@@ -373,6 +379,33 @@ def load_cuffdiff():
     cuffdiff_output = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff/gene_exp.diff','r')
     header = cuffdiff_output.readline()
     diff_exps = {}
+    
+    #very terrible temporary hack, i blame this on the cuffdiff bug along with myself
+    bad_list = ['RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
+            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
+            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
+            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
+            'RNAseq_delta-crp_glucose_NH4Cl_O2\RNAseq_wt_glycerol_NH4Cl_O2',\
+            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
+            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
+            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
+            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
+            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
+            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
+            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
+            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
+            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
+            'RNAseq_delta-crp_fructose_NH4Cl_O2\RNAseq_wt_glycerol_NH4Cl_O2',\
+            'RNAseq_delta-crp_fructose_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
+            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
+            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
+            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
+            'RNAseq_delta-crp_glucose_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
+            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
+            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
+            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2']
+    
+    
     for line in cuffdiff_output.readlines():
         vals = line.split('\t')
         
@@ -382,10 +415,20 @@ def load_cuffdiff():
         except: continue
         
         if pvalue > .25: continue
+        if vals[4]+'\\'+vals[5] in bad_list: continue
         
         if str(vals[4:6]) not in diff_exps.keys():
-            diff_exp = session.get_or_create(data.DifferentialExpression, name=vals[4]+'\\'+vals[5], norm_method='classic-fpkm',fdr=.05)
-            print vals[4]
+            x = vals[4].split('_')
+            y = vals[5].split('_')
+            exp_name = ''
+            for i in range(len(x)):
+                if x[i] == y[i]:
+                    exp_name += x[i]+'_'
+                else: exp_name += x[i]+'/'+y[i]+'_'
+            exp_name = exp_name.rstrip('_')
+            
+            diff_exp = session.get_or_create(data.DifferentialExpression, name=exp_name, norm_method='classic-fpkm',fdr=.05)
+            print vals[4]+'\\'+vals[5]
             exp1 = session.query(data.Analysis).filter_by(name=vals[4]).one()
             exp2 = session.query(data.Analysis).filter_by(name=vals[5]).one()
             session.get_or_create(data.AnalysisComposition, analysis_id = diff_exp.id, data_set_id = exp1.id)

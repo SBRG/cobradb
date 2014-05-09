@@ -2,11 +2,12 @@
 
 from PrototypeDB.orm.base import *
 
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
     String, Float, ForeignKey, ForeignKeyConstraint, select
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.schema import UniqueConstraint
+from sqlalchemy.sql.expression import join
 from pymongo import ASCENDING, DESCENDING
 
 import simplejson as json
@@ -336,8 +337,8 @@ class Analysis(DataSet):
     __mapper_args__ = {'polymorphic_identity': 'analysis',
                        'polymorphic_on': 'type'}
     
-    def __init__(self,name):
-        super(Analysis, self).__init__(name)
+    def __init__(self, name, replicate=1, strain=None, environment=None):
+        super(Analysis, self).__init__(name, replicate, strain, environment)
     
     def __repr__(self):
         return "Analysis (#%d):  %s" % \
@@ -357,8 +358,8 @@ class ChIPPeak(Analysis):
         return "ChIP Peak Analysis (#%d, %s): %s %s" % \
                 (self.id, self.name, self.method, self.parameters)
 
-    def __init__(self, name, method=None, parameters=None):
-        super(ChIPPeak, self).__init__(name)
+    def __init__(self, name, replicate=1, strain=None, environment=None, method=None, parameters=None):
+        super(ChIPPeak, self).__init__(name, replicate, strain, environment)
         self.method = method
         self.parameters = parameters
 
@@ -373,9 +374,11 @@ class NormalizedExpression(Analysis):
     __mapper_args__ = {'polymorphic_identity': 'normalized_expression'}
 
     
-    def __init__(self,name):
-        super(NormalizedExpression, self).__init__(name)
-    
+    def __init__(self, name, replicate=1, strain=None, environment=None, norm_method=None, dispersion_method=None):
+        super(NormalizedExpression, self).__init__(name, replicate, strain, environment)
+        self.norm_method = norm_method
+        self.dispersion_method = dispersion_method
+        
     def __repr__(self):
         return "Expression Data (#%d):  %s" % \
             (self.id, self.name)
@@ -386,9 +389,10 @@ class DifferentialExpression(Analysis):
     
     id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
     norm_method = Column(String(20))
-    fdr = Column(Float)
+    fdr = Column(Float)       
     
     __mapper_args__ = {'polymorphic_identity': 'differential_expression'}
+
 
     def __init__(self, name, norm_method, fdr):
         super(DifferentialExpression, self).__init__(name)
@@ -415,7 +419,7 @@ class GenomeData(Base):
     
     @hybrid_property
     def all_data(self):
-        return [x['value'] for x in query_genome_data([self.data_set_id], genome_region.leftpos, genome_region.rightpos)]
+        return [x['value'] for x in query_genome_data([self.data_set_id], self.genome_region.leftpos, self.genome_region.rightpos)]
     
 
     __mapper_args__ = {'polymorphic_identity': 'genome_data',
@@ -436,8 +440,9 @@ class DiffExpData(GenomeData):
     __tablename__ = 'diff_exp_data'
     
     data_set_id = Column(Integer, primary_key=True)
+    diff_exp_analysis = relationship('DifferentialExpression')
     genome_region_id = Column(Integer, primary_key=True)
-    diff_exp_analysis = relationship('Analysis')
+    
     pval = Column(Float)
     
     __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
@@ -447,8 +452,8 @@ class DiffExpData(GenomeData):
     __mapper_args__ = { 'polymorphic_identity': 'diff_exp_data' }
 
     def __repr__(self):
-        return "Diff Exp Data: %s %5.2f %5.2f" % \
-            (self.genome_region, self.value, self.pval)
+        return "Diff Exp Data: %s %5.2f %5.2f %s" % \
+            (self.genome_region, self.value, self.pval, self.diff_exp_analysis.name)
     
     def __init__(self, data_set_id, genome_region_id, value, pval):
         super(DiffExpData, self).__init__(data_set_id, genome_region_id, value)
@@ -497,7 +502,8 @@ def load_genome_data(file_path, data_set_id, bulk_file_load=False, loading_cutof
             if float(data[5]) < loading_cutoff: continue
             
             entries.append({
-                "position": int(data[3]),
+                "leftpos": int(data[3]),
+                "rightpos": int(data[4]),
                 "value": float(data[5]),
                 "strand": data[6],
                 "data_set_id": data_set_id})
@@ -507,14 +513,14 @@ def load_genome_data(file_path, data_set_id, bulk_file_load=False, loading_cutof
                 entries = []
                 
     if not bulk_file_load: 
-        genome_data.create_index([("data_set_id", ASCENDING), ("position", ASCENDING)])
+        genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])
    
    
 def query_genome_data(data_set_ids,leftpos=0,rightpos=1000,strand=['+','-'],value=0):
     genome_data = omics_database.genome_data
     return genome_data.find({"$and": 
-                            [{"position" : {"$gte": leftpos}}, 
-                             {"position": {"$lte": rightpos}}, 
+                            [{"leftpos" : {"$gte": leftpos}}, 
+                             {"leftpos": {"$lte": rightpos}}, 
                              {"strand": {"$in" : strand }},
                              {"data_set_id": {"$in" : data_set_ids}}
                          ]})
