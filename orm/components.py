@@ -146,7 +146,7 @@ class DNA(Component):
                       }
     
     
-    def __init__(self, dna_type='dna', name=None, leftpos=None, rightpos=None, strand=None):
+    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None):
         super(DNA, self).__init__(name)
         session = Session()
         self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
@@ -170,7 +170,7 @@ class DnaBindingSite(DNA):
     
     
     def __init__(self, name, leftpos, rightpos, strand, centerpos, width):
-        super(DnaBindingSite, self).__init__('binding_site', name, leftpos, rightpos, strand)
+        super(DnaBindingSite, self).__init__(name, leftpos, rightpos, strand)
         self.centerpos = centerpos
         self.width = width
         
@@ -185,14 +185,29 @@ class RNA(Component):
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
     
     
-    def __init__(self, name, rna_type, leftpos, rightpos, strand):
-        genome_region = get_or_create(Session(), GenomeRegion, leftpos=leftpos, rightpos=rightpos, strand=strand)
+    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None):
         super(RNA, self).__init__(name)
-        self.rna_type = rna_type
-     
+        session = Session()
+        self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
+                                              rightpos=rightpos, strand=strand).id
+        session.close()
+        
     def __repr__(self):
         return "RNA (#%d, %s)" % \
             (self.id, self.name)      
+
+
+class TUGenes(Base):
+    __tablename__ = 'tu_genes'
+    
+    tu_id = Column(Integer, ForeignKey('tu.id'), primary_key=True)
+    gene_id = Column(Integer, ForeignKey('gene.id'), primary_key=True)
+    
+    __table_args__ = (UniqueConstraint('tu_id','gene_id'),{})
+    
+    def __init__(self, tu_id, gene_id):
+        self.tu_id = tu_id
+        self.gene_id = gene_id
 
 
 class TU(RNA):
@@ -200,14 +215,16 @@ class TU(RNA):
 
     __mapper_args__ = { 'polymorphic_identity': 'tu' }
     
-    component_id = Column(Integer, ForeignKey('rna.id'), primary_key=True)
-    tss = Column(Integer)
-    genes = Column(String(10))
-    name = Column(String(10))
-    long_name = Column(String(100))
+    id = Column(Integer, ForeignKey('rna.id'), primary_key=True)
+    genome_region = relationship("GenomeRegion")
+    genes = relationship("Gene", secondary="TUGenes",\
+                                 primaryjoin = id == TUGenes.tu_id,\
+                                 backref="tu")
     
-    def __init__(self, name):
-        super(TU, self).__init__(name)
+    name = Column(String(10))
+    
+    def __init__(self, name, leftpos, rightpos, strand):
+        super(TU, self).__init__(name, leftpos, rightpos, strand)
         self.name = name
    
      

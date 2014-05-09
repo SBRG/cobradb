@@ -4,6 +4,7 @@ import os
 import math
 import re
 import cobra
+import operator
 #from cobra.io.sbml import create_cobra_model_from_sbml_file
 # import copy
 # from copy import deepcopy
@@ -320,10 +321,51 @@ def get_or_create_ecocyc_protein_complex(session, base, components, protein_comp
     return protein_complex    
     
     
+def get_or_create_ecocyc_transcription_unit(session, base, components, tu_entry):
+    vals = scrub_ecocyc_entry(tu_entry,extra_args=['COMPONENTS'])
+    if vals is None: return None
+    
+    genes = []
+    for ecocyc_component in vals['COMPONENTS']:
+        try: 
+            gene_entry = ecocyc_genes[component]
+            genes.append(get_or_create_ecocyc_gene(session, base, components, gene_entry))
+        except: None
+        try: 
+            promoter_entry = ecocyc_promoters[component]
+            vals = scrub_ecocyc_entry(promoter_entry,extra_args=['ABSOLUTE-PLUS-1-POS'])
+            tss = vals['ABSOLUTE-PLUS-1-POS'][0]
+        except: None
+    
+    leftpos = min([x.leftpos for x in genes].iteritems(), key=operator.itemgetter(1))[0]
+    rightpos = max([x.rightpos for x in genes].iteritems(), key=operator.itemgetter(1))[0]
+    strand = genes[0].strand
+    
+    try: name = vals['COMMON-NAME'][0]
+    except: name = vals['UNIQUE-ID'][0]
+    
+    if not tss and strand == '+':
+        tss = leftpos
+    elif not tss and strand =='-':
+        tss = rightpos
+    
+    if strand == '+':
+        tu = session.get_or_create(components.TU, name=name, leftpos=tss, rightpos=rightpos, strand=strand)
+    else:
+        tu = session.get_or_create(components.TU, name=name, leftpos=leftpos, rightpos=tss, strand=strand)
+        
+    for gene in genes:
+        session.get_or_create(components.TUGenes, tu_id=tu.id, gene_id=gene.id)
+    
+    return tu   
+
+
 def load_motifs(base, components):
     motifs = open(settings.data_directory + '/annotation/ec_annotation_from_Ecocyc_2010July19_wpseudo.gff','r')
  
-    
+ecocyc_genes = parseEco_dat('genes.dat')
+ecocyc_promoters = parseEco_dat('promoters.dat')
+
 @timing
 def load_genes(base,components):
     session = base.Session()
@@ -359,7 +401,7 @@ def load_genes(base,components):
             get_or_create_ecocyc_protein(entry)         
     """
 
-ecocyc_genes = parseEco_dat('genes.dat')        
+        
 @timing
 def load_proteins(base, components):
     session = base.Session()
@@ -371,7 +413,6 @@ def load_proteins(base, components):
     protein_sequences = parseEco_fsa('protseq.fsa')
             
 
-    
     for unique_id,entry in ecocyc_proteins.iteritems():    
         
         vals = scrub_ecocyc_entry(entry)
@@ -395,6 +436,55 @@ def load_proteins(base, components):
         elif 'Polypeptides' in vals['TYPES']:
             get_or_create_ecocyc_protein(session, base, components, entry)    
             
+
+@timing
+def load_transcription_units(base, components):
+    session = base.Session()
+    ##First load annotation file containing merger of ecocyc and NCBI
+    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
+    
+    ecocyc_tus = parseEco_dat('transunits.dat')
+
+    for unique_id,entry in ecocyc_tus.iteritems():    
+        
+        vals = scrub_ecocyc_entry(entry,extra_args=['COMPONENTS'])
+        if vals is None: continue
+        
+        if 'Transcription-Units' in vals['TYPES']:
+            get_or_create_ecocyc_transcription_unit(session, base, components, entry)
+
+
+
+
+        
+        start_strand_bnum = get_start_strand_bnum(ome, components)
+        if start_strand_bnum == '': continue
+
+        result = ome.execute("INSERT INTO TU(name, strand) VALUES ('%s', '%s') RETURNING id;"%(name, start_strand_bnum[1]))
+        tu_id = result.fetchone()[0]
+        ome.execute("INSERT INTO id2otherID(id, otherID, type, dataset_id) VALUES " + \
+                    "(%i, '%s', '%s', %i);"%(tu_id, ID, 'TU', ecocyc_ID))
+
+        has_tss_flag = 0
+        genes = []
+        for c in components:
+            id_and_type = find_id_and_type(ome, c)
+
+            if id_and_type == '': continue
+            if id_and_type[1] == 'binding_site': continue
+            if id_and_type[1] == 'gene': genes.append(id_and_type[0])
+            if id_and_type[1] == 'tss': has_tss_flag = 1
+
+            ome.execute("INSERT INTO TU_components(tu_id, other_id, type) VALUES (%i, %i, '%s');"%(tu_id, id_and_type[0], id_and_type[1]))
+
+        if not has_tss_flag:
+            result = ome.execute("INSERT INTO tss(name, position) VALUES ('%s', %i) RETURNING id;"%('start_'+start_strand_bnum[2], start_strand_bnum[0]))
+            tss_id = result.fetchone()[0]
+            ome.execute("INSERT INTO id2otherid(id, otherID, type, dataset_id) VALUES " + \
+                        "(%i, '%s', '%s', %i);"%(tss_id, start_strand_bnum[2], 'gene_start_as_tss', ecocyc_ID))
+            ome.execute("INSERT INTO TU_components(tu_id, other_id, type) VALUES (%i, %i, '%s');"%(tu_id, tss_id, 'tss'))
+        make_citations(ome, transunits[t], tu_id)
+
 
 @timing
 def load_chemicals(ome, ecocyc_ID=None):
@@ -441,104 +531,6 @@ def load_promoters(ome, ecocyc_ID=None):
                         "(%i, '%s', '%s', %i);"%(id, ID, 'tss', ecocyc_ID))
         make_citations(ome, promoters[p], id)
     ome.commit()
-
-
-@timing
-def load_transcription_units(base, components):
-    session = base.Session()
-    ##First load annotation file containing merger of ecocyc and NCBI
-    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
-    
-    transcription_units = parseEco_dat('transunits.dat')
-
-    for t in transcription_units:
-        try: 
-            ID = transcription_units[t]['UNIQUE-ID'][0]
-            components = transcription_units[t]['COMPONENTS']
-        except: continue
-        try: name = transcription_units[t]['COMMON-NAME'][0]
-        except: name = ''
-
-        start_strand_bnum = get_start_strand_bnum(ome, components)
-        if start_strand_bnum == '': continue
-
-        result = ome.execute("INSERT INTO TU(name, strand) VALUES ('%s', '%s') RETURNING id;"%(name, start_strand_bnum[1]))
-        tu_id = result.fetchone()[0]
-        ome.execute("INSERT INTO id2otherID(id, otherID, type, dataset_id) VALUES " + \
-                    "(%i, '%s', '%s', %i);"%(tu_id, ID, 'TU', ecocyc_ID))
-
-        has_tss_flag = 0
-        genes = []
-        for c in components:
-            id_and_type = find_id_and_type(ome, c)
-
-            if id_and_type == '': continue
-            if id_and_type[1] == 'binding_site': continue
-            if id_and_type[1] == 'gene': genes.append(id_and_type[0])
-            if id_and_type[1] == 'tss': has_tss_flag = 1
-
-            ome.execute("INSERT INTO TU_components(tu_id, other_id, type) VALUES (%i, %i, '%s');"%(tu_id, id_and_type[0], id_and_type[1]))
-
-        if not has_tss_flag:
-            result = ome.execute("INSERT INTO tss(name, position) VALUES ('%s', %i) RETURNING id;"%('start_'+start_strand_bnum[2], start_strand_bnum[0]))
-            tss_id = result.fetchone()[0]
-            ome.execute("INSERT INTO id2otherid(id, otherID, type, dataset_id) VALUES " + \
-                        "(%i, '%s', '%s', %i);"%(tss_id, start_strand_bnum[2], 'gene_start_as_tss', ecocyc_ID))
-            ome.execute("INSERT INTO TU_components(tu_id, other_id, type) VALUES (%i, %i, '%s');"%(tu_id, tss_id, 'tss'))
-        make_citations(ome, transunits[t], tu_id)
-
-
-@timing
-def load_bindsites(base, components):
-    session = base.Session()
-    ##First load annotation file containing merger of ecocyc and NCBI
-    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
-    ecocyc_binding_sites = parseEco_dat('dnabindsites.dat')
-    ecocyc_regulation = parseEco_dat('regulation.dat')
-    
-    
-    for unique_id,entry in ecocyc_binding_sites.iteritems():
-        
-        vals = scrub_ecocyc_entry(entry, args=['UNIQUE-ID','TYPES','ABS-CENTER-POS'])
-        if vals is None: continue
-        
-        if 'DNA-Binding-Sites' in vals['TYPES']:
-            
-            try: centerpos = math.floor(float(vals['ABS-CENTER-POS'][0]))
-            except: continue
-            
-            try:
-                length = int(ecocyc_binding_sites[unique_id]['SITE-LENGTH'][0])
-                leftpos = math.floor(centerpos-(length/2))
-                rightpos = math.floor(centerpos+(length/2))
-            except: 
-                length = 0
-                leftpos = centerpos
-                rightpos = centerpos
-            
-            session.get_or_create(components.DnaBindingSite, name=vals['UNIQUE-ID'][0], leftpos=leftpos,\
-                                  rightpos=rightpos, strand='+', centerpos=centerpos, width=length)                  
-
-    
-    for unique_id,entry in ecocyc_regulation.iteritems():
-        vals = scrub_ecocyc_entry(entry, args=['UNIQUE-ID','TYPES','ASSOCIATED-BINDING-SITE','REGULATOR'])
-        if vals is None: continue
-        
-        if 'Transcription-Factor-Binding' in vals['TYPES']:
-            regulator = session.get_or_create(components.Component, name=vals['REGULATOR'][0])
-            
-            binding_site = session.query(components.DnaBindingSite).filter_by(name=vals['ASSOCIATED-BINDING-SITE'][0]).first()
-            if binding_site is None: continue
-        
-            tf_binding_complex = session.get_or_create(components.Complex, name=vals['UNIQUE-ID'][0])
-            
-            session.get_or_create(components.ComplexComposition, complex_id=tf_binding_complex.id,\
-                                                                     component_id=regulator.id,\
-                                                                     stoichiometry=1.)
-            
-            session.get_or_create(components.ComplexComposition, complex_id=tf_binding_complex.id,\
-                                                                     component_id=binding_site.id,\
-                                                                     stoichiometry=1.)
 
                               
 @timing
@@ -607,7 +599,7 @@ if __name__ == "__main__":
 
     # components can now be loaded into the database
     #load_genome()
-    load_genes(session, ecocyc_ID)
+    #load_genes(session, ecocyc_ID)
     #load_proteins(session, ecocyc_ID)
     #load_chemicals(session, ecocyc_ID)
     #load_promoters(session, ecocyc_ID)
@@ -615,7 +607,6 @@ if __name__ == "__main__":
     #load_bindsites(session, ecocyc_ID)
     #load_protein_complexes(session, ecocyc_ID)
     #load_protein_ligand_complexes(session, ecocyc_ID)
-
     #load_iMC1010(session)
     #load_cobra_model(session)
     #load_kegg_pathways(session)
