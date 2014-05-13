@@ -324,7 +324,7 @@ def run_cuffdiff(exp_sets):
     #         ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets]))
     
 
-def run_gem(chip_peak_analyses):
+def run_gem(chip_peak_analyses, debug=False):
     default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':''}
     gem_path = settings.home_directory+'/libraries/gem'
     bam_dir = settings.dropbox_directory+'/crp/data/ChIP/bam/'
@@ -343,29 +343,29 @@ def run_gem(chip_peak_analyses):
         parameter_string = ' '.join(['--'+y+' '+str(z) for y,z in params.iteritems()])
         
         
-        #print "java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
-        #          (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
-        #           input_files, parameter_string)
+        if debug:
+            print "java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
+                    (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
+                     input_files, parameter_string)
         
+        else:
+            os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
+                      (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
+                       input_files, parameter_string))
+        
+        
+            gem_peak_file = open(out_path+'/out_GPS_events.narrowPeak','r')
+            with open(out_path+'/'+chip_peak_analysis.name+'.gff', 'wb') as peaks_gff_file:
+        
+                for line in gem_peak_file.readlines():
+                    vals = line.split('\t')
 
+                    position = int(vals[3].split(':')[1])
         
-        os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
-                  (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
-                   input_files, parameter_string))
-        
-        
-        gem_peak_file = open(out_path+'/out_GPS_events.narrowPeak','r')
-        with open(out_path+'/'+chip_peak_analysis.name+'.gff', 'wb') as peaks_gff_file:
-        
-            for line in gem_peak_file.readlines():
-                vals = line.split('\t')
-
-                position = int(vals[3].split(':')[1])
-        
-                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                    ('NC_000913','.', chip_peak_analysis.name, position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
-                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                    ('NC_000913','.', chip_peak_analysis.name, vals[1], vals[2], float(vals[6]), '+', '.','.'))           
+                    peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                         ('NC_000913','.', chip_peak_analysis.name, position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
+                    peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                         ('NC_000913','.', chip_peak_analysis.name, vals[1], vals[2], float(vals[6]), '+', '.','.'))           
          
                    
 def load_cuffnorm():
