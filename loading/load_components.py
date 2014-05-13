@@ -13,7 +13,7 @@ import cPickle as pickle
 from sqlalchemy import text
 from sqlalchemy import or_
 
-from PrototypeDB.lib import settings, timing
+from om.lib import settings, timing
 
 
 ####Auxiliary functions####
@@ -246,8 +246,7 @@ def get_or_create_ecocyc_gene(session, base, components, gene_entry):
                                                      components.Gene.name == vals['COMMON-NAME'][0])).first()
     if gene is not None:
         return gene
-    else:
-        return None
+
         #session.get_or_create(components.Gene, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0],\
         #                        leftpos=vals['LEFT-END-POSITION'], rightpos=vals['RIGHT-END-POSITION'],\
         #                        strand=vals['TRANSCRIPTION-DIRECTION'])
@@ -263,7 +262,9 @@ def get_or_create_ecocyc_gene(session, base, components, gene_entry):
         id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=synonym,\
                                               type='gene', data_source_id=ecocyc_ID)
     """
-    return session.get_or_create(components.Gene, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
+    return session.get_or_create(components.Gene, name=vals['UNIQUE-ID'][0], leftpos=vals['LEFT-END-POSITION'][0],\
+                                 rightpos=vals['RIGHT-END-POSITION'][0], strand=vals['TRANSCRIPTION-DIRECTION'][0],\
+                                 long_name=vals['COMMON-NAME'][0], locus_id=vals['ACCESSION-1'][0])
             
     
 def get_or_create_ecocyc_protein(session, base, components, protein_entry):
@@ -326,20 +327,24 @@ def get_or_create_ecocyc_transcription_unit(session, base, components, tu_entry)
     if vals is None: return None
     
     genes = []
+    tss = None
     for ecocyc_component in vals['COMPONENTS']:
         try: 
-            gene_entry = ecocyc_genes[component]
+            gene_entry = ecocyc_genes[ecocyc_component]
             genes.append(get_or_create_ecocyc_gene(session, base, components, gene_entry))
         except: None
         try: 
-            promoter_entry = ecocyc_promoters[component]
-            vals = scrub_ecocyc_entry(promoter_entry,extra_args=['ABSOLUTE-PLUS-1-POS'])
-            tss = vals['ABSOLUTE-PLUS-1-POS'][0]
+            promoter_entry = ecocyc_promoters[ecocyc_component]
+            tss_vals = scrub_ecocyc_entry(promoter_entry,extra_args=['ABSOLUTE-PLUS-1-POS'])
+            tss = tss_vals['ABSOLUTE-PLUS-1-POS'][0]
         except: None
+    if len(genes) == 0: return
     
-    leftpos = min([x.leftpos for x in genes].iteritems(), key=operator.itemgetter(1))[0]
-    rightpos = max([x.rightpos for x in genes].iteritems(), key=operator.itemgetter(1))[0]
-    strand = genes[0].strand
+    try:
+        leftpos = min([x.leftpos for x in genes])
+        rightpos = max([x.rightpos for x in genes])
+        strand = genes[0].strand
+    except: return
     
     try: name = vals['COMMON-NAME'][0]
     except: name = vals['UNIQUE-ID'][0]
@@ -456,7 +461,7 @@ def load_transcription_units(base, components):
 
 
 
-        
+        """
         start_strand_bnum = get_start_strand_bnum(ome, components)
         if start_strand_bnum == '': continue
 
@@ -484,6 +489,60 @@ def load_transcription_units(base, components):
                         "(%i, '%s', '%s', %i);"%(tss_id, start_strand_bnum[2], 'gene_start_as_tss', ecocyc_ID))
             ome.execute("INSERT INTO TU_components(tu_id, other_id, type) VALUES (%i, %i, '%s');"%(tu_id, tss_id, 'tss'))
         make_citations(ome, transunits[t], tu_id)
+        """
+
+
+@timing
+def load_bindsites(base, components):
+    session = base.Session()
+    ##First load annotation file containing merger of ecocyc and NCBI
+    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
+    ecocyc_binding_sites = parseEco_dat('dnabindsites.dat')
+    ecocyc_regulation = parseEco_dat('regulation.dat')
+    
+    
+    for unique_id,entry in ecocyc_binding_sites.iteritems():
+        
+        vals = scrub_ecocyc_entry(entry, args=['UNIQUE-ID','TYPES','ABS-CENTER-POS'])
+        if vals is None: continue
+        
+        if 'DNA-Binding-Sites' in vals['TYPES']:
+            
+            try: centerpos = math.floor(float(vals['ABS-CENTER-POS'][0]))
+            except: continue
+            
+            try:
+                length = int(ecocyc_binding_sites[unique_id]['SITE-LENGTH'][0])
+                leftpos = math.floor(centerpos-(length/2))
+                rightpos = math.floor(centerpos+(length/2))
+            except: 
+                length = 0
+                leftpos = centerpos
+                rightpos = centerpos
+            
+            session.get_or_create(components.DnaBindingSite, name=vals['UNIQUE-ID'][0], leftpos=leftpos,\
+                                  rightpos=rightpos, strand='+', centerpos=centerpos, width=length)                  
+
+    
+    for unique_id,entry in ecocyc_regulation.iteritems():
+        vals = scrub_ecocyc_entry(entry, args=['UNIQUE-ID','TYPES','ASSOCIATED-BINDING-SITE','REGULATOR'])
+        if vals is None: continue
+        
+        if 'Transcription-Factor-Binding' in vals['TYPES']:
+            regulator = session.get_or_create(components.Component, name=vals['REGULATOR'][0])
+            
+            binding_site = session.query(components.DnaBindingSite).filter_by(name=vals['ASSOCIATED-BINDING-SITE'][0]).first()
+            if binding_site is None: continue
+        
+            tf_binding_complex = session.get_or_create(components.Complex, name=vals['UNIQUE-ID'][0])
+            
+            session.get_or_create(components.ComplexComposition, complex_id=tf_binding_complex.id,\
+                                                                     component_id=regulator.id,\
+                                                                     stoichiometry=1.)
+            
+            session.get_or_create(components.ComplexComposition, complex_id=tf_binding_complex.id,\
+                                                                     component_id=binding_site.id,\
+                                                                     stoichiometry=1.)
 
 
 @timing
@@ -594,7 +653,7 @@ if __name__ == "__main__":
     from PrototypeDB.orm import base,components
     session = base.Session()
     # find ecocyc
-    ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
+    #ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
 
 
     # components can now be loaded into the database

@@ -1,4 +1,4 @@
-from PrototypeDB.orm.base import *
+from om.orm.base import *
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
@@ -217,11 +217,20 @@ class TU(RNA):
     
     id = Column(Integer, ForeignKey('rna.id'), primary_key=True)
     genome_region = relationship("GenomeRegion")
-    genes = relationship("Gene", secondary="TUGenes",\
+    genes = relationship("Gene", secondary="tu_genes",\
                                  primaryjoin = id == TUGenes.tu_id,\
                                  backref="tu")
     
-    name = Column(String(10))
+    name = Column(String(100))
+    
+    """
+    @hybrid_property
+    def tss(self):
+        if self.genome_region.strand == '+':
+            return self.genome_region.leftpos
+        else:
+            return self.genome_region.rightpos
+    """
     
     def __init__(self, name, leftpos, rightpos, strand):
         super(TU, self).__init__(name, leftpos, rightpos, strand)

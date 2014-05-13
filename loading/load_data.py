@@ -1,10 +1,10 @@
 ####This code is just a minor modification of sequtil/make_gff.py written by aebrahim####
 #!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
-from PrototypeDB.orm import base
-from PrototypeDB.orm import data
-from PrototypeDB.orm import components
-from PrototypeDB.lib import settings
+from om.orm import base
+from om.orm import data
+from om.orm import components
+from om.lib import settings
 from os.path import split
 from math import log
 import os
@@ -13,6 +13,7 @@ from numpy import zeros, roll
 from sqlalchemy import func
 
 import pysam
+import simplejson as json
 
 session = base.Session()
 
@@ -241,6 +242,7 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
 
 def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', bulk_file_load=False):
     vals = exp_name.split('_')
+    if len(vals) < 5: return
     strain = session.get_or_create(data.Strain, name=vals[1])
     data_source = session.get_or_create(data.DataSource, name=vals[0], lab=lab, institution=institution)
     environment = session.get_or_create(data.InVivoEnvironment, name='_'.join(vals[2:5]), carbon_source=vals[2],\
@@ -256,8 +258,8 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
         #variance = gff_variance(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name)
         #data.load_genome_data(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name, experiment.id, bulk_file_load,\
         #                      loading_cutoff=math.sqrt(variance)/4.)
-        load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
-                           bulk_file_load=bulk_file_load)
+        #load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
+        #                   bulk_file_load=bulk_file_load)
 
     
     
@@ -322,25 +324,50 @@ def run_cuffdiff(exp_sets):
     #         ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets]))
     
 
-def run_gem(exp_sets):
+def run_gem(chip_peak_analyses):
+    default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':''}
     gem_path = settings.home_directory+'/libraries/gem'
     bam_dir = settings.dropbox_directory+'/crp/data/ChIP/bam/'
     """ This could easily be parallelized """
-    for exp in exp_sets:
-        outdir = '_'.join(exp[0][0].split('_')[0:5]+exp[0][0].split('_')[6:7])    
+    
+    for chip_peak_analysis in chip_peak_analyses:            
+        outdir = chip_peak_analysis.name
         out_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'+outdir
         os.system('rm -r '+out_path)
         os.mkdir(out_path)
         os.chdir(out_path)
     
-        input_files = ' '.join(['--expt'+exp[0][i]+' '+bam_dir+exp[1][i] \
-                                for i in range(len(exp[0]))])
+        input_files = ' '.join(['--expt'+x.name+' '+bam_dir+x.file_name for x in chip_peak_analysis.children])
+        
+        params = json.loads(chip_peak_analysis.parameters)
+        parameter_string = ' '.join(['--'+y+' '+str(z) for y,z in params.iteritems()])
+        
+        
+        #print "java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
+        #          (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
+        #           input_files, parameter_string)
+        
 
-        os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM --k_min %d --smooth 3 --outNP" %\
+        
+        os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
                   (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
-                   input_files, 1))
-            
-                                    
+                   input_files, parameter_string))
+        
+        
+        gem_peak_file = open(out_path+'/out_GPS_events.narrowPeak','r')
+        with open(out_path+'/'+chip_peak_analysis.name+'.gff', 'wb') as peaks_gff_file:
+        
+            for line in gem_peak_file.readlines():
+                vals = line.split('\t')
+
+                position = int(vals[3].split(':')[1])
+        
+                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                    ('NC_000913','.', chip_peak_analysis.name, position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
+                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                    ('NC_000913','.', chip_peak_analysis.name, vals[1], vals[2], float(vals[6]), '+', '.','.'))           
+         
+                   
 def load_cuffnorm():
     cuffnorm_genes = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm/isoforms.attr_table','r')
     cuffnorm_genes.readline()
@@ -451,29 +478,21 @@ def load_cuffdiff():
                                                value=value, pval=pvalue)
 
 
-def load_gem():
+def load_gem(chip_peak_analyses):
     gem_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'
     
-    for exp_name,exp_id in session.query(data.ChIPPeak.name,data.ChIPPeak.id).all():
-        gem_peak_file = open(gem_path+exp_name+'/out_GPS_events.narrowPeak','r')
+    for chip_peak_analysis in chip_peak_analyses:
+        gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
         
         for line in gem_peak_file.readlines():
             vals = line.split('\t')
 
             position = int(vals[3].split(':')[1])
         
-            with open(gem_path+exp_name+'/'+exp_name+'_peaks.gff', 'wb') as peaks_gff_file:
-                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                     ('NC_000913','.',exp_name+'_peaks', position-1, position+1, float(vals[6])+20, '+', '.','.'))
-                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                     ('NC_000913','.',exp_name+'_peaks', vals[1], vals[2], float(vals[6]), '+', '.','.'))
-            
             peak_region = session.get_or_create(base.GenomeRegion, leftpos=vals[1], rightpos=vals[2], strand='+')
 
-            
-            
-            peak_data = session.get_or_create(data.ChIPPeakData, data_set_id=exp_id, genome_region_id=peak_region.id,\
-                                              value=vals[6], eventpos=position, pval=vals[8])
+            peak_data = session.get_or_create(data.ChIPPeakData, data_set_id=chip_peak_analysis.id, genome_region_id=peak_region.id,\
+                                                value=vals[6], eventpos=position, pval=vals[8])
 
 
 def load_arraydata(file_path):

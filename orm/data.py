@@ -1,6 +1,6 @@
 """Module to implement ORM for the experimental portion of the OME database"""
 
-from PrototypeDB.orm.base import *
+from om.orm.base import *
 
 from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
@@ -8,8 +8,10 @@ from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.sql.expression import join
-from pymongo import ASCENDING, DESCENDING
+from sqlalchemy import func
 
+from pymongo import ASCENDING, DESCENDING
+from math import ceil
 import simplejson as json
 
 
@@ -195,21 +197,23 @@ class DataSet(Base):
 
     def __init__(self, name, replicate=1, strain=None, environment=None, data_source=None):
         
+        session = Session()
         if strain is None:
-            strain = get_or_create(Session(), Strain, name='generic')
+            strain = session.get_or_create(Strain, name='generic')
         
         if environment is None:
-            environment = get_or_create(Session(), Environment, name='generic')
+            environment = session.get_or_create(Environment, name='generic')
         
         if data_source is None:
-            data_source = get_or_create(Session(), DataSource, name='generic', lab='generic', institution='generic')
+            data_source = session.get_or_create(DataSource, name='generic', lab='generic', institution='generic')
         
         self.name = name
         self.replicate = replicate
         self.strain_id = strain.id
         self.environment_id = environment.id
         self.data_source_id = data_source.id
-        
+        session.close()
+
 
 class ArrayExperiment(DataSet):
     __tablename__ = 'array_experiment'
@@ -345,12 +349,12 @@ class Analysis(DataSet):
             (self.id, self.name)
 
 
-class ChIPPeak(Analysis):
+class ChIPPeakAnalysis(Analysis):
     __tablename__ = 'chip_peak_analysis'
     
     id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
     method = Column(String(30))
-    parameters = Column(String(100))
+    parameters = Column(String(200))
 
     __mapper_args__ = { 'polymorphic_identity': 'chip_peak_analysis' }
 
@@ -359,7 +363,7 @@ class ChIPPeak(Analysis):
                 (self.id, self.name, self.method, self.parameters)
 
     def __init__(self, name, replicate=1, strain=None, environment=None, method=None, parameters=None):
-        super(ChIPPeak, self).__init__(name, replicate, strain, environment)
+        super(ChIPPeakAnalysis, self).__init__(name, replicate, strain, environment)
         self.method = method
         self.parameters = parameters
 
@@ -468,6 +472,14 @@ class ChIPPeakData(GenomeData):
     peak_analysis = relationship('Analysis')
     eventpos = Column(Integer)
     pval = Column(Float)
+    
+    @hybrid_property
+    def grouped_eventpos(self):
+        return ceil(self.eventpos/200) * 200
+    
+    @grouped_eventpos.expression
+    def carbon_source(cls):
+        return func.ceil(ChIPPeakData.eventpos/200) * 200   
     
     __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
                                            ['genome_data.data_set_id', 'genome_data.genome_region_id']),\
