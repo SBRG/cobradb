@@ -7,7 +7,7 @@ The OM framework is a systems biology and bioinformatics framework that helps to
 
 1. map highthroughput experimental data to cellular components
 2. map cellular components to computational models
-3. map computational models to highthroughput experimental data
+3. map computational models to highthroughput experimental data via cellular components
 
 ==
 
