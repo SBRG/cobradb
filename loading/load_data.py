@@ -1,10 +1,10 @@
 ####This code is just a minor modification of sequtil/make_gff.py written by aebrahim####
 #!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
-from om.orm import base
-from om.orm import data
-from om.orm import components
-from om.lib import settings
+from om_dev.orm import base
+from om_dev.orm import data
+from om_dev.orm import components
+from om_dev.lib import settings
 from os.path import split
 from math import log
 import os
@@ -243,15 +243,29 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
 def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', bulk_file_load=False):
     vals = exp_name.split('_')
     if len(vals) < 5: return
+    
+    exp_type = vals[0].split('-')    
+    try: 
+        vals[7] = vals[7].split('.')[0]
+        name = '_'.join(vals[0:8])
+        supplements = vals[7]
+        print supplements
+    except:
+        try: vals[6] = vals[6].split('.')[0]
+        except: vals[5] = vals[5].split('.')[0]
+        name = '_'.join(vals[0:7])
+        supplements = ''
+    
+    
     strain = session.get_or_create(data.Strain, name=vals[1])
     data_source = session.get_or_create(data.DataSource, name=vals[0], lab=lab, institution=institution)
-    environment = session.get_or_create(data.InVivoEnvironment, name='_'.join(vals[2:5]), carbon_source=vals[2],\
-                                        nitrogen_source=vals[3], electron_acceptor=vals[4], temperature=37)
-    exp_type = vals[0].split('-')
-    try: vals[6] = vals[6].split('.')[0]
-    except: vals[5] = vals[5].split('.')[0]
+    environment = session.get_or_create(data.InVivoEnvironment, name='_'.join(vals[2:5]+[supplements]), carbon_source=vals[2],\
+                                        nitrogen_source=vals[3], electron_acceptor=vals[4], temperature=37,\
+                                        supplements=supplements)
+    
+        
     if exp_type[0][0:4] == 'chip': 
-        experiment = session.get_or_create(data.ChIPExperiment, name='_'.join(vals[0:7]), replicate=vals[5],\
+        experiment = session.get_or_create(data.ChIPExperiment, name=name, replicate=vals[5],\
                                            strain=strain, data_source=data_source, environment=environment,\
                                            protocol_type=exp_type[0], antibody=vals[6],\
                                            target=exp_type[1], file_name=exp_name)
@@ -259,7 +273,7 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
         #data.load_genome_data(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name, experiment.id, bulk_file_load,\
         #                      loading_cutoff=math.sqrt(variance)/4.)
         #load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
-        #                   bulk_file_load=bulk_file_load)
+        #                   bulk_file_load=bulk_file_load, five_prime=True)
 
     
     

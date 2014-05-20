@@ -118,8 +118,9 @@ class InVivoEnvironment(Environment):
     nitrogen_source = Column(String(100))
     electron_acceptor = Column(String(100))
     temperature = Column(Float)
+    supplements = Column(String(100))
     
-    __table_args__ = (UniqueConstraint('carbon_source','nitrogen_source','electron_acceptor','temperature'),{})
+    __table_args__ = (UniqueConstraint('carbon_source','nitrogen_source','electron_acceptor','temperature','supplements'),{})
     
     __mapper_args__ = { 'polymorphic_identity': 'in_vivo' }    
     
@@ -135,26 +136,13 @@ class InVivoEnvironment(Environment):
                                  "temperature":self.temperature}
         return environment
     
-    def __init__(self, name, carbon_source, nitrogen_source, electron_acceptor, temperature):
+    def __init__(self, name, carbon_source, nitrogen_source, electron_acceptor, temperature, supplements):
         super(InVivoEnvironment, self).__init__(name)
         self.carbon_source = carbon_source
         self.nitrogen_source = nitrogen_source
         self.electron_acceptor = electron_acceptor
         self.temperature = temperature
-
-
-class Protocol(Base):
-    __tablename__ = 'protocol'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100))
-    location = Column(String(100))
-    
-    __table_args__ = (UniqueConstraint('name', name='name'),{})
-    
-    def __repr__(self):
-        return "Protocol (#%d, %s):  %s" % \
-            (self.id, self.name, self.location)
+        self.supplements = supplements
     
 
 class DataSet(Base):
@@ -475,11 +463,11 @@ class ChIPPeakData(GenomeData):
     
     @hybrid_property
     def grouped_eventpos(self):
-        return ceil(self.eventpos/200) * 200
+        return ceil(self.eventpos/400) * 400
     
     @grouped_eventpos.expression
     def carbon_source(cls):
-        return func.ceil(ChIPPeakData.eventpos/200) * 200   
+        return func.ceil(ChIPPeakData.eventpos/400) * 400   
     
     __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
                                            ['genome_data.data_set_id', 'genome_data.genome_region_id']),\

@@ -13,7 +13,7 @@ class Gene(GenomeRegion):
     __tablename__ = 'gene'
 
     id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
-    locus_id = Column(String(10))
+    locus_id = Column(String(20))
     info = Column(String(200))
     long_name = Column(String(100))
     
@@ -50,27 +50,6 @@ class Motif(GenomeRegion):
         super(Motif, self).__init__(leftpos, rightpos, strand)
         self.pval = pval
         self.info = info
-
-
-class Component(Base):
-    __tablename__ = 'component'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100))
-    type = Column(String(20))
-   
-    __table_args__ = (UniqueConstraint('name'),{})
-    
-    __mapper_args__ = {'polymorphic_identity': 'component', 
-                       'polymorphic_on': type
-                      }
-
-    def __init__(self, name):
-        self.name = name
-        
-    def __repr__(self):
-        return "Component (#%d):  %s" % \
-            (self.id, self.name)
 
    
 class ComplexComposition(Base):
@@ -181,7 +160,7 @@ class RNA(Component):
     __mapper_args__ = { 'polymorphic_identity': 'rna' }
      
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-    rna_type = Column(String(20))
+    type = Column(String(20))
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
     
     
@@ -221,7 +200,7 @@ class TU(RNA):
                                  primaryjoin = id == TUGenes.tu_id,\
                                  backref="tu")
     
-    name = Column(String(100))
+    long_name = Column(String(200))
     
     """
     @hybrid_property
@@ -232,10 +211,10 @@ class TU(RNA):
             return self.genome_region.rightpos
     """
     
-    def __init__(self, name, leftpos, rightpos, strand):
+    def __init__(self, name, leftpos, rightpos, strand, long_name=None):
         super(TU, self).__init__(name, leftpos, rightpos, strand)
-        self.name = name
-   
+        self.long_name = long_name
+     
      
 class Protein(Component):
     __tablename__ = 'protein'
@@ -257,18 +236,18 @@ class Protein(Component):
             (self.id, self.long_name)             
      
      
-class SmallMolecule(Component):
-    __tablename__ = 'small_molecule'
+class Metabolite(Component):
+    __tablename__ = 'metabolite'
      
-    __mapper_args__ = { 'polymorphic_identity': 'small_molecule' }
+    __mapper_args__ = { 'polymorphic_identity': 'metabolite' }
      
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
 
-    long_name = Column(String(100))
-    formula = Column(String(100))
+    long_name = Column(String(200))
+    formula = Column(String(200))
     smiles = Column(String(200))
     def __init__(self, name, long_name, formula="", smiles=""):
-        super(SmallMolecule, self).__init__(name)
+        super(Metabolite, self).__init__(name)
         self.long_name = long_name
         self.formula = formula
         self.smiles = smiles

@@ -95,6 +95,27 @@ class GenomeRegion(Base):
         self.strand = strand
         self.name = name
         
+  
+class Component(Base):
+    __tablename__ = 'component'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100))
+    type = Column(String(20))
+   
+    __table_args__ = (UniqueConstraint('name'),{})
+    
+    __mapper_args__ = {'polymorphic_identity': 'component', 
+                       'polymorphic_on': type
+                      }
+
+    def __init__(self, name):
+        self.name = name
+        
+    def __repr__(self):
+        return "Component (#%d):  %s" % \
+            (self.id, self.name)  
+  
         
 def make_table(table_name):
     """function to create a table with the default parameters"""
