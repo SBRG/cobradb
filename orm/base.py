@@ -9,7 +9,7 @@ from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
     String, Float, ForeignKey, and_, or_, not_, distinct, select
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
-import om_dev.lib.settings as settings
+import om.lib.settings as settings
 import pymongo
 
 
@@ -19,8 +19,7 @@ Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine, schema=settings.schema)
 
 connection = pymongo.Connection()
-#omics_database = connection.omics_database
-omics_database = connection.omics_database3
+omics_database = connection.omics_database2
 
 class id2otherid(Base):
     __tablename__ = "id2otherid"

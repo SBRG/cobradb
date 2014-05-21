@@ -13,7 +13,7 @@ import cPickle as pickle
 from sqlalchemy import text
 from sqlalchemy import or_
 
-from om_dev.lib import settings, timing
+from om.lib import settings, timing
 
 
 ####Auxiliary functions####

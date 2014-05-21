@@ -1,10 +1,10 @@
 ####This code is just a minor modification of sequtil/make_gff.py written by aebrahim####
 #!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
-from om_dev.orm import base
-from om_dev.orm import data
-from om_dev.orm import components
-from om_dev.lib import settings
+from om.orm import base
+from om.orm import data
+from om.orm import components
+from om.lib import settings
 from os.path import split
 from math import log
 import os
@@ -249,7 +249,6 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
         vals[7] = vals[7].split('.')[0]
         name = '_'.join(vals[0:8])
         supplements = vals[7]
-        print supplements
     except:
         try: vals[6] = vals[6].split('.')[0]
         except: vals[5] = vals[5].split('.')[0]
@@ -272,8 +271,8 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
         #variance = gff_variance(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name)
         #data.load_genome_data(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name, experiment.id, bulk_file_load,\
         #                      loading_cutoff=math.sqrt(variance)/4.)
-        #load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
-        #                   bulk_file_load=bulk_file_load, five_prime=True)
+        load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
+                           bulk_file_load=bulk_file_load, five_prime=True)
 
     
     
@@ -282,8 +281,8 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
                                            strain=strain, data_source=data_source, environment=environment,\
                                            machine_id='miseq', sequencing_type='unpaired',\
                                            file_name=exp_name)
-        #load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
-        #                   bulk_file_load=bulk_file_load)
+        load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
+                           bulk_file_load=bulk_file_load)
         
     elif exp_type[0][0:7] == 'affyexp':
         experiment = session.get_or_create(data.ArrayExperiment, name='_'.join(vals[0:6]), replicate=vals[5],\
