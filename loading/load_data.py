@@ -41,7 +41,7 @@ def count_coverage(samfile, flip=False, include_insert=False):
     for i, read in enumerate(samfile):
         if read.is_unmapped:
             continue
-        # for paired and data get entire insert only from read 1
+        # for paired end data get entire insert only from read 1
         if include_insert and read.is_proper_pair:
             if read.is_read2:
                 continue  # will get handled with read 1
@@ -202,10 +202,7 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
     else:
         all_counts = count_coverage(samfile,
             include_insert=include_insert, flip=flip)
-    if track is None:
-        name = split(samfile.filename)[1]
-    else:
-        name = track
+
     #connection to mongo data store
     genome_data = base.omics_database.genome_data
 
@@ -217,7 +214,6 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
     for reference in all_counts:
         for strand in all_counts[reference]:
             factor = 1 if strand == "+" else -1
-            track_name = "%s_(%s)" % (name, strand) if separate_strand else name
             counts = all_counts[reference][strand]
             entries = []
             for i in counts.nonzero()[0]:    

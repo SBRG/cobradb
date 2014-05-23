@@ -1,4 +1,3 @@
-from om.orm import base
 from nose.tools import assert_equal
 from nose.tools import assert_not_equal
 from nose.tools import assert_raises
@@ -22,6 +21,8 @@ class TestBase:
         engine = sqlalchemy.create_engine("postgresql://test_user@localhost/test_db")
         Base = declarative_base(bind=engine)
         metadata = sqlalchemy.MetaData(bind=engine, schema='test_schema')
+        
+        from om.orm import base
         
     @classmethod
     def teardown_class(cls):
