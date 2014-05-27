@@ -14,7 +14,7 @@ import pymongo
 
 
 engine = create_engine("postgresql://%s:%s@%s/%s" %
-    (settings.user, settings.password, settings.host, settings.dev_database))
+    (settings.user, settings.password, settings.host, settings.postgres_database))
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine, schema=settings.schema)
 
