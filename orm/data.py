@@ -240,6 +240,7 @@ class RNASeqExperiment(DataSet):
 
     sequencing_type = Column(String(20))
     machine_ID = Column(String(20))
+    normalization_method = Column(String(100))
     
     #terrrible hack right here
     file_name = Column(String(100))
@@ -260,10 +261,11 @@ class RNASeqExperiment(DataSet):
         return data_set
     
     def __init__(self, name, replicate, strain, environment, data_source,\
-                       sequencing_type, machine_id, file_name):
+                       sequencing_type, machine_id, file_name, normalization_method):
         super(RNASeqExperiment, self).__init__(name, replicate, strain, environment, data_source)
         self.sequencing_type = sequencing_type
         self.machine_id = machine_id
+        self.normalization_method = normalization_method
         self.file_name = file_name
     
     
@@ -275,7 +277,8 @@ class ChIPExperiment(DataSet):
     antibody = Column(String(20))
     protocol_type = Column(String(20))
     target = Column(String(20))
-    
+    normalization_method = Column(String(100))
+
     #terrrible hack right here
     file_name = Column(String(100))
     
@@ -296,12 +299,13 @@ class ChIPExperiment(DataSet):
         return dataset
     
     def __init__(self, name, replicate, strain, environment, data_source,\
-                       antibody, protocol_type, target, file_name):
+                       antibody, protocol_type, target, file_name, normalization_method):
         super(ChIPExperiment, self).__init__(name, replicate, strain, environment, data_source)
         self.antibody = antibody
         self.protocol_type = protocol_type
         self.target = target
         self.file_name = file_name
+        self.normalization_method = normalization_method
 
 
 class AnalysisComposition(Base):

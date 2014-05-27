@@ -182,7 +182,7 @@ def write_samfile_to_gff(sam_filename, out_filename, flip=False, log2=False,
 
 def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_load=False,
                        flip=False, log2=False, separate_strand=False, include_insert=False,
-                       five_prime=False, track=None):
+                       five_prime=False, track=None, normalization_factor=1.):
     """
     write samfile object to an output object in a gff format
 
@@ -202,10 +202,6 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
     else:
         all_counts = count_coverage(samfile,
             include_insert=include_insert, flip=flip)
-    if track is None:
-        name = split(samfile.filename)[1]
-    else:
-        name = track
     #connection to mongo data store
     genome_data = base.omics_database.genome_data
 
@@ -217,30 +213,30 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
     for reference in all_counts:
         for strand in all_counts[reference]:
             factor = 1 if strand == "+" else -1
-            track_name = "%s_(%s)" % (name, strand) if separate_strand else name
             counts = all_counts[reference][strand]
             entries = []
             for i in counts.nonzero()[0]:    
-                if abs(float(counts[i])) < loading_cutoff: continue
-            
+                #if abs(float(counts[i])) < loading_cutoff: continue
+                
                 entries.append({
                                 "leftpos": int(i),
                                 "rightpos": int(i),
-                                "value": float(counts[i]),
+                                "value": float(counts[i])*normalization_factor,
                                 "strand": strand,
                                 "data_set_id": data_set_id})
             
-                if i%50000 == 0:
+                if i%100000 == 0:
                     genome_data.insert(entries)
                     entries = []
-    
+            genome_data.insert(entries) 
     if not bulk_file_load: 
         genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])                
     
     samfile.close()
 
 
-def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', bulk_file_load=False):
+def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
+								  bulk_file_load=False, normalization_factor=1.):
     vals = exp_name.split('_')
     if len(vals) < 5: return
     
@@ -264,15 +260,15 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
     
         
     if exp_type[0][0:4] == 'chip': 
-        experiment = session.get_or_create(data.ChIPExperiment, name=name, replicate=vals[5],\
+    	if normalization_factor == 1.: normalization = None
+    	else: normalization = 'mean of total mapped reads'
+        experiment = session.get_or_create(data.ChIPExperiment, name=name+'_'+str(normalization_factor), replicate=vals[5],\
                                            strain=strain, data_source=data_source, environment=environment,\
                                            protocol_type=exp_type[0], antibody=vals[6],\
-                                           target=exp_type[1], file_name=exp_name)
+                                           target=exp_type[1], file_name=exp_name,normalization_method=normalization)
         #variance = gff_variance(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name)
-        #data.load_genome_data(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name, experiment.id, bulk_file_load,\
-        #                      loading_cutoff=math.sqrt(variance)/4.)
-        load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
-                           bulk_file_load=bulk_file_load, five_prime=True)
+        load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=2,\
+                           bulk_file_load=bulk_file_load, five_prime=True, normalization_factor=normalization_factor)
 
     
     
@@ -282,7 +278,7 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD', b
                                            machine_id='miseq', sequencing_type='unpaired',\
                                            file_name=exp_name)
         load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
-                           bulk_file_load=bulk_file_load)
+                           bulk_file_load=bulk_file_load, flip=True)
         
     elif exp_type[0][0:7] == 'affyexp':
         experiment = session.get_or_create(data.ArrayExperiment, name='_'.join(vals[0:6]), replicate=vals[5],\
