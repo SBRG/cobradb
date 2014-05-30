@@ -159,20 +159,38 @@ def get_or_create(session, class_type, **kwargs):
     """gets an object using filter_by on the unique kwargs. If no such object
     is found in the database, a new one will be created which satisfies
     these constraints. This is why every class that wants to use this
-    method to be instantiated needs to have a UniqueConstraint defined."""
+    method to be instantiated needs to have a UniqueConstraint defined.
+    """
     
     for constraint in list(class_type.__table_args__):
         if constraint.__class__.__name__ == 'UniqueConstraint':
             unique_cols = constraint.columns.keys()
-    #print class_type.__name__
-    #print unique_cols
-    #print kwargs
-    try:
-        result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).one()
-    except:
-        session.add(class_type(**kwargs))
+
+    """if the class_type inherits something, lets query that inherited class by its unique columns
+    to get the id which is the foreign key of the class_type
+    """
+
+    
+    if '__mapper_args__' in class_type.__dict__ and 'inherits' in class_type.__mapper_args__:
+        obj = session.query(class_type.__mapper_args__['inherits']).filter_by(name=kwargs['name']).first()      
+        if obj: 
+            kwargs['id'] = obj.id
+        else: 
+            kwargs['id'] = None
+        result = False
+    else:
+        result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).first()
+    
+    print class_type  
+    print kwargs  
+    print result
+        
+    if not result:
+        result = class_type(**kwargs)
+        result = session.merge(result)
+        session.add(result)
         session.commit()
-        result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).one()
+
     return result
 
 

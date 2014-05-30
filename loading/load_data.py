@@ -1,4 +1,4 @@
-####This code is just a minor modification of sequtil/make_gff.py written by aebrahim####
+####A portion of this code is derived from sequtil/make_gff.py written by aebrahim####
 #!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
 from om.orm import base
@@ -14,8 +14,6 @@ from sqlalchemy import func
 
 import pysam
 import simplejson as json
-
-session = base.Session()
 
 
 def count_coverage(samfile, flip=False, include_insert=False):
@@ -99,6 +97,7 @@ def count_coverage_5prime(samfile, flip=False):
         minus_strands.append(zeros((chromosome_sizes[reference],)))
     # iterate through each mapped read
     for i, read in enumerate(samfile):
+        if i > 1e4: break
         if read.is_unmapped:
             continue
         if read.is_reverse:
@@ -182,7 +181,7 @@ def write_samfile_to_gff(sam_filename, out_filename, flip=False, log2=False,
 
 def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_load=False,
                        flip=False, log2=False, separate_strand=False, include_insert=False,
-                       five_prime=False, track=None, normalization_factor=1.):
+                       five_prime=False, track=None, norm_factor=1.):
     """
     write samfile object to an output object in a gff format
 
@@ -221,13 +220,13 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
                 entries.append({
                                 "leftpos": int(i),
                                 "rightpos": int(i),
-                                "value": float(counts[i])*normalization_factor,
+                                "value": float(counts[i])*norm_factor,
                                 "strand": strand,
                                 "data_set_id": data_set_id})
             
-                if i%100000 == 0:
-                    genome_data.insert(entries)
-                    entries = []
+                #if i%50000 == 0:
+                #    genome_data.insert(entries)
+                #    entries = []
             genome_data.insert(entries) 
     if not bulk_file_load: 
         genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])                
@@ -236,7 +235,7 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
 
 
 def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
-								  bulk_file_load=False, normalization_factor=1.):
+								  bulk_file_load=False, norm_factor=1.):
     vals = exp_name.split('_')
     if len(vals) < 5: return
     
@@ -251,6 +250,11 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
         name = '_'.join(vals[0:7])
         supplements = ''
     
+    if norm_factor == 1.: 
+        norm_method = None
+    else: norm_method = 'mean of total mapped reads'
+    
+    session = base.Session()
     
     strain = session.get_or_create(data.Strain, name=vals[1])
     data_source = session.get_or_create(data.DataSource, name=vals[0], lab=lab, institution=institution)
@@ -258,32 +262,37 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
                                         nitrogen_source=vals[3], electron_acceptor=vals[4], temperature=37,\
                                         supplements=supplements)
     
-        
+    
     if exp_type[0][0:4] == 'chip': 
-    	if normalization_factor == 1.: normalization = None
-    	else: normalization = 'mean of total mapped reads'
-        experiment = session.get_or_create(data.ChIPExperiment, name=name+'_'+str(normalization_factor), replicate=vals[5],\
-                                           strain=strain, data_source=data_source, environment=environment,\
+
+        experiment = session.get_or_create(data.ChIPExperiment, name=name, replicate=vals[5],\
+                                           strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
                                            protocol_type=exp_type[0], antibody=vals[6],\
-                                           target=exp_type[1], file_name=exp_name,normalization_method=normalization)
-        #variance = gff_variance(settings.dropbox_directory+'/crp/data/ChIP/gff/raw/'+exp_name)
+                                           target=exp_type[1], file_name=exp_name, normalization_method=norm_method,\
+                                                                                   normalization_factor=norm_factor)
+
         load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=2,\
-                           bulk_file_load=bulk_file_load, five_prime=True, normalization_factor=normalization_factor)
+                           bulk_file_load=bulk_file_load, five_prime=True, norm_factor=norm_factor)
 
     
     
     elif exp_type[0][0:6] == 'RNAseq':
-        experiment = session.get_or_create(data.RNASeqExperiment, name='_'.join(vals[0:6]), replicate=vals[5],\
+        experiment = session.get_or_create(data.RNASeqExperiment, name=name, replicate=vals[5],\
                                            strain=strain, data_source=data_source, environment=environment,\
                                            machine_id='miseq', sequencing_type='unpaired',\
-                                           file_name=exp_name)
+                                           file_name=exp_name, normalization_method=norm_method,\
+                                                               normalization_factor=norm_factor)
+                                           
         load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
-                           bulk_file_load=bulk_file_load, flip=True)
+                           bulk_file_load=bulk_file_load, flip=True, norm_factor=norm_factor)
         
     elif exp_type[0][0:7] == 'affyexp':
-        experiment = session.get_or_create(data.ArrayExperiment, name='_'.join(vals[0:6]), replicate=vals[5],\
+        experiment = session.get_or_create(data.ArrayExperiment, name=name, replicate=vals[5],\
                                            strain=strain, data_source=data_source, environment=environment,\
                                            platform=vals[6], file_name=exp_name)
+    session.flush()
+    session.commit()
+    session.close()
 
 
 def run_cuffquant(exp):

@@ -48,7 +48,7 @@ class Strain(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100))
-    
+        
     __table_args__ = (UniqueConstraint('name'),{})
     
     def __repr__(self):
@@ -136,8 +136,9 @@ class InVivoEnvironment(Environment):
                                  "temperature":self.temperature}
         return environment
     
-    def __init__(self, name, carbon_source, nitrogen_source, electron_acceptor, temperature, supplements):
-        super(InVivoEnvironment, self).__init__(name)
+    def __init__(self, id, name, carbon_source, nitrogen_source, electron_acceptor, temperature, supplements):
+        if id: self.id = id
+        else: super(InVivoEnvironment, self).__init__(name)
         self.carbon_source = carbon_source
         self.nitrogen_source = nitrogen_source
         self.electron_acceptor = electron_acceptor
@@ -165,7 +166,7 @@ class DataSet(Base):
     __mapper_args__ = {'polymorphic_identity': 'data_set',
                        'polymorphic_on': type}
     
-    __table_args__ = (UniqueConstraint('name'),{})
+    __table_args__ = (UniqueConstraint('name','replicate'),{})
     
     def __repr__(self):
         return "Data Set (#%d):  %s" % \
@@ -183,25 +184,25 @@ class DataSet(Base):
     def __repr__json__(self):
         return json.dumps(self.__repr__dict__())
 
-    def __init__(self, name, replicate=1, strain=None, environment=None, data_source=None):
+    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, data_source_id=None):
         
         session = Session()
-        if strain is None:
-            strain = session.get_or_create(Strain, name='generic')
+        if strain_id is None:
+            strain_id = session.get_or_create(Strain, name='generic').id
         
-        if environment is None:
-            environment = session.get_or_create(Environment, name='generic')
+        if environment_id is None:
+            environment_id = session.get_or_create(Environment, name='generic').id
         
-        if data_source is None:
-            data_source = session.get_or_create(DataSource, name='generic', lab='generic', institution='generic')
-        
-        self.name = name
-        self.replicate = replicate
-        self.strain_id = strain.id
-        self.environment_id = environment.id
-        self.data_source_id = data_source.id
+        if data_source_id is None:
+            data_source_id = session.get_or_create(DataSource, name='generic', lab='generic', institution='generic').id
         session.close()
 
+        self.name = name
+        self.replicate = replicate
+        self.strain_id = strain_id
+        self.environment_id = environment_id
+        self.data_source_id = data_source_id
+        
 
 class ArrayExperiment(DataSet):
     __tablename__ = 'array_experiment'
@@ -237,15 +238,18 @@ class RNASeqExperiment(DataSet):
     __tablename__ = 'rna_seq_experiment'
     
     id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
-
+    
     sequencing_type = Column(String(20))
     machine_ID = Column(String(20))
     normalization_method = Column(String(100))
+    normalization_factor = Column(Float)
     
     #terrrible hack right here
     file_name = Column(String(100))
     
     __mapper_args__ = { 'polymorphic_identity': 'rna_seq_experiment' }          
+    
+    __table_args__ = (UniqueConstraint('id', 'normalization_factor'),{})
     
     def __repr__(self):
         return "RNASeqExperiment (#%d, %s):  %s" % \
@@ -261,11 +265,13 @@ class RNASeqExperiment(DataSet):
         return data_set
     
     def __init__(self, name, replicate, strain, environment, data_source,\
-                       sequencing_type, machine_id, file_name, normalization_method):
+                       sequencing_type, machine_id, file_name, normalization_method,\
+                       normalization_factor):
         super(RNASeqExperiment, self).__init__(name, replicate, strain, environment, data_source)
         self.sequencing_type = sequencing_type
         self.machine_id = machine_id
         self.normalization_method = normalization_method
+        self.normalization_factor = normalization_factor
         self.file_name = file_name
     
     
@@ -273,17 +279,17 @@ class ChIPExperiment(DataSet):
     __tablename__ = 'chip_experiment'
     
     id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
-
     antibody = Column(String(20))
     protocol_type = Column(String(20))
     target = Column(String(20))
     normalization_method = Column(String(100))
+    normalization_factor = Column(Float, primary_key=True)
 
     #terrrible hack right here
     file_name = Column(String(100))
     
     __mapper_args__ = { 'polymorphic_identity': 'chip_experiment' }
-    
+        
     def __repr__(self):
         return "ChIPExperiment (#%d, %s): %s %s %s" % \
             (self.id, self.name, self.protocol_type, self.target, self.replicate)
@@ -298,16 +304,21 @@ class ChIPExperiment(DataSet):
         
         return dataset
     
-    def __init__(self, name, replicate, strain, environment, data_source,\
-                       antibody, protocol_type, target, file_name, normalization_method):
-        super(ChIPExperiment, self).__init__(name, replicate, strain, environment, data_source)
+    def __init__(self, id, name, replicate, strain_id, environment_id, data_source_id,\
+                       antibody, protocol_type, target, normalization_method,\
+                       normalization_factor, file_name):
+
+        
+        if id: self.id = id
+        else: super(ChIPExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
+        
         self.antibody = antibody
         self.protocol_type = protocol_type
         self.target = target
-        self.file_name = file_name
         self.normalization_method = normalization_method
-
-
+        self.normalization_factor = normalization_factor
+        self.file_name = file_name
+          
 class AnalysisComposition(Base):
     __tablename__ = 'analysis_composition'
     

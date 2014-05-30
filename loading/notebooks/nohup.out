@@ -22662,3 +22662,485 @@ Total running time: 12.7m
 2014-05-11 22:12:52.561 [NotebookApp] Kernel started: a1b49c7e-03d2-4863-a286-e7b83bf57914
 2014-05-11 22:13:18.948 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
 Too many open files (signaler.cpp:330)
+2014-05-28 15:49:51.388 [NotebookApp] Using existing profile dir: u'/Users/sfederow/.ipython/profile_nbserver2'
+2014-05-28 15:49:51.430 [NotebookApp] Using MathJax from CDN: https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js
+2014-05-28 15:49:51.530 [NotebookApp] Serving notebooks from local directory: /Users/sfederow/ome/om/loading/notebooks
+2014-05-28 15:49:51.530 [NotebookApp] 0 active kernels 
+2014-05-28 15:49:51.530 [NotebookApp] The IPython Notebook is running at: https://[all ip addresses on your system]:8888/
+2014-05-28 15:49:51.530 [NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+2014-05-28 15:49:55.558 [tornado.general] WARNING | Invalid cookie signature 'YWNiMWE5N2UtYjdkYi00ZTIyLTg3NGEtYzJmOTQyY2VmM2U1|1400793084|f75bc4ba02b8256f91da29d317b8cc627080b4df'
+2014-05-28 15:49:55.559 [tornado.access] 302 GET / (72.197.214.22) 2.29ms
+2014-05-28 15:49:59.838 [tornado.access] 302 POST /login?next=%2F (72.197.214.22) 0.87ms
+2014-05-28 15:49:59.869 [tornado.access] 302 GET / (72.197.214.22) 0.60ms
+2014-05-28 15:50:06.761 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 15:50:08.076 [NotebookApp] Kernel started: 9df62d53-941f-4f9f-8aa6-245fdbc5fac6
+2014-05-28 15:50:34.363 [tornado.general] WARNING | Invalid cookie signature 'MmU0NjY5ZDgtZjAxYi00ZWNjLWJiZmItZGM4Nzg3ODUyY2Q1|1401223178|25618250b3e9af9be2a944f5c2dd7855ceb1a573'
+2014-05-28 15:50:34.363 [NotebookApp] WARNING | Couldn't authenticate WebSocket connection
+2014-05-28 15:50:34.370 [tornado.general] WARNING | Invalid cookie signature 'MmU0NjY5ZDgtZjAxYi00ZWNjLWJiZmItZGM4Nzg3ODUyY2Q1|1401223178|25618250b3e9af9be2a944f5c2dd7855ceb1a573'
+2014-05-28 15:50:34.370 [NotebookApp] WARNING | Couldn't authenticate WebSocket connection
+2014-05-28 15:50:34.376 [tornado.general] WARNING | Invalid cookie signature 'MmU0NjY5ZDgtZjAxYi00ZWNjLWJiZmItZGM4Nzg3ODUyY2Q1|1401223178|25618250b3e9af9be2a944f5c2dd7855ceb1a573'
+2014-05-28 15:50:34.376 [NotebookApp] WARNING | Couldn't authenticate WebSocket connection
+2014-05-28 15:52:08.490 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 15:52:08.492 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 15:59:26.162 [NotebookApp] Kernel restarted: 9df62d53-941f-4f9f-8aa6-245fdbc5fac6
+2014-05-28 16:00:08.484 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:00:08.486 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 16:00:17.306 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 16:02:08.499 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:02:08.501 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 16:03:24.632 [NotebookApp] Kernel restarted: 9df62d53-941f-4f9f-8aa6-245fdbc5fac6
+2014-05-28 16:03:39.339 [NotebookApp] Kernel shutdown: 9df62d53-941f-4f9f-8aa6-245fdbc5fac6
+2014-05-28 16:03:41.406 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 16:03:42.622 [NotebookApp] Kernel started: 0217c02a-f618-47a4-a35d-41505b0c1045
+2014-05-28 16:04:30.978 [NotebookApp] Kernel restarted: 0217c02a-f618-47a4-a35d-41505b0c1045
+2014-05-28 16:05:43.077 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:05:43.079 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 16:06:02.430 [tornado.general] WARNING | Invalid cookie signature 'OGE5ZjA2MDEtYTNjOS00NDk4LTg3ZWMtNTJjNjc1NTYyMTlm|1400895059|cc82136a39389b9b309f8680af0c7f8bb4ffc666'
+2014-05-28 16:06:02.430 [NotebookApp] WARNING | Couldn't authenticate WebSocket connection
+2014-05-28 16:06:02.444 [tornado.general] WARNING | Invalid cookie signature 'OGE5ZjA2MDEtYTNjOS00NDk4LTg3ZWMtNTJjNjc1NTYyMTlm|1400895059|cc82136a39389b9b309f8680af0c7f8bb4ffc666'
+2014-05-28 16:06:02.444 [NotebookApp] WARNING | Couldn't authenticate WebSocket connection
+2014-05-28 16:06:02.456 [tornado.general] WARNING | Invalid cookie signature 'OGE5ZjA2MDEtYTNjOS00NDk4LTg3ZWMtNTJjNjc1NTYyMTlm|1400895059|cc82136a39389b9b309f8680af0c7f8bb4ffc666'
+2014-05-28 16:06:02.456 [NotebookApp] WARNING | Couldn't authenticate WebSocket connection
+2014-05-28 16:06:15.256 [NotebookApp] Kernel restarted: 0217c02a-f618-47a4-a35d-41505b0c1045
+2014-05-28 16:07:43.031 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:07:43.033 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 16:07:55.335 [NotebookApp] Kernel restarted: 0217c02a-f618-47a4-a35d-41505b0c1045
+2014-05-28 16:09:43.260 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:09:43.262 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 16:11:24.492 [NotebookApp] Kernel interrupted: 0217c02a-f618-47a4-a35d-41505b0c1045
+2014-05-28 16:11:43.087 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:11:43.088 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 16:12:08.990 [NotebookApp] Kernel restarted: 0217c02a-f618-47a4-a35d-41505b0c1045
+2014-05-28 16:13:43.325 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:13:43.327 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 16:17:43.905 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:17:43.906 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 16:18:06.544 [NotebookApp] Kernel interrupted: 0217c02a-f618-47a4-a35d-41505b0c1045
+2014-05-28 16:18:23.389 [NotebookApp] Kernel shutdown: 0217c02a-f618-47a4-a35d-41505b0c1045
+2014-05-28 16:18:28.196 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 16:18:29.590 [NotebookApp] Kernel started: 70ddb0c6-9ccc-4b1c-831a-3f411d79b146
+2014-05-28 16:45:37.494 [NotebookApp] Kernel shutdown: 70ddb0c6-9ccc-4b1c-831a-3f411d79b146
+2014-05-28 16:45:40.524 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 16:45:42.708 [NotebookApp] Kernel started: 18211214-9c03-4056-8cef-a343557f5e1f
+2014-05-28 16:47:01.040 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 16:47:10.970 [NotebookApp] Kernel restarted: 18211214-9c03-4056-8cef-a343557f5e1f
+2014-05-28 16:47:43.360 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:47:43.362 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 16:57:36.620 [NotebookApp] Kernel restarted: 18211214-9c03-4056-8cef-a343557f5e1f
+2014-05-28 16:57:45.912 [NotebookApp] Kernel shutdown: 18211214-9c03-4056-8cef-a343557f5e1f
+2014-05-28 16:57:48.792 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 16:57:50.417 [NotebookApp] Kernel started: f59c694b-92c3-4e98-b4b9-8f41c923818c
+2014-05-28 16:58:22.441 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 16:59:51.445 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 16:59:51.447 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 17:00:12.412 [NotebookApp] WARNING | Notebook /component_loading.ipynb is not trusted
+2014-05-28 17:00:17.646 [NotebookApp] Kernel started: 9111102a-5d01-4010-a32e-df71e502b54a
+2014-05-28 17:02:02.492 [NotebookApp] Kernel interrupted: f59c694b-92c3-4e98-b4b9-8f41c923818c
+2014-05-28 17:02:07.578 [NotebookApp] Kernel restarted: f59c694b-92c3-4e98-b4b9-8f41c923818c
+2014-05-28 17:02:21.514 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-28 17:03:52.532 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 17:03:52.534 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 17:05:51.377 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 17:05:51.380 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 17:07:51.473 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 17:07:51.476 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 18:27:10.254 [NotebookApp] Kernel shutdown: f59c694b-92c3-4e98-b4b9-8f41c923818c
+2014-05-28 18:27:13.240 [NotebookApp] Kernel shutdown: 9111102a-5d01-4010-a32e-df71e502b54a
+2014-05-28 18:27:18.690 [NotebookApp] Kernel started: 3bd6cd62-5f8d-481f-ac7c-9a957416a812
+2014-05-28 18:29:04.988 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 18:29:21.268 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-28 18:29:22.046 [NotebookApp] Kernel restarted: 3bd6cd62-5f8d-481f-ac7c-9a957416a812
+2014-05-28 18:30:20.477 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 18:30:48.970 [NotebookApp] Kernel restarted: 3bd6cd62-5f8d-481f-ac7c-9a957416a812
+2014-05-28 18:30:54.836 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 18:30:56.007 [NotebookApp] Kernel started: ff9653c8-10f3-4b74-9d12-08dfa184e3e7
+2014-05-28 18:31:21.615 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-28 18:32:24.113 [NotebookApp] Kernel restarted: 3bd6cd62-5f8d-481f-ac7c-9a957416a812
+2014-05-28 18:32:56.473 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 18:32:56.495 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 18:33:21.568 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-28 18:34:56.472 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 18:34:56.475 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 18:35:21.708 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-28 18:36:56.485 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 18:36:56.487 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 18:39:21.712 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-28 18:45:53.261 [tornado.access] 302 GET / (72.197.214.22) 0.69ms
+2014-05-28 19:28:56.602 [NotebookApp] Kernel restarted: 3bd6cd62-5f8d-481f-ac7c-9a957416a812
+2014-05-28 19:29:14.655 [NotebookApp] Kernel shutdown: ff9653c8-10f3-4b74-9d12-08dfa184e3e7
+2014-05-28 19:29:15.793 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 19:29:16.870 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 19:29:18.074 [NotebookApp] Kernel started: e934551d-c4d8-47fc-9142-adf135ef8734
+2014-05-28 19:29:19.903 [NotebookApp] Kernel shutdown: 3bd6cd62-5f8d-481f-ac7c-9a957416a812
+2014-05-28 19:31:08.833 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 19:31:18.562 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 19:31:18.565 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:11:10.698 [NotebookApp] Kernel restarted: e934551d-c4d8-47fc-9142-adf135ef8734
+2014-05-28 20:11:18.615 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:11:18.618 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:11:24.969 [NotebookApp] Kernel interrupted: e934551d-c4d8-47fc-9142-adf135ef8734
+2014-05-28 20:11:29.215 [NotebookApp] Kernel shutdown: e934551d-c4d8-47fc-9142-adf135ef8734
+2014-05-28 20:11:35.090 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 20:11:36.372 [NotebookApp] Kernel started: a42281f0-8dc3-4c46-b726-1bd22777dab1
+2014-05-28 20:12:35.319 [NotebookApp] Kernel restarted: a42281f0-8dc3-4c46-b726-1bd22777dab1
+2014-05-28 20:13:13.295 [NotebookApp] Kernel restarted: a42281f0-8dc3-4c46-b726-1bd22777dab1
+2014-05-28 20:13:36.878 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:13:36.882 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:13:38.399 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 20:13:44.142 [NotebookApp] Kernel restarted: a42281f0-8dc3-4c46-b726-1bd22777dab1
+2014-05-28 20:14:15.179 [NotebookApp] Kernel restarted: a42281f0-8dc3-4c46-b726-1bd22777dab1
+2014-05-28 20:14:40.507 [tornado.general] WARNING | SSL Error on 90 ('64.233.172.68', 59570): [Errno 1] _ssl.c:499: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-05-28 20:14:40.509 [tornado.general] WARNING | SSL Error on 90 ('64.233.172.68', 35284): [Errno 1] _ssl.c:499: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-05-28 20:14:40.509 [tornado.general] WARNING | SSL Error on 91 ('64.233.172.68', 58917): [Errno 1] _ssl.c:499: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-05-28 20:15:37.779 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:15:37.782 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:18:16.885 [NotebookApp] Kernel restarted: a42281f0-8dc3-4c46-b726-1bd22777dab1
+2014-05-28 20:19:37.708 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:19:37.711 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:24:37.745 [NotebookApp] Kernel restarted: a42281f0-8dc3-4c46-b726-1bd22777dab1
+2014-05-28 20:24:51.012 [NotebookApp] Kernel shutdown: a42281f0-8dc3-4c46-b726-1bd22777dab1
+2014-05-28 20:24:53.152 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 20:24:54.358 [NotebookApp] Kernel started: 0a9b0895-91bf-490f-90e2-3388fab8df9d
+2014-05-28 20:25:00.709 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 20:26:54.761 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:26:54.762 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:27:27.342 [NotebookApp] Kernel restarted: 0a9b0895-91bf-490f-90e2-3388fab8df9d
+2014-05-28 20:28:10.157 [NotebookApp] Kernel restarted: 0a9b0895-91bf-490f-90e2-3388fab8df9d
+2014-05-28 20:28:54.773 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:28:54.775 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:30:17.989 [NotebookApp] Kernel restarted: 0a9b0895-91bf-490f-90e2-3388fab8df9d
+2014-05-28 20:30:54.819 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:30:54.821 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:35:38.110 [NotebookApp] Kernel restarted: 0a9b0895-91bf-490f-90e2-3388fab8df9d
+2014-05-28 20:36:30.543 [NotebookApp] Kernel restarted: 0a9b0895-91bf-490f-90e2-3388fab8df9d
+2014-05-28 20:36:55.641 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:36:55.642 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:37:01.336 [NotebookApp] Kernel restarted: 0a9b0895-91bf-490f-90e2-3388fab8df9d
+2014-05-28 20:38:29.399 [NotebookApp] Kernel restarted: 0a9b0895-91bf-490f-90e2-3388fab8df9d
+2014-05-28 20:38:55.625 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:38:55.628 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:40:55.840 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:40:55.843 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:53:08.090 [NotebookApp] Kernel shutdown: 0a9b0895-91bf-490f-90e2-3388fab8df9d
+2014-05-28 20:53:10.435 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 20:53:11.638 [NotebookApp] Kernel started: 8ad3a7eb-65c6-42cb-be25-34bd390e263f
+2014-05-28 20:54:32.860 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 20:55:12.027 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:55:12.030 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 20:56:44.874 [NotebookApp] Kernel restarted: 8ad3a7eb-65c6-42cb-be25-34bd390e263f
+2014-05-28 20:57:12.197 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 20:57:12.198 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:08:18.123 [NotebookApp] Kernel restarted: 8ad3a7eb-65c6-42cb-be25-34bd390e263f
+2014-05-28 21:09:07.719 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 21:09:08.723 [NotebookApp] Kernel restarted: 8ad3a7eb-65c6-42cb-be25-34bd390e263f
+2014-05-28 21:09:12.653 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:09:12.654 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:09:21.553 [NotebookApp] Kernel shutdown: 8ad3a7eb-65c6-42cb-be25-34bd390e263f
+2014-05-28 21:09:24.172 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 21:09:25.330 [NotebookApp] Kernel started: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:10:19.317 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:11:25.919 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:11:25.921 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:12:24.815 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:12:57.265 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:13:26.030 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:13:26.032 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:14:08.395 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:15:25.898 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:15:25.900 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:15:43.656 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:16:33.429 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:17:00.640 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:17:25.898 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:17:25.900 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:17:53.316 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:19:26.062 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:19:26.064 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:20:54.085 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:21:25.913 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:21:25.915 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:21:43.441 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:22:48.924 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:23:25.921 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:23:25.923 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:24:24.093 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:25:26.111 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:25:26.112 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:25:44.208 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:26:33.557 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:27:25.939 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:27:25.940 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:27:35.107 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:29:25.949 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:29:25.950 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:31:26.079 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:31:26.081 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:34:37.421 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:35:25.838 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:35:25.840 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:35:35.739 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:36:58.280 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:37:25.901 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:37:25.903 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 21:37:42.683 [NotebookApp] Kernel restarted: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 21:39:25.992 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 21:39:25.994 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 22:27:31.958 [NotebookApp] Kernel shutdown: 01f93191-1a17-4399-a536-3e2112cb4149
+2014-05-28 22:27:35.494 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 22:27:39.480 [NotebookApp] Kernel started: 595b9dcd-3884-4865-b253-a5e8eab272bf
+2014-05-28 22:27:50.923 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 22:29:40.774 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 22:29:40.776 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 22:31:10.072 [NotebookApp] Kernel restarted: 595b9dcd-3884-4865-b253-a5e8eab272bf
+2014-05-28 22:31:40.944 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 22:31:40.945 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 22:33:17.856 [NotebookApp] Kernel restarted: 595b9dcd-3884-4865-b253-a5e8eab272bf
+2014-05-28 22:33:40.027 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 22:33:40.028 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 22:38:02.796 [NotebookApp] Kernel restarted: 595b9dcd-3884-4865-b253-a5e8eab272bf
+2014-05-28 22:39:40.014 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 22:39:40.015 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 22:56:30.195 [NotebookApp] Kernel restarted: 595b9dcd-3884-4865-b253-a5e8eab272bf
+2014-05-28 22:56:44.162 [NotebookApp] Kernel shutdown: 595b9dcd-3884-4865-b253-a5e8eab272bf
+2014-05-28 22:56:46.883 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 22:56:48.167 [NotebookApp] Kernel started: 5521632b-233f-4a66-9735-984b2664be10
+2014-05-28 22:57:26.693 [NotebookApp] Kernel restarted: 5521632b-233f-4a66-9735-984b2664be10
+2014-05-28 22:57:28.659 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 22:57:58.378 [NotebookApp] Kernel restarted: 5521632b-233f-4a66-9735-984b2664be10
+2014-05-28 22:58:04.506 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 22:58:04.509 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 22:58:07.385 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 22:58:07.386 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 22:58:12.050 [NotebookApp] Kernel shutdown: 5521632b-233f-4a66-9735-984b2664be10
+2014-05-28 22:58:14.451 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 22:58:15.798 [NotebookApp] Kernel started: 1c8abab6-35e9-44bb-994d-ca1c83c1380d
+2014-05-28 22:58:35.147 [NotebookApp] Kernel interrupted: 1c8abab6-35e9-44bb-994d-ca1c83c1380d
+2014-05-28 22:58:41.044 [NotebookApp] Kernel restarted: 1c8abab6-35e9-44bb-994d-ca1c83c1380d
+2014-05-28 22:58:47.311 [NotebookApp] Kernel shutdown: 1c8abab6-35e9-44bb-994d-ca1c83c1380d
+2014-05-28 22:58:49.324 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 22:58:50.824 [NotebookApp] Kernel started: 35dc0a9d-cf15-4871-9c4f-63d5da2fc943
+2014-05-28 23:00:51.393 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:00:51.394 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:01:35.506 [NotebookApp] Kernel restarted: 35dc0a9d-cf15-4871-9c4f-63d5da2fc943
+2014-05-28 23:02:51.287 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:02:51.289 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:06:03.273 [NotebookApp] Kernel restarted: 35dc0a9d-cf15-4871-9c4f-63d5da2fc943
+2014-05-28 23:06:51.557 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:06:51.559 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:13:43.499 [NotebookApp] Kernel restarted: 35dc0a9d-cf15-4871-9c4f-63d5da2fc943
+2014-05-28 23:13:53.776 [NotebookApp] Kernel shutdown: 35dc0a9d-cf15-4871-9c4f-63d5da2fc943
+2014-05-28 23:13:58.277 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 23:13:59.706 [NotebookApp] Kernel started: 7f3998b2-351a-48cf-b142-16c7f89303df
+2014-05-28 23:14:09.060 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 23:15:48.525 [NotebookApp] Kernel restarted: 7f3998b2-351a-48cf-b142-16c7f89303df
+2014-05-28 23:15:54.189 [NotebookApp] Kernel shutdown: 7f3998b2-351a-48cf-b142-16c7f89303df
+2014-05-28 23:15:56.239 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 23:15:57.581 [NotebookApp] Kernel started: c9b2a269-765f-46b0-90b0-1e54b45d5864
+2014-05-28 23:17:58.195 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:17:58.197 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:19:22.664 [NotebookApp] Kernel restarted: c9b2a269-765f-46b0-90b0-1e54b45d5864
+2014-05-28 23:19:58.173 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:19:58.175 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:20:00.249 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:20:00.250 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:20:09.049 [NotebookApp] Kernel restarted: c9b2a269-765f-46b0-90b0-1e54b45d5864
+2014-05-28 23:21:00.299 [NotebookApp] Kernel restarted: c9b2a269-765f-46b0-90b0-1e54b45d5864
+2014-05-28 23:21:42.749 [NotebookApp] Kernel shutdown: c9b2a269-765f-46b0-90b0-1e54b45d5864
+2014-05-28 23:21:45.135 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 23:21:46.458 [NotebookApp] Kernel started: 54da6aa8-843f-4584-b2cd-93c3c9858602
+2014-05-28 23:22:27.923 [NotebookApp] Kernel restarted: 54da6aa8-843f-4584-b2cd-93c3c9858602
+2014-05-28 23:23:17.581 [NotebookApp] Kernel restarted: 54da6aa8-843f-4584-b2cd-93c3c9858602
+2014-05-28 23:23:47.049 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:23:47.050 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:31:46.584 [NotebookApp] Kernel restarted: 54da6aa8-843f-4584-b2cd-93c3c9858602
+2014-05-28 23:32:00.654 [NotebookApp] Kernel shutdown: 54da6aa8-843f-4584-b2cd-93c3c9858602
+2014-05-28 23:32:02.970 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-28 23:32:04.259 [NotebookApp] Kernel started: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:32:09.376 [tornado.general] WARNING | error on read
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 391, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 447, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/Library/Python/2.7/site-packages/tornado/iostream.py", line 911, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 138, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-05-28 23:32:33.530 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:33:19.829 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:33:24.719 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:33:24.721 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:33:26.197 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:34:06.959 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:34:06.961 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:34:44.101 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:36:06.992 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:36:06.994 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:37:04.724 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:37:23.951 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:37:34.320 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:38:06.956 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:38:06.958 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:38:16.893 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:38:44.677 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:40:06.939 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:40:06.942 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:41:48.844 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:42:06.903 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:42:06.904 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:42:59.752 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:43:34.964 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:44:07.002 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:44:07.004 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-28 23:45:32.960 [NotebookApp] Kernel restarted: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-28 23:46:06.824 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-28 23:46:06.826 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-29 05:44:40.567 [tornado.general] WARNING | SSL Error on 125 ('115.200.75.167', 1596): [Errno 1] _ssl.c:499: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-05-29 09:46:27.611 [tornado.general] WARNING | SSL Error on 125 ('64.233.172.68', 35063): [Errno 1] _ssl.c:499: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-05-29 09:46:27.629 [tornado.general] WARNING | SSL Error on 125 ('64.233.172.68', 42765): [Errno 1] _ssl.c:499: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-05-29 09:46:27.632 [tornado.general] WARNING | SSL Error on 125 ('64.233.172.68', 35892): [Errno 1] _ssl.c:499: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-05-29 10:23:07.747 [tornado.general] WARNING | SSL Error on 125 ('64.233.172.68', 43517): [Errno 1] _ssl.c:499: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-05-29 18:09:11.623 [NotebookApp] CRITICAL | received signal 15, stopping
+2014-05-29 18:09:11.635 [NotebookApp] Shutting down kernels
+2014-05-29 18:09:12.161 [NotebookApp] Kernel shutdown: e6ebc0ac-7540-4d43-958f-348e94cdf750
