@@ -136,9 +136,8 @@ class InVivoEnvironment(Environment):
                                  "temperature":self.temperature}
         return environment
     
-    def __init__(self, id, name, carbon_source, nitrogen_source, electron_acceptor, temperature, supplements):
-        if id: self.id = id
-        else: super(InVivoEnvironment, self).__init__(name)
+    def __init__(self, name, carbon_source, nitrogen_source, electron_acceptor, temperature, supplements):
+        super(InVivoEnvironment, self).__init__(name)
         self.carbon_source = carbon_source
         self.nitrogen_source = nitrogen_source
         self.electron_acceptor = electron_acceptor
@@ -166,7 +165,7 @@ class DataSet(Base):
     __mapper_args__ = {'polymorphic_identity': 'data_set',
                        'polymorphic_on': type}
     
-    __table_args__ = (UniqueConstraint('name','replicate'),{})
+    #__table_args__ = (UniqueConstraint('name','replicate'),{})
     
     def __repr__(self):
         return "Data Set (#%d):  %s" % \
@@ -215,9 +214,9 @@ class ArrayExperiment(DataSet):
     
     __mapper_args__ = { 'polymorphic_identity': 'array_experiment' }
     
-    def __init__(self, name, replicate, strain, environment, data_source,\
+    def __init__(self, name, replicate, strain_id, environment_id, data_source_id,\
                        platform, file_name):
-        super(ArrayExperiment, self).__init__(name, replicate, strain, environment, data_source)
+        super(ArrayExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
         self.platform = platform
         self.file_name = file_name
         
@@ -264,10 +263,10 @@ class RNASeqExperiment(DataSet):
         
         return data_set
     
-    def __init__(self, name, replicate, strain, environment, data_source,\
+    def __init__(self, name, replicate, strain_id, environment_id, data_source_id,\
                        sequencing_type, machine_id, file_name, normalization_method,\
                        normalization_factor):
-        super(RNASeqExperiment, self).__init__(name, replicate, strain, environment, data_source)
+        super(RNASeqExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
         self.sequencing_type = sequencing_type
         self.machine_id = machine_id
         self.normalization_method = normalization_method
@@ -304,20 +303,19 @@ class ChIPExperiment(DataSet):
         
         return dataset
     
-    def __init__(self, id, name, replicate, strain_id, environment_id, data_source_id,\
+    def __init__(self, name, replicate, strain_id, environment_id, data_source_id,\
                        antibody, protocol_type, target, normalization_method,\
                        normalization_factor, file_name):
 
         
-        if id: self.id = id
-        else: super(ChIPExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
-        
+        super(ChIPExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
         self.antibody = antibody
         self.protocol_type = protocol_type
         self.target = target
         self.normalization_method = normalization_method
         self.normalization_factor = normalization_factor
         self.file_name = file_name
+     
           
 class AnalysisComposition(Base):
     __tablename__ = 'analysis_composition'
@@ -344,8 +342,8 @@ class Analysis(DataSet):
     __mapper_args__ = {'polymorphic_identity': 'analysis',
                        'polymorphic_on': 'type'}
     
-    def __init__(self, name, replicate=1, strain=None, environment=None):
-        super(Analysis, self).__init__(name, replicate, strain, environment)
+    def __init__(self, name, replicate=1, strain_id=None, environment_id=None):
+        super(Analysis, self).__init__(name, replicate, strain_id, environment_id)
     
     def __repr__(self):
         return "Analysis (#%d):  %s" % \
@@ -365,8 +363,8 @@ class ChIPPeakAnalysis(Analysis):
         return "ChIP Peak Analysis (#%d, %s): %s %s" % \
                 (self.id, self.name, self.method, self.parameters)
 
-    def __init__(self, name, replicate=1, strain=None, environment=None, method=None, parameters=None):
-        super(ChIPPeakAnalysis, self).__init__(name, replicate, strain, environment)
+    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, method=None, parameters=None):
+        super(ChIPPeakAnalysis, self).__init__(name, replicate, strain_id, environment_id)
         self.method = method
         self.parameters = parameters
 
@@ -381,8 +379,8 @@ class NormalizedExpression(Analysis):
     __mapper_args__ = {'polymorphic_identity': 'normalized_expression'}
 
     
-    def __init__(self, name, replicate=1, strain=None, environment=None, norm_method=None, dispersion_method=None):
-        super(NormalizedExpression, self).__init__(name, replicate, strain, environment)
+    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, norm_method=None, dispersion_method=None):
+        super(NormalizedExpression, self).__init__(name, replicate_id, strain_id, environment)
         self.norm_method = norm_method
         self.dispersion_method = dispersion_method
         

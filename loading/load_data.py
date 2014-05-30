@@ -265,7 +265,7 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
     
     if exp_type[0][0:4] == 'chip': 
 
-        experiment = session.get_or_create(data.ChIPExperiment, name=name, replicate=vals[5],\
+        experiment = session.get_or_create(data.ChIPExperiment, name=name+'_'+str(norm_factor), replicate=vals[5],\
                                            strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
                                            protocol_type=exp_type[0], antibody=vals[6],\
                                            target=exp_type[1], file_name=exp_name, normalization_method=norm_method,\
@@ -277,7 +277,7 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
     
     
     elif exp_type[0][0:6] == 'RNAseq':
-        experiment = session.get_or_create(data.RNASeqExperiment, name=name, replicate=vals[5],\
+        experiment = session.get_or_create(data.RNASeqExperiment, name=name+'_'+str(norm_factor), replicate=vals[5],\
                                            strain=strain, data_source=data_source, environment=environment,\
                                            machine_id='miseq', sequencing_type='unpaired',\
                                            file_name=exp_name, normalization_method=norm_method,\
@@ -498,7 +498,7 @@ def load_cuffdiff():
 
 def load_gem(chip_peak_analyses):
     gem_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'
-    
+    session = base.Session()
     for chip_peak_analysis in chip_peak_analyses:
         gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
         
@@ -512,6 +512,7 @@ def load_gem(chip_peak_analyses):
             peak_data = session.get_or_create(data.ChIPPeakData, data_set_id=chip_peak_analysis.id, genome_region_id=peak_region.id,\
                                                 value=vals[6], eventpos=position, pval=vals[8])
 
+    session.close()
 
 def load_arraydata(file_path):
     array_data_file = open(file_path)
