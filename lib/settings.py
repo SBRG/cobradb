@@ -40,10 +40,9 @@ def _escape_space(program):
 config = SafeConfigParser()
 # set the default settings
 config.add_section("DATABASE")
-config.set("DATABASE", "host", "localhost:5432")
-config.set("DATABASE", "database", "ome")
+config.set("DATABASE", "postgres_host", "localhost:5432")
+config.set("DATABASE", "postgres_database", "om")
 config.set("DATABASE", "password", "")
-config.set("DATABASE", "schema", "ecoli")
 
 config.add_section("MISC")
 config.set("MISC", "entrez_email", "SET_ENTREZ_EMAIL")
@@ -55,8 +54,7 @@ except:
     except:
         default_home = ""
 default_dropbox = __join(default_home, "Dropbox", "")
-# the data_directory is by default in dropbox
-default_data_dir = __join(default_dropbox, "trn_data", "")
+default_data_dir = __join(default_dropbox, "om_data", "")
 config.set("MISC", "home_directory", default_home)
 config.set("MISC", "dropbox_directory", default_dropbox)
 config.set("MISC", "data_directory", default_data_dir)
@@ -110,21 +108,20 @@ def load_settings_from_file(filepath="settings.ini", in_trnlib=True):
         config.write(outfile)
 
     # save options as variables
-    self.user = config.get("DATABASE", "user")
-    self.password = config.get("DATABASE", "password")
-    if len(self.password) > 0:
-        __os.environ["PGPASSWORD"] = self.password
+    self.postgres_user = config.get("DATABASE", "postgres_user")
+    self.postgres_password = config.get("DATABASE", "postgres_password")
+    if len(self.postgres_password) > 0:
+        __os.environ["PGPASSWORD"] = self.postgres_password
     self.postgres_database = config.get("DATABASE", "postgres_database")
-    self.host = config.get("DATABASE", "host")
-    self.schema = config.get("DATABASE", "schema")
+    self.postgres_host = config.get("DATABASE", "postgres_host")
     self.psql = _escape_space(config.get("EXECUTABLES", "psql"))
     self.R = _escape_space(config.get("EXECUTABLES", "R"))
     self.Rscript = _escape_space(config.get("EXECUTABLES", "Rscript"))
     self.primer3 = _escape_space(config.get("EXECUTABLES", "primer3"))
     # make a psql string with the database options included
-    self.hostname, self.port = host.split(":")
+    self.hostname, self.port = postgres_host.split(":")
     self.psql_full = "%s --host=%s --username=%s --port=%s " % \
-        (self.psql, self.hostname, self.user, self.port)
+        (self.psql, self.hostname, self.postgres_user, self.port)
     self.entrez_email = config.get("MISC", "entrez_email")
     if self.entrez_email == "SET_ENTREZ_EMAIL": self.entrez_email = None
     #set home directory

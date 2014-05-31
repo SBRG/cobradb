@@ -14,9 +14,9 @@ import pymongo
 
 
 engine = create_engine("postgresql://%s:%s@%s/%s" %
-    (settings.user, settings.password, settings.host, settings.postgres_database))
+    (settings.postgres_user, settings.postgres_password, settings.postgres_host, settings.postgres_database))
 Base = declarative_base(bind=engine)
-metadata = MetaData(bind=engine, schema=settings.schema)
+metadata = MetaData(bind=engine)
 
 connection = pymongo.Connection()
 omics_database = connection.omics_database2
@@ -145,7 +145,7 @@ class _Session(_SA_Session):
     
     def __init__(self, *args, **kwargs):
         super(_Session, self).__init__(*args, **kwargs)
-        self.execute("set search_path to %s;" % (settings.schema))
+        #self.execute("set search_path to %s;" % (settings.schema))
         self.commit()
         self.get_or_create = MethodType(get_or_create, self)
         #self.search_by_synonym = MethodType(search_by_synonym, self)
