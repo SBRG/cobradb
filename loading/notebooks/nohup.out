@@ -23144,3 +23144,56 @@ error: [Errno 60] Operation timed out
 2014-05-29 18:09:11.623 [NotebookApp] CRITICAL | received signal 15, stopping
 2014-05-29 18:09:11.635 [NotebookApp] Shutting down kernels
 2014-05-29 18:09:12.161 [NotebookApp] Kernel shutdown: e6ebc0ac-7540-4d43-958f-348e94cdf750
+2014-05-30 19:07:24.089 [NotebookApp] Using existing profile dir: u'/Users/sfederow/.ipython/profile_nbserver2'
+2014-05-30 19:07:24.125 [NotebookApp] Using MathJax from CDN: https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js
+2014-05-30 19:07:24.212 [NotebookApp] Serving notebooks from local directory: /Users/sfederow/ome/om/loading/notebooks
+2014-05-30 19:07:24.213 [NotebookApp] 0 active kernels 
+2014-05-30 19:07:24.213 [NotebookApp] The IPython Notebook is running at: https://[all ip addresses on your system]:8888/
+2014-05-30 19:07:24.213 [NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+2014-05-30 19:07:29.002 [tornado.general] WARNING | Invalid cookie signature 'MjdhMmI5NDAtNGI2Mi00NTc5LWE5MGUtMmI2Yjk1NDE1NGU5|1401426535|4d8504755d900ecf98005a5fe6f68dd313cc25ef'
+2014-05-30 19:07:29.003 [tornado.access] 302 GET / (72.197.214.22) 2.34ms
+2014-05-30 19:07:34.063 [tornado.access] 302 POST /login?next=%2F (72.197.214.22) 0.87ms
+2014-05-30 19:07:34.096 [tornado.access] 302 GET / (72.197.214.22) 0.59ms
+2014-05-30 19:07:39.957 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-05-30 19:07:41.207 [NotebookApp] Kernel started: 64d6162b-c226-4a64-9464-4f42398a5215
+2014-05-30 19:08:49.322 [NotebookApp] Kernel interrupted: 64d6162b-c226-4a64-9464-4f42398a5215
+2014-05-30 19:08:53.130 [NotebookApp] Kernel restarted: 64d6162b-c226-4a64-9464-4f42398a5215
+2014-05-30 19:09:06.190 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:09:06.193 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:09:41.574 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:09:41.576 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:11:41.640 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:11:41.643 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:12:31.201 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:12:31.203 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:12:45.675 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:12:45.678 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:13:41.615 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:13:41.617 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:15:41.754 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:15:41.757 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:16:30.252 [NotebookApp] Kernel restarted: 64d6162b-c226-4a64-9464-4f42398a5215
+2014-05-30 19:16:50.578 [NotebookApp] Kernel restarted: 64d6162b-c226-4a64-9464-4f42398a5215
+2014-05-30 19:17:41.814 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:17:41.816 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:19:41.814 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:19:41.817 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:20:31.883 [NotebookApp] Kernel started: ac6542f7-9d8b-4d9e-9082-055819ee37cd
+2014-05-30 19:21:42.719 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:21:42.722 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:21:52.688 [NotebookApp] Kernel restarted: ac6542f7-9d8b-4d9e-9082-055819ee37cd
+2014-05-30 19:22:17.316 [NotebookApp] Kernel restarted: 64d6162b-c226-4a64-9464-4f42398a5215
+2014-05-30 19:22:34.436 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-30 19:24:34.406 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-30 19:26:34.580 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-30 19:27:14.187 [NotebookApp] Kernel restarted: 64d6162b-c226-4a64-9464-4f42398a5215
+2014-05-30 19:27:18.627 [NotebookApp] Kernel restarted: ac6542f7-9d8b-4d9e-9082-055819ee37cd
+2014-05-30 19:27:42.571 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:27:42.573 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:28:34.438 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-30 19:29:42.725 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:29:42.728 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:30:34.630 [NotebookApp] Saving notebook at /component_loading.ipynb
+2014-05-30 19:31:42.839 [NotebookApp] Saving notebook at /data_loading.ipynb
+2014-05-30 19:31:42.842 [NotebookApp] WARNING | Saving untrusted notebook /data_loading.ipynb
+2014-05-30 19:32:35.015 [NotebookApp] Saving notebook at /component_loading.ipynb

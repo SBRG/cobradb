@@ -165,7 +165,7 @@ class DataSet(Base):
     __mapper_args__ = {'polymorphic_identity': 'data_set',
                        'polymorphic_on': type}
     
-    #__table_args__ = (UniqueConstraint('name','replicate'),{})
+    __table_args__ = (UniqueConstraint('id','replicate'),{})
     
     def __repr__(self):
         return "Data Set (#%d):  %s" % \
@@ -239,17 +239,15 @@ class RNASeqExperiment(DataSet):
     id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
     
     sequencing_type = Column(String(20))
-    machine_ID = Column(String(20))
+    machine_id = Column(String(20))
     normalization_method = Column(String(100))
-    normalization_factor = Column(Float)
+    normalization_factor = Column(Float, primary_key=True)
     
     #terrrible hack right here
     file_name = Column(String(100))
     
     __mapper_args__ = { 'polymorphic_identity': 'rna_seq_experiment' }          
-    
-    __table_args__ = (UniqueConstraint('id', 'normalization_factor'),{})
-    
+        
     def __repr__(self):
         return "RNASeqExperiment (#%d, %s):  %s" % \
             (self.id, self.name, self.replicate)
@@ -307,7 +305,6 @@ class ChIPExperiment(DataSet):
                        antibody, protocol_type, target, normalization_method,\
                        normalization_factor, file_name):
 
-        
         super(ChIPExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
         self.antibody = antibody
         self.protocol_type = protocol_type
@@ -380,7 +377,7 @@ class NormalizedExpression(Analysis):
 
     
     def __init__(self, name, replicate=1, strain_id=None, environment_id=None, norm_method=None, dispersion_method=None):
-        super(NormalizedExpression, self).__init__(name, replicate_id, strain_id, environment)
+        super(NormalizedExpression, self).__init__(name, replicate, strain_id, environment_id)
         self.norm_method = norm_method
         self.dispersion_method = dispersion_method
         

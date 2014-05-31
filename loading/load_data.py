@@ -278,17 +278,17 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
     
     elif exp_type[0][0:6] == 'RNAseq':
         experiment = session.get_or_create(data.RNASeqExperiment, name=name+'_'+str(norm_factor), replicate=vals[5],\
-                                           strain=strain, data_source=data_source, environment=environment,\
+                                           strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
                                            machine_id='miseq', sequencing_type='unpaired',\
                                            file_name=exp_name, normalization_method=norm_method,\
                                                                normalization_factor=norm_factor)
                                            
         load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
-                           bulk_file_load=bulk_file_load, flip=True, norm_factor=norm_factor)
+                           bulk_file_load=bulk_file_load, five_prime=True, flip=True, norm_factor=norm_factor)
         
     elif exp_type[0][0:7] == 'affyexp':
         experiment = session.get_or_create(data.ArrayExperiment, name=name, replicate=vals[5],\
-                                           strain=strain, data_source=data_source, environment=environment,\
+                                           strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
                                            platform=vals[6], file_name=exp_name)
     session.flush()
     session.commit()
