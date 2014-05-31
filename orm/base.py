@@ -21,52 +21,6 @@ metadata = MetaData(bind=engine, schema=settings.schema)
 connection = pymongo.Connection()
 omics_database = connection.omics_database2
 
-class id2otherid(Base):
-    __tablename__ = "id2otherid"
-    
-    id = Column(Integer, primary_key=True)
-    other_id = Column(String(100), primary_key=True)
-    type = Column(String(25))
-    data_source_id = Column(Integer, ForeignKey('data_source.id'))
-    data_source = relationship("DataSource")
-    
-    __table_args__ = (UniqueConstraint('id','other_id'),{})
-
-    def __repr__(self):
-        return "%s in (%s)" % (self.other_id, str(self.data_source))
-    
-    def __init__(self, id, other_id, type, data_source_id):
-        self.id = id
-        self.other_id = other_id
-        self.type = type
-        self.data_source_id = data_source_id
-        
-
-class DataSource(Base):
-    __tablename__ = 'data_source'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100))
-    lab = Column(String(100))
-    institution = Column(String(100))
-    #data_sets = relationship("DataSet")
-
-    __table_args__ = (UniqueConstraint('name'),{})
-    
-    def __repr__(self):
-        return "Data Source %s (#%d)" % (self.name, self.id)
-    
-    def __repr__dict__(self):
-        return {"name":self.name,"wid":self.id,"values":{"lab":self.lab,"institution":self.institution}}
-    
-    def __repr__json__(self):
-        return json.dumps(self.__repr__dict__())
-    
-    def __init__(self, name, lab=None, institution=None):
-        self.name = name
-        self.lab = lab
-        self.institution = institution
-        
 
 class GenomeRegion(Base):
     __tablename__ = 'genome_region'    
@@ -114,13 +68,59 @@ class Component(Base):
     def __repr__(self):
         return "Component (#%d):  %s" % \
             (self.id, self.name)  
-  
+            
+
+class DataSource(Base):
+    __tablename__ = 'data_source'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+    lab = Column(String(100))
+    institution = Column(String(100))
+    #data_sets = relationship("DataSet")
+
+    __table_args__ = (UniqueConstraint('name'),{})
+    
+    def __repr__(self):
+        return "Data Source %s (#%d)" % (self.name, self.id)
+    
+    def __repr__dict__(self):
+        return {"name":self.name,"wid":self.id,"values":{"lab":self.lab,"institution":self.institution}}
+    
+    def __repr__json__(self):
+        return json.dumps(self.__repr__dict__())
+    
+    def __init__(self, name, lab=None, institution=None):
+        self.name = name
+        self.lab = lab
+        self.institution = institution
+
+            
+class id2otherid(Base):
+    __tablename__ = "id2otherid"
+    
+    id = Column(Integer, primary_key=True)
+    other_id = Column(String(100), primary_key=True)
+    
+    id_data_source_id = Column(Integer, ForeignKey('data_source.id'))
+    other_id_data_source_id = Column(Integer, ForeignKey('data_source.id'))
+    
+    id_data_source = relationship("DataSource", primaryjoin = id_data_source_id == DataSource.id)
+    other_id_data_source = relationship("DataSource", primaryjoin = other_id_data_source_id == DataSource.id)
+    
+    __table_args__ = (UniqueConstraint('id','other_id'),{})
+
+    def __repr__(self):
+        return "%s in (%s)" % (self.other_id, str(self.other_id_data_source))
+    
+    def __init__(self, id, other_id, id_data_source_id, other_id_data_source_id):
+        self.id = id
+        self.other_id = other_id
+        self.id_data_source_id = id_data_source_id
+        self.other_id_data_source_id = other_id_data_source_id
         
-def make_table(table_name):
-    """function to create a table with the default parameters"""
-    return Table(table_name, metadata, autoload=True)
 
-
+        
 class _Session(_SA_Session):
     """an sqlalchemy session object to interact with the OME database
 
@@ -159,20 +159,22 @@ def get_or_create(session, class_type, **kwargs):
     """gets an object using filter_by on the unique kwargs. If no such object
     is found in the database, a new one will be created which satisfies
     these constraints. This is why every class that wants to use this
-    method to be instantiated needs to have a UniqueConstraint defined."""
+    method to be instantiated needs to have a UniqueConstraint defined.
+    """
     
     for constraint in list(class_type.__table_args__):
         if constraint.__class__.__name__ == 'UniqueConstraint':
             unique_cols = constraint.columns.keys()
-    #print class_type.__name__
-    #print unique_cols
-    #print kwargs
-    try:
-        result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).one()
-    except:
-        session.add(class_type(**kwargs))
+
+    try: result = session.query(class_type).filter_by(**kwargs).first()
+    except: result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).first()
+    
+    if not result:
+        result = class_type(**kwargs)
+        result = session.merge(result)
+        session.add(result)
         session.commit()
-        result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).one()
+
     return result
 
 

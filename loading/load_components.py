@@ -376,6 +376,7 @@ def load_genes(base,components):
     session = base.Session()
     ##First load annotation file containing merger of ecocyc and NCBI
     ecocyc_ID = session.get_or_create(base.DataSource, name="ecocyc").id
+    NCBI_ID = session.get_or_create(base.DataSource, name="NCBI").id
     genes = open(settings.data_directory + '/annotation/ec_annotation_from_Ecocyc_2010July19_wpseudo.gff','r')
     noncoding_genes = get_nc_RNA()
     for line in genes:
@@ -390,8 +391,7 @@ def load_genes(base,components):
         gene = session.get_or_create(components.Gene, name=info[1], leftpos=int(vals[3]), rightpos=int(vals[4]), strand=vals[6], locus_id=bnum)
         gene.noncoding = bnum in noncoding_genes
     
-        id_entry = session.get_or_create(base.id2otherid,id=gene.id, other_id=bnum,\
-                                              type='gene', data_source_id=ecocyc_ID)
+        #id_entry = session.get_or_create(base.id2otherid, id=gene.id, other_id=bnum, id_data_source_id=ecocyc_ID)
 
     """
     for unique_id,entry in ecocyc_genes.iteritems():    
