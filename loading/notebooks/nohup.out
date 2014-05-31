@@ -22662,3 +22662,11 @@ Total running time: 12.7m
 2014-05-11 22:12:52.561 [NotebookApp] Kernel started: a1b49c7e-03d2-4863-a286-e7b83bf57914
 2014-05-11 22:13:18.948 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
 Too many open files (signaler.cpp:330)
+2014-05-30 19:35:19.306 [NotebookApp] Created profile dir: u'/Users/dbuser/.ipython/profile_nbserver'
+2014-05-30 19:35:19.323 [NotebookApp] Using MathJax from CDN: http://cdn.mathjax.org/mathjax/latest/MathJax.js
+2014-05-30 19:35:19.464 [NotebookApp] Serving notebooks from local directory: /Users/dbuser/om/loading/notebooks
+2014-05-30 19:35:19.464 [NotebookApp] 0 active kernels 
+2014-05-30 19:35:19.464 [NotebookApp] The IPython Notebook is running at: http://127.0.0.1:8888/
+2014-05-30 19:35:19.465 [NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+2014-05-30 19:36:21.459 [NotebookApp] CRITICAL | received signal 15, stopping
+2014-05-30 19:36:21.475 [NotebookApp] Shutting down kernels
