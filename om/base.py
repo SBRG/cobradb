@@ -9,7 +9,7 @@ from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
     String, Float, ForeignKey, and_, or_, not_, distinct, select
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
-import om.lib.settings as settings
+from om import settings
 import pymongo
 
 

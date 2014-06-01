@@ -22,7 +22,7 @@ class TestBase:
         cls.Base = declarative_base(bind=engine)
         cls.metadata = sqlalchemy.MetaData(bind=engine)
         
-        from om.orm import base
+        from om import base
         cls.GenomeRegion = base.GenomeRegion
         cls.Session = base.Session
             

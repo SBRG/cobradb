@@ -1,6 +1,6 @@
 """Module to implement ORM for the experimental portion of the OME database"""
 
-from om.orm.base import *
+from om.base import *
 
 from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
