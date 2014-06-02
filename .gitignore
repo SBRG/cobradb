@@ -10,7 +10,6 @@ dist
 build
 eggs
 parts
-bin
 var
 sdist
 develop-eggs
@@ -20,6 +19,8 @@ lib64
 
 # Installer logs
 pip-log.txt
+*.ini
+.DS_STORE
 
 # Unit test / coverage reports
 .coverage

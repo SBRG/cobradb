@@ -1,19 +1,11 @@
-import sys
+import sys, os, math, re
 
-import os
-import math
-import re
-import cobra
-import operator
-#from cobra.io.sbml import create_cobra_model_from_sbml_file
-# import copy
-# from copy import deepcopy
 import cPickle as pickle
 
 from sqlalchemy import text
 from sqlalchemy import or_
 
-from om.lib import settings, timing
+from om import settings, timing
 
 
 ####Auxiliary functions####

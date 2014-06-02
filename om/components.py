@@ -1,4 +1,4 @@
-from om.orm.base import *
+from om.base import *
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \

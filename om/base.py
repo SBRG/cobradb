@@ -9,17 +9,17 @@ from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
     String, Float, ForeignKey, and_, or_, not_, distinct, select
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
-import om.lib.settings as settings
+from om import settings
 import pymongo
 
 
 engine = create_engine("postgresql://%s:%s@%s/%s" %
-    (settings.user, settings.password, settings.host, settings.postgres_database))
+    (settings.postgres_user, settings.postgres_password, settings.postgres_host, settings.postgres_database))
 Base = declarative_base(bind=engine)
-metadata = MetaData(bind=engine, schema=settings.schema)
+metadata = MetaData(bind=engine)
 
 connection = pymongo.Connection()
-omics_database = connection.omics_database2
+omics_database = connection.omics_database
 
 
 class GenomeRegion(Base):
@@ -145,7 +145,7 @@ class _Session(_SA_Session):
     
     def __init__(self, *args, **kwargs):
         super(_Session, self).__init__(*args, **kwargs)
-        self.execute("set search_path to %s;" % (settings.schema))
+        #self.execute("set search_path to %s;" % (settings.schema))
         self.commit()
         self.get_or_create = MethodType(get_or_create, self)
         #self.search_by_synonym = MethodType(search_by_synonym, self)
@@ -165,13 +165,22 @@ def get_or_create(session, class_type, **kwargs):
     for constraint in list(class_type.__table_args__):
         if constraint.__class__.__name__ == 'UniqueConstraint':
             unique_cols = constraint.columns.keys()
-
+	
+	inherited_result = True
+	if '__mapper_args__' in class_type.__dict__ and 'inherits' in class_type.__mapper_args__:
+		inherited_class_type = class_type.__mapper_args__['inherits']
+		for constraint in list(inherited_class_type.__table_args__):
+			if constraint.__class__.__name__ == 'UniqueConstraint':
+				inherited_unique_cols = constraint.columns.keys()
+            
+		try: inherited_result = session.query(inherited_class_type).filter_by(**{k: kwargs[k] for k in inherited_unique_cols}).first()      
+		except: None
+		
     try: result = session.query(class_type).filter_by(**kwargs).first()
     except: result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).first()
     
-    if not result:
+    if not result or not inherited_result:
         result = class_type(**kwargs)
-        result = session.merge(result)
         session.add(result)
         session.commit()
 
