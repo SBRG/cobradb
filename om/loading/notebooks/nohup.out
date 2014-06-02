@@ -22670,3 +22670,82 @@ Too many open files (signaler.cpp:330)
 2014-05-30 19:35:19.465 [NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
 2014-05-30 19:36:21.459 [NotebookApp] CRITICAL | received signal 15, stopping
 2014-05-30 19:36:21.475 [NotebookApp] Shutting down kernels
+2014-06-01 15:12:57.523 [NotebookApp] Using existing profile dir: u'/Users/dbuser/.ipython/profile_nbserver'
+2014-06-01 15:12:57.615 [NotebookApp] Using MathJax from CDN: https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js
+2014-06-01 15:12:57.684 [NotebookApp] Serving notebooks from local directory: /Users/dbuser/om/om/loading/notebooks
+2014-06-01 15:12:57.685 [NotebookApp] 0 active kernels 
+2014-06-01 15:12:57.685 [NotebookApp] The IPython Notebook is running at: https://[all ip addresses on your system]:2222/
+2014-06-01 15:12:57.685 [NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+WARNING:tornado.general:SSL Error on 9 ('66.249.84.119', 55879): [Errno 1] _ssl.c:507: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+WARNING:tornado.general:Invalid cookie signature 'ZGNhM2Q5ZjktYzFlYS00MmJmLWE3YTktZjg4OTM0MjI4N2E2|1401257605|dcb7b3b66ea33cc7060b66ae7a232170fd571c26'
+INFO:tornado.access:302 GET / (72.197.214.22) 1.59ms
+INFO:tornado.access:302 POST /login?next=%2F (72.197.214.22) 0.86ms
+INFO:tornado.access:302 GET / (72.197.214.22) 0.55ms
+2014-06-01 15:13:31.865 [NotebookApp] Creating new notebook in /
+2014-06-01 15:13:31.866 [NotebookApp] Writing notebook-signing key to /Users/dbuser/.ipython/profile_nbserver/security/notebook_secret
+2014-06-01 15:13:36.259 [NotebookApp] Kernel started: 497cd775-e089-49bc-a7ff-00333c79f6b4
+2014-06-01 15:14:50.927 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-06-01 15:14:52.875 [NotebookApp] Kernel started: ca2dcae9-68c4-4150-aa25-2ca9d9882cea
+2014-06-01 15:15:36.427 [NotebookApp] Saving notebook at /testing_sandbox.ipynb
+2014-06-01 15:17:36.276 [NotebookApp] Saving notebook at /testing_sandbox.ipynb
+2014-06-01 15:19:36.384 [NotebookApp] Saving notebook at /testing_sandbox.ipynb
+2014-06-01 15:21:36.268 [NotebookApp] Saving notebook at /testing_sandbox.ipynb
+2014-06-01 15:24:04.667 [NotebookApp] Kernel restarted: 497cd775-e089-49bc-a7ff-00333c79f6b4
+2014-06-01 15:24:09.000 [NotebookApp] Kernel restarted: ca2dcae9-68c4-4150-aa25-2ca9d9882cea
+WARNING:tornado.general:error on read
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 404, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 460, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 936, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/usr/local/Cellar/python/2.7.6/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 160, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-06-01 15:58:24.758 [NotebookApp] Kernel interrupted: 497cd775-e089-49bc-a7ff-00333c79f6b4
+2014-06-01 15:58:32.791 [NotebookApp] Kernel shutdown: 497cd775-e089-49bc-a7ff-00333c79f6b4
+2014-06-01 15:58:35.100 [NotebookApp] Kernel started: 70d9ccfb-58ed-4f24-b854-b067b00acfd8
+WARNING:tornado.general:error on read
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 404, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 460, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 936, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/usr/local/Cellar/python/2.7.6/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 160, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+2014-06-01 15:59:55.789 [NotebookApp] WARNING | Notebook /data_loading.ipynb is not trusted
+2014-06-01 16:00:35.210 [NotebookApp] Saving notebook at /testing_sandbox.ipynb
+2014-06-01 16:02:35.391 [NotebookApp] Saving notebook at /testing_sandbox.ipynb
+2014-06-01 16:06:33.107 [NotebookApp] Kernel restarted: 70d9ccfb-58ed-4f24-b854-b067b00acfd8
+2014-06-01 16:06:36.435 [NotebookApp] Kernel restarted: ca2dcae9-68c4-4150-aa25-2ca9d9882cea
+WARNING:tornado.general:error on read
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 404, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 460, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 936, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/usr/local/Cellar/python/2.7.6/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 160, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+WARNING:tornado.general:error on read
+Traceback (most recent call last):
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 404, in _handle_read
+    if self._read_to_buffer() == 0:
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 460, in _read_to_buffer
+    chunk = self.read_from_fd()
+  File "/usr/local/lib/python2.7/site-packages/tornado/iostream.py", line 936, in read_from_fd
+    chunk = self.socket.read(self.read_chunk_size)
+  File "/usr/local/Cellar/python/2.7.6/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ssl.py", line 160, in read
+    return self._sslobj.read(len)
+error: [Errno 60] Operation timed out
+WARNING:tornado.general:SSL Error on 59 ('66.249.84.119', 42938): [Errno 1] _ssl.c:507: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-06-01 21:59:39.748 [NotebookApp] CRITICAL | received signal 15, stopping
+2014-06-01 21:59:39.749 [NotebookApp] Shutting down kernels
+2014-06-01 21:59:40.157 [NotebookApp] Kernel shutdown: 70d9ccfb-58ed-4f24-b854-b067b00acfd8
+2014-06-01 21:59:40.563 [NotebookApp] Kernel shutdown: ca2dcae9-68c4-4150-aa25-2ca9d9882cea

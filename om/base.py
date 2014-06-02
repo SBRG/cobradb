@@ -19,7 +19,7 @@ Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 
 connection = pymongo.Connection()
-omics_database = connection.omics_database2
+omics_database = connection.omics_database
 
 
 class GenomeRegion(Base):

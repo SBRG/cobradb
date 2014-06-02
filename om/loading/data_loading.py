@@ -1,16 +1,13 @@
 ####A portion of this code is derived from sequtil/make_gff.py written by aebrahim####
 #!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
-from om.orm import base
-from om.orm import data
-from om.orm import components
-from om.lib import settings
+from om import base, data, components, settings, timing
 from os.path import split
 from math import log
 import os
 
 from numpy import zeros, roll
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 import pysam
 import simplejson as json
@@ -97,7 +94,7 @@ def count_coverage_5prime(samfile, flip=False):
         minus_strands.append(zeros((chromosome_sizes[reference],)))
     # iterate through each mapped read
     for i, read in enumerate(samfile):
-        if i > 1e4: break
+        #if i > 1e3: break
         if read.is_unmapped:
             continue
         if read.is_reverse:
@@ -215,7 +212,7 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
             counts = all_counts[reference][strand]
             entries = []
             for i in counts.nonzero()[0]:    
-                #if abs(float(counts[i])) < loading_cutoff: continue
+                if abs(float(counts[i])) < loading_cutoff: continue
                 
                 entries.append({
                                 "leftpos": int(i),
@@ -233,7 +230,7 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
     
     samfile.close()
 
-
+@timing
 def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
 								  bulk_file_load=False, norm_factor=1.):
     vals = exp_name.split('_')
@@ -283,8 +280,8 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
                                            file_name=exp_name, normalization_method=norm_method,\
                                                                normalization_factor=norm_factor)
                                            
-        load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
-                           bulk_file_load=bulk_file_load, five_prime=True, flip=True, norm_factor=norm_factor)
+        #load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
+        #                   bulk_file_load=bulk_file_load, five_prime=True, flip=True, norm_factor=norm_factor)
         
     elif exp_type[0][0:7] == 'affyexp':
         experiment = session.get_or_create(data.ArrayExperiment, name=name, replicate=vals[5],\
@@ -308,7 +305,7 @@ def run_cuffquant(exp):
     
     os.system('%s -p %d %s %s' % ('cuffquant', 8, gtf_file, exp_file))
     
-    
+@timing    
 def run_cuffnorm(exp_sets):
     gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
     cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
@@ -322,12 +319,11 @@ def run_cuffnorm(exp_sets):
              ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
              ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets]))) 
     
-    
+@timing   
 def run_cuffdiff(exp_sets):
     gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
     cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
     out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff'
-    
     
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
@@ -336,12 +332,8 @@ def run_cuffdiff(exp_sets):
     os.system('cuffdiff -v -p %d --library-type fr-firststrand --FDR 0.05 -L %s %s %s' % (24,\
              ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
              ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets])))
-    
-    #print 'cuffdiff -p %d --library-type fr-firststrand --upper-quartile-norm --FDR 0.05 -L %s -C %s %s %s' % (24,\
-    #         ','.join([x[0][0][:-2] for x in exp_sets]), out_path+'/contrasts2.txt', gtf_file,\
-    #         ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets]))
-    
 
+@timing
 def run_gem(chip_peak_analyses, debug=False):
     default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':''}
     gem_path = settings.home_directory+'/libraries/gem'
@@ -385,7 +377,7 @@ def run_gem(chip_peak_analyses, debug=False):
                     peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
                                          ('NC_000913','.', chip_peak_analysis.name, vals[1], vals[2], float(vals[6]), '+', '.','.'))           
          
-                   
+@timing                   
 def load_cuffnorm():
     cuffnorm_genes = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm/isoforms.attr_table','r')
     cuffnorm_genes.readline()
@@ -398,19 +390,18 @@ def load_cuffnorm():
    
     cuffnorm_output = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm/isoforms.fpkm_table','r')
     header = cuffnorm_output.readline().rstrip('\n').split('\t')
-    #print header
-    print [name[:-5]+'_'+str(int(name[-1])+1)+'_1.0' for i,name in enumerate(header[1:])]  
+    #print [name[:-5]+'_'+str(int(name[-1])+1)+'_1.0' for i,name in enumerate(header[1:])]  
     exp_id_map = {i:session.query(data.RNASeqExperiment).filter_by(name=name[:-2]+'_'+str(int(name[-1])+1)+'_1.0').one().id\
                   for i,name in enumerate(header[1:])}
-    print [name[:-2]+'_'+str(int(name[-1])+1)+'_1.0' for i,name in enumerate(header[1:])]               
+              
     for line in cuffnorm_output.readlines():
         vals = line.split('\t')
         
         try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
-        except: 
-            x = cuffnorm_gene_dict[vals[0]]
-            gene = session.get_or_create(base.GenomeRegion, name=x['name'], leftpos=x['leftpos'],\
-                                                            rightpos=x['rightpos'], strand='+')
+        except: continue
+            #x = cuffnorm_gene_dict[vals[0]]
+            #gene = session.get_or_create(base.GenomeRegion, name=x['name'], leftpos=x['leftpos'],\
+            #                                                rightpos=x['rightpos'], strand='+')
 
         for i,val in enumerate(vals[1:]):
         
@@ -422,7 +413,7 @@ def load_cuffnorm():
                                                    value=value)
     session.close()
     
-    
+@timing  
 def load_cuffdiff():
     cuffdiff_output = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff/gene_exp.diff','r')
     header = cuffdiff_output.readline()
@@ -476,7 +467,7 @@ def load_cuffdiff():
             exp_name = exp_name.rstrip('_')
             
             diff_exp = session.get_or_create(data.DifferentialExpression, name=exp_name, norm_method='classic-fpkm',fdr=.05)
-            print vals[4]+'\\'+vals[5]
+            
             exp1 = session.query(data.Analysis).filter_by(name=vals[4]).one()
             exp2 = session.query(data.Analysis).filter_by(name=vals[5]).one()
             session.get_or_create(data.AnalysisComposition, analysis_id = diff_exp.id, data_set_id = exp1.id)
@@ -484,12 +475,12 @@ def load_cuffdiff():
             diff_exps[str(vals[4:6])] = diff_exp.id
 
         try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
-        except: 
-            x = {'name':vals[2], 'leftpos':vals[3].split(':')[1].split('-')[0],\
-                                 'rightpos':vals[3].split(':')[1].split('-')[1]}
+        except: continue
+            #x = {'name':vals[2], 'leftpos':vals[3].split(':')[1].split('-')[0],\
+            #                     'rightpos':vals[3].split(':')[1].split('-')[1]}
                                                                              
-            gene = session.get_or_create(base.GenomeRegion, name=x['name'], leftpos=x['leftpos'],\
-                                                            rightpos=x['rightpos'], strand='+')
+            #gene = session.get_or_create(base.GenomeRegion, name=x['name'], leftpos=x['leftpos'],\
+            #                                                rightpos=x['rightpos'], strand='+')
 
         
         
@@ -499,7 +490,8 @@ def load_cuffdiff():
                                                value=value, pval=pvalue)
 
 	session.close()
-	
+
+@timing	
 def load_gem(chip_peak_analyses):
     gem_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'
     session = base.Session()
@@ -518,30 +510,35 @@ def load_gem(chip_peak_analyses):
 
     session.close()
 
-
-def load_arraydata(file_path):
+@timing
+def load_arraydata(file_path, type='ec2'):
     array_data_file = open(file_path)
     
     header = array_data_file.readline().rstrip('\n').split('\t')
-
+    
+    session = base.Session()
+    
     exp_id_map = {}
     for i,name in enumerate(header[2:]):
-        try: exp_id_map[i] = session.query(data.ArrayExperiment).filter(func.lower(data.ArrayExperiment.name) == name[:-4].lower()).one().id
-        except: 
-            print name
-            continue
-             
+        try:
+            exp_id_map[i] = session.query(data.ArrayExperiment).\
+                                    filter(func.lower(data.ArrayExperiment.name) == str(name[:-4]+'_'+type).lower()).one().id
+        except: continue
+
     for line in array_data_file.readlines():
         vals = line.split('\t')
         
         ##This code sucks right now and depend on components or load_cuffdiff/load_cuffnorm 
         ##above being run first
-        try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
+        
+        gene = session.query(components.Gene).filter(or_(components.Gene.name == vals[0],\
+                                                         components.Gene.locus_id == vals[0])).first()
+        if not gene: continue
+        """
         except: 
-            try: gene = session.query(base.GenomeRegion).filter_by(name=vals[0]).one()
-            except: 
-                print 'fuck  '+str(vals[1])
-                continue
+            try: gene = session.query(base.GenomeRegion).filter_by(name=vals[0]).first()
+            except: continue
+        """
         
         for i,val in enumerate(vals[2:]):
         
@@ -553,5 +550,6 @@ def load_arraydata(file_path):
                                                        value=value) 
             except: None
         
+    session.close()
     
 
