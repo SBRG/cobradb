@@ -14,7 +14,9 @@ The OM framework is a systems biology and bioinformatics framework that helps to
 The framework is written entirely in python with great help from SQLalchemy. You can browse the schemas below to get a sense of the underlying database design or jump straight to the examples page. Enjoy!
 
 <a href="https://www.draw.io/?url=https://raw.githubusercontent.com/steve-federowicz/om/master/docs/data_schema.xml#" target="_blank">data schema</a>
+
 <a href="https://www.draw.io/?url=https://raw.githubusercontent.com/steve-federowicz/om/master/docs/component_schema.xml#" target="_blank">component schema</a>
+
 <a href="https://www.draw.io/?url=https://raw.githubusercontent.com/steve-federowicz/om/master/docs/model_schema.xml#" target="_blank">model schema</a>
 
 
