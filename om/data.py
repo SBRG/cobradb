@@ -153,14 +153,14 @@ class DataSet(Base):
     type = Column(String(40))
     replicate = Column(Integer)
 
-    strain_id = Column(Integer, ForeignKey('strain.id'))
+    strain_id = Column(Integer, ForeignKey('strain.id', ondelete='CASCADE'))
     strain = relationship("Strain")
 
-    environment_id = Column(Integer, ForeignKey('environment.id'))
+    environment_id = Column(Integer, ForeignKey('environment.id', ondelete='CASCADE'))
     environment = relationship("Environment")
 
-    data_source_id = Column(Integer, ForeignKey('data_source.id'))
-    data_source = relationship("DataSource", cascade='all,delete')
+    data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
+    data_source = relationship("DataSource")
 
     __mapper_args__ = {'polymorphic_identity': 'data_set',
                        'polymorphic_on': type}
@@ -206,7 +206,7 @@ class DataSet(Base):
 class ArrayExperiment(DataSet):
     __tablename__ = 'array_experiment'
 
-    id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('data_set.id', ondelete='CASCADE'), primary_key=True)
     platform = Column(String(10))
 
     #terrrible hack right here
@@ -236,7 +236,7 @@ class ArrayExperiment(DataSet):
 class RNASeqExperiment(DataSet):
     __tablename__ = 'rna_seq_experiment'
 
-    id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('data_set.id', ondelete='CASCADE'), primary_key=True)
 
     sequencing_type = Column(String(20))
     machine_id = Column(String(20))
@@ -330,7 +330,7 @@ class AnalysisComposition(Base):
 class Analysis(DataSet):
     __tablename__ = 'analysis'
 
-    id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('data_set.id', ondelete='CASCADE'), primary_key=True)
     type = Column(String(40))
     children = relationship("DataSet", secondary="analysis_composition",\
                             primaryjoin = id == AnalysisComposition.analysis_id,\
@@ -350,7 +350,7 @@ class Analysis(DataSet):
 class ChIPPeakAnalysis(Analysis):
     __tablename__ = 'chip_peak_analysis'
 
-    id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('analysis.id', ondelete='CASCADE'), primary_key=True)
     method = Column(String(30))
     parameters = Column(String(200))
 
@@ -369,7 +369,7 @@ class ChIPPeakAnalysis(Analysis):
 class NormalizedExpression(Analysis):
     __tablename__ = 'normalized_expression'
 
-    id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('analysis.id', ondelete='CASCADE'), primary_key=True)
     norm_method = Column(String(40))
     dispersion_method = Column(String(20))
 
@@ -389,7 +389,7 @@ class NormalizedExpression(Analysis):
 class DifferentialExpression(Analysis):
     __tablename__ = 'differential_expression'
 
-    id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('analysis.id', ondelete='CASCADE'), primary_key=True)
     norm_method = Column(String(20))
     fdr = Column(Float)
 
@@ -410,7 +410,7 @@ class DifferentialExpression(Analysis):
 class GenomeData(Base):
     __tablename__ = 'genome_data'
 
-    data_set_id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    data_set_id = Column(Integer, ForeignKey('data_set.id', ondelete="CASCADE"), primary_key=True)
     data_set = relationship('DataSet')
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
     genome_region = relationship('GenomeRegion', backref='data')
@@ -465,7 +465,7 @@ class DiffExpData(GenomeData):
 class ChIPPeakData(GenomeData):
     __tablename__ = 'chip_peak_data'
 
-    data_set_id = Column(Integer, primary_key=True)
+    data_set_id = Column(Integer, ForeignKey('data_set.id', ondelete="CASCADE"), primary_key=True)
     genome_region_id = Column(Integer, primary_key=True)
     peak_analysis = relationship('Analysis')
     eventpos = Column(Integer)
@@ -476,7 +476,7 @@ class ChIPPeakData(GenomeData):
         return ceil(self.eventpos/400) * 400
 
     @grouped_eventpos.expression
-    def carbon_source(cls):
+    def grouped_eventpos(cls):
         return func.ceil(ChIPPeakData.eventpos/400) * 400
 
     __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\

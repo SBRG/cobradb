@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     #if not query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
     #                    'are you sure you want to do this?'): sys.exit()
-    """
+
     base.Base.metadata.drop_all()
     base.omics_database.genome_data.drop()
     base.Base.metadata.create_all()
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     experiment_sets = query_experiment_sets()
 
     load_experiment_sets(experiment_sets)
-    """
+
     component_loading.load_genes(base, components)
     #component_loading.load_proteins(base, components)
     #component_loading.load_bindsites(base, components)
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
 
 
-    #data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
+    data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
     #data_loading.load_cuffnorm()
     data_loading.load_cuffdiff()
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_asv2.txt', type='asv2')

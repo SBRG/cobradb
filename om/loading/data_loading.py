@@ -483,31 +483,6 @@ def load_cuffdiff():
     header = cuffdiff_output.readline()
     diff_exps = {}
 
-    #very terrible temporary hack, i blame this on the cuffdiff bug along with myself
-    bad_list = ['RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glucose_NH4Cl_O2\RNAseq_wt_glycerol_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delta-crp_fructose_NH4Cl_O2\RNAseq_wt_glycerol_NH4Cl_O2',\
-            'RNAseq_delta-crp_fructose_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glucose_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2']
-
     session = base.Session()
     for line in cuffdiff_output.readlines():
         vals = line.split('\t')
@@ -592,17 +567,11 @@ def load_arraydata(file_path, type='ec2'):
     for line in array_data_file.readlines():
         vals = line.split('\t')
 
-        ##This code sucks right now and depend on components or load_cuffdiff/load_cuffnorm
-        ##above being run first
 
-        gene = session.query(components.Gene).filter(or_(components.Gene.name == vals[0],\
-                                                         components.Gene.locus_id == vals[0])).first()
-        if not gene: continue
-        """
-        except:
-            try: gene = session.query(base.GenomeRegion).filter_by(name=vals[0]).first()
-            except: continue
-        """
+        try: gene = session.query(components.Gene).filter(or_(components.Gene.name == vals[0],\
+                                                         components.Gene.locus_id == vals[0])).one()
+        except: continue
+
 
         for i,val in enumerate(vals[2:]):
 
