@@ -115,8 +115,7 @@ def load_settings_from_file(filepath="settings.ini", in_trnlib=True):
     if len(self.password) > 0:
         __os.environ["PGPASSWORD"] = self.password
     self.host = config.get("DATABASE", "host")
-    self.dev_database = config.get("DATABASE", "dev_database")
-    self.schema = config.get("DATABASE", "schema")
+    self.database = config.get("DATABASE", "postgres_database")
     self.psql = _escape_space(config.get("EXECUTABLES", "psql"))
     self.R = _escape_space(config.get("EXECUTABLES", "R"))
     self.Rscript = _escape_space(config.get("EXECUTABLES", "Rscript"))
@@ -129,8 +128,6 @@ def load_settings_from_file(filepath="settings.ini", in_trnlib=True):
     if self.entrez_email == "SET_ENTREZ_EMAIL": self.entrez_email = None
     #set home directory
     self.home_directory = config.get("MISC", "home_directory")
-    self.ome_directory = config.get("MISC", "ome_directory")
-    self.dropbox_directory = config.get("MISC", "dropbox_directory")
     self.data_directory = config.get("MISC", "data_directory")
     
 load_settings_from_file()

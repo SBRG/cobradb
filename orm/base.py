@@ -13,13 +13,15 @@ import om.lib.settings as settings
 import pymongo
 
 
-engine = create_engine("postgresql://%s:%s@%s/%s" %
-    (settings.user, settings.password, settings.host, settings.dev_database))
-Base = declarative_base(bind=engine)
-metadata = MetaData(bind=engine, schema=settings.schema)
 
-connection = pymongo.Connection()
-omics_database = connection.omics_database2
+def make_engine(user=settings.user, password=settings.password, host=settings.host,
+                database=settings.database):
+    return create_engine("postgresql://%s:%s@%s/%s" % (user, password, host, database))
+    
+engine = make_engine()
+Base = declarative_base(bind=engine)
+metadata = MetaData(bind=engine)
+
 
 class id2otherid(Base):
     __tablename__ = "id2otherid"
@@ -145,7 +147,6 @@ class _Session(_SA_Session):
     
     def __init__(self, *args, **kwargs):
         super(_Session, self).__init__(*args, **kwargs)
-        self.execute("set search_path to %s;" % (settings.schema))
         self.commit()
         self.get_or_create = MethodType(get_or_create, self)
         #self.search_by_synonym = MethodType(search_by_synonym, self)
@@ -197,6 +198,8 @@ def update(session, object, **kwargs):
         
 Session = sessionmaker(bind=engine, class_=_Session)
 
+connection = pymongo.Connection()
+omics_database = connection.omics_database2
 
 if __name__ == "__main__":
     session = Session()
