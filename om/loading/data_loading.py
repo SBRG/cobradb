@@ -380,38 +380,64 @@ def run_cuffdiff(normalized_expression_objects, debug=False):
 
 
 @timing
-def run_gem(chip_peak_analyses, debug=False):
+def run_gem(chip_peak_analysis, control_chip_peak_analysis = None, debug=False):
     default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':''}
     gem_path = settings.home_directory+'/libraries/gem'
-    bam_dir = settings.dropbox_directory+'crp/data/ChIP/bam/'
+    bam_dir = settings.dropbox_directory+'/crp/data/ChIP/bam/'
     """ This could easily be parallelized """
 
-    for chip_peak_analysis in chip_peak_analyses:
-        outdir = chip_peak_analysis.name
-        out_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'+outdir
-        os.system('rm -r '+out_path)
-        os.mkdir(out_path)
-        os.chdir(out_path)
 
-        input_files = ' '.join(['--expt'+x.name+' '+bam_dir+x.file_name for x in chip_peak_analysis.children])
+    outdir = chip_peak_analysis.name
+    out_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'+outdir
+    os.system('rm -r '+out_path)
+    os.mkdir(out_path)
+    os.chdir(out_path)
 
-        params = json.loads(chip_peak_analysis.parameters)
-        parameter_string = ' '.join(['--'+y+' '+str(z) for y,z in params.iteritems()])
+    input_files = ' '.join(['--expt'+x.name+' '+bam_dir+x.file_name for x in chip_peak_analysis.children])
 
-
-        if debug:
-            print "java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
-                    (gem_path, gem_path, settings.dropbox_directory+'crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'crp/data/annotation',\
-                     input_files, parameter_string)
-
-        else:
-            os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
-                      (gem_path, gem_path, settings.dropbox_directory+'crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'crp/data/annotation',\
-                       input_files, parameter_string))
+    if control_chip_peak_analysis:
+        from random import randint
+        """since every replicate needs a corresponding control replicate for GEMs and since we might have less or more
+           control replicates than experimental replicates, we are going to randomly sample from the set of control
+           replicates for each experimental replicate.  This should be fine because control replicates should be random
+           noise anyways. However, if specific control replicates are generated this function needs to be changed.
+        """
+        control_input_files = ' '.join(['--ctrl'+x.name+' '+bam_dir+control_chip_peak_analysis.children[randint(0,len(control_chip_peak_analysis.children))].file_name for i,x in enumerate(chip_peak_analysis.children)])
+    else:
+        control_input_files = ''
 
 
-            gem_peak_file = open(out_path+'/out_GPS_events.narrowPeak','r')
-            with open(out_path+'/'+chip_peak_analysis.name+'_gps.gff', 'wb') as peaks_gff_file:
+    params = json.loads(chip_peak_analysis.parameters)
+    parameter_string = ' '.join(['--'+y+' '+str(z) for y,z in params.iteritems()])
+
+
+    if debug:
+        print "java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s %s --f SAM %s" %\
+                     (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
+                     input_files, control_input_files, parameter_string)
+
+    else:
+        os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s %s --f SAM %s" %\
+                      (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
+                       input_files, control_input_files, parameter_string))
+
+
+        gem_peak_file = open(out_path+'/out_GPS_events.narrowPeak','r')
+        with open(out_path+'/'+chip_peak_analysis.name+'_gps.gff', 'wb') as peaks_gff_file:
+
+            for line in gem_peak_file.readlines():
+                vals = line.split('\t')
+
+                position = int(vals[3].split(':')[1])
+
+                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                         ('NC_000913','.', chip_peak_analysis.name+'_gps', position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
+                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                         ('NC_000913','.', chip_peak_analysis.name+'_gps', vals[1], vals[2], float(vals[6]), '+', '.','.'))
+
+        try:
+            gem_peak_file = open(out_path+'/out_GEM_events.narrowPeak','r')
+            with open(out_path+'/'+chip_peak_analysis.name+'_gem.gff', 'wb') as peaks_gff_file:
 
                 for line in gem_peak_file.readlines():
                     vals = line.split('\t')
@@ -419,26 +445,10 @@ def run_gem(chip_peak_analyses, debug=False):
                     position = int(vals[3].split(':')[1])
 
                     peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                         ('NC_000913','.', chip_peak_analysis.name+'_gps', position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
-                    peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                         ('NC_000913','.', chip_peak_analysis.name+'_gps', vals[1], vals[2], float(vals[6]), '+', '.','.'))
-
-            try:
-                gem_peak_file = open(out_path+'/out_GEM_events.narrowPeak','r')
-                with open(out_path+'/'+chip_peak_analysis.name+'_gem.gff', 'wb') as peaks_gff_file:
-
-                    for line in gem_peak_file.readlines():
-                        vals = line.split('\t')
-
-                        position = int(vals[3].split(':')[1])
-
-                        peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
                                              ('NC_000913','.', chip_peak_analysis.name+'_gem', position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
-                        peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                    peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
                                              ('NC_000913','.', chip_peak_analysis.name+'_gem', vals[1], vals[2], float(vals[6]), '+', '.','.'))
-            except: None
-
-
+        except: None
 
 
 @timing

@@ -93,7 +93,7 @@ def load_experiment_sets(experiment_sets):
     default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':'', 'nf':'', 'k_min': 4, 'k_max': 22}
 
     for exp_group in experiment_sets['ChIP']:
-        parameters = {'mrc':20, 'smooth':3, 'outNP':'', 'nrf':'', 'nf':'','k_min': 4, 'k_max': 22}
+        parameters = {'mrc':20, 'smooth':3, 'outNP':'', 'nrf':'', 'nf':'','k_min': 4, 'k_max': 22, 'k_win':150, 'q':1}
         if not set(parameters.items()) - set(default_parameters.items()):
             parameter_name = 'default'
         else:
@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
     load_experiment_sets(experiment_sets)
 
-    component_loading.load_genes(base, components)
+    #component_loading.load_genes(base, components)
     #component_loading.load_proteins(base, components)
     #component_loading.load_bindsites(base, components)
     #component_loading.load_transcription_units(base, components)
@@ -189,13 +189,21 @@ if __name__ == "__main__":
     rna_seq_exp_sets = session.query(NormalizedExpression).join(AnalysisComposition, NormalizedExpression.id == AnalysisComposition.analysis_id).\
                                                            join(RNASeqExperiment, RNASeqExperiment.id == AnalysisComposition.data_set_id).all()
     #data_loading.run_cuffdiff(rna_seq_exp_sets, debug=False)
-    #data_loading.run_gem(session.query(ChIPPeakAnalysis).filter_by(id=335).all(),debug=False)
+
+    control_peak_analysis = session.query(ChIPPeakAnalysis).join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
+                                                            join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
+                                                            join(Strain).\
+                                                            filter(and_(Strain.name == 'delta-crp',
+                                                                        ChIPExperiment.antibody == 'anti-crp')).one()
+
+    for chip_peak_analysis in session.query(ChIPPeakAnalysis).filter_by(id=342).all():
+        data_loading.run_gem(chip_peak_analysis, control_peak_analysis, debug=False)
 
 
 
-    data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
+    #data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
     #data_loading.load_cuffnorm()
-    data_loading.load_cuffdiff()
+    #data_loading.load_cuffdiff()
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_asv2.txt', type='asv2')
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_ec2.txt', type='ec2')
 
