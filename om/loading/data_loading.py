@@ -596,3 +596,17 @@ def load_arraydata(file_path, type='ec2'):
     session.close()
 
 
+def make_genome_region_map():
+    session = base.Session()
+
+    genome_regions = session.query(GenomeRegion).all()
+
+    for genome_region_1 in genome_regions:
+        for genome_region_2 in genome_regions:
+            midpoint_1 = (genome_region_1.leftpos + genome_region_1.rightpos)/2
+            midpoint_2 = (genome_region_2.leftpos + genome_region_2.rightpos)/2
+            distance = midpoint_1 - midpoint_2
+            session.add(GenomeRegionMap(genome_region_1.id, genome_region_2.id, distance))
+
+    session.commit()
+    session.close()
