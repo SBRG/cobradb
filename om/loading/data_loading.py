@@ -122,14 +122,14 @@ def gff_variance(gff_file_path):
     M2 = 0
 
     for line in open(gff_file_path, 'r').readlines():
-        vals = line.split('\t') 
-    
+        vals = line.split('\t')
+
         x = abs(float(vals[5]))
         n = n + 1
         delta = x - mean
         mean = mean + delta/n
         M2 = M2 + delta*(x - mean)
- 
+
     variance = M2/(n - 1)
     return variance
 
@@ -191,7 +191,7 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
 
     log2: Whether intensities should be reported as log2.
     """
-    
+
     samfile = pysam.Samfile(sam_filepath)
     if five_prime:
         all_counts = count_coverage_5prime(samfile, flip=flip)
@@ -211,23 +211,23 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
             factor = 1 if strand == "+" else -1
             counts = all_counts[reference][strand]
             entries = []
-            for i in counts.nonzero()[0]:    
+            for i in counts.nonzero()[0]:
                 if abs(float(counts[i])) < loading_cutoff: continue
-                
+
                 entries.append({
                                 "leftpos": int(i),
                                 "rightpos": int(i),
                                 "value": float(counts[i])*norm_factor,
                                 "strand": strand,
                                 "data_set_id": data_set_id})
-            
+
                 #if i%50000 == 0:
                 #    genome_data.insert(entries)
                 #    entries = []
-            genome_data.insert(entries) 
-    if not bulk_file_load: 
-        genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])                
-    
+            genome_data.insert(entries)
+    if not bulk_file_load:
+        genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])
+
     samfile.close()
 
 @timing
@@ -235,9 +235,9 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
 								  bulk_file_load=False, norm_factor=1.):
     vals = exp_name.split('_')
     if len(vals) < 5: return
-    
-    exp_type = vals[0].split('-')    
-    try: 
+
+    exp_type = vals[0].split('-')
+    try:
         vals[7] = vals[7].split('.')[0]
         name = '_'.join(vals[0:8])
         supplements = vals[7]
@@ -246,21 +246,21 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
         except: vals[5] = vals[5].split('.')[0]
         name = '_'.join(vals[0:7])
         supplements = ''
-    
-    if norm_factor == 1.: 
+
+    if norm_factor == 1.:
         norm_method = None
     else: norm_method = 'mean of total mapped reads'
-    
+
     session = base.Session()
-    
+
     strain = session.get_or_create(data.Strain, name=vals[1])
     data_source = session.get_or_create(data.DataSource, name=vals[0], lab=lab, institution=institution)
     environment = session.get_or_create(data.InVivoEnvironment, name='_'.join(vals[2:5]+[supplements]), carbon_source=vals[2],\
                                         nitrogen_source=vals[3], electron_acceptor=vals[4], temperature=37,\
                                         supplements=supplements)
-    
-    
-    if exp_type[0][0:4] == 'chip': 
+
+
+    if exp_type[0][0:4] == 'chip':
 
         experiment = session.get_or_create(data.ChIPExperiment, name=name+'_'+str(norm_factor), replicate=vals[5],\
                                            strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
@@ -271,18 +271,18 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
         load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=2,\
                            bulk_file_load=bulk_file_load, five_prime=True, norm_factor=norm_factor)
 
-    
-    
+
+
     elif exp_type[0][0:6] == 'RNAseq':
         experiment = session.get_or_create(data.RNASeqExperiment, name=name+'_'+str(norm_factor), replicate=vals[5],\
                                            strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
                                            machine_id='miseq', sequencing_type='unpaired',\
                                            file_name=exp_name, normalization_method=norm_method,\
                                                                normalization_factor=norm_factor)
-                                           
+
         #load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
         #                   bulk_file_load=bulk_file_load, five_prime=True, flip=True, norm_factor=norm_factor)
-        
+
     elif exp_type[0][0:7] == 'affyexp':
         experiment = session.get_or_create(data.ArrayExperiment, name=name, replicate=vals[5],\
                                            strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
@@ -296,88 +296,104 @@ def run_cuffquant(exp):
 
     os.chdir(settings.dropbox_directory+'/crp/data/RNAseq/cxb')
     gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
-    
+
     out_path = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'+exp.name
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
     os.chdir(out_path)
     exp_file = settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp.file_name
-    
+
     os.system('%s -p %d %s %s' % ('cuffquant', 8, gtf_file, exp_file))
-    
-@timing    
+
+@timing
 def run_cuffnorm(exp_sets):
     gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
     cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
     out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm'
-    
+
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
     os.chdir(out_path)
 
     os.system('cuffnorm -p %d --library-type fr-firststrand -L %s %s %s' % (24,\
              ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
-             ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets]))) 
-    
-@timing   
+             ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets])))
+
+@timing
 def run_cuffdiff(exp_sets):
     gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
     cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
     out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff'
-    
+
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
     os.chdir(out_path)
-    
+
     os.system('cuffdiff -v -p %d --library-type fr-firststrand --FDR 0.05 -L %s %s %s' % (24,\
              ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
              ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets])))
 
 @timing
 def run_gem(chip_peak_analyses, debug=False):
-    default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':''}
+
+    default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'nf':'', 'outNP':''}
     gem_path = settings.home_directory+'/libraries/gem'
     bam_dir = settings.dropbox_directory+'/crp/data/ChIP/bam/'
     """ This could easily be parallelized """
-    
-    for chip_peak_analysis in chip_peak_analyses:            
+
+    for chip_peak_analysis in chip_peak_analyses:
         outdir = chip_peak_analysis.name
         out_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'+outdir
-        os.system('rm -r '+out_path)
+        out_paths = '\''+settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'+outdir+'\''
+        os.system('rm -r '+out_paths)
         os.mkdir(out_path)
         os.chdir(out_path)
-    
+
         input_files = ' '.join(['--expt'+x.name+' '+bam_dir+x.file_name for x in chip_peak_analysis.children])
-        
+
         params = json.loads(chip_peak_analysis.parameters)
         parameter_string = ' '.join(['--'+y+' '+str(z) for y,z in params.iteritems()])
-        
-        
+
+
         if debug:
-            print "java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
+            print "java -Xmx5G -jar %s/gem.jar --t 32 --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
                     (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
                      input_files, parameter_string)
-        
+
         else:
-            os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
+            os.system("java -Xmx5G -jar %s/gem.jar --t 32 --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
                       (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
                        input_files, parameter_string))
-        
-        
-            gem_peak_file = open(out_path+'/out_GPS_events.narrowPeak','r')
-            with open(out_path+'/'+chip_peak_analysis.name+'.gff', 'wb') as peaks_gff_file:
-        
-                for line in gem_peak_file.readlines():
+
+
+            gps_peak_file = open(out_path+'/out_GPS_events.narrowPeak','r')
+            with open(out_path+'/gps_'+chip_peak_analysis.name+'.gff', 'wb') as peaks_gff_file:
+
+                for line in gps_peak_file.readlines():
                     vals = line.split('\t')
 
                     position = int(vals[3].split(':')[1])
-        
+
                     peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                         ('NC_000913','.', chip_peak_analysis.name, position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
+                                         ('NC_000913','.', 'gps_'+chip_peak_analysis.name, position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
                     peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                         ('NC_000913','.', chip_peak_analysis.name, vals[1], vals[2], float(vals[6]), '+', '.','.'))           
-         
-@timing                   
+                                         ('NC_000913','.', 'gps_'+chip_peak_analysis.name, vals[1], vals[2], float(vals[6]), '+', '.','.'))
+
+            try:
+                gem_peak_file = open(out_path+'/out_GEM_events.narrowPeak','r')
+                with open(out_path+'/gems_'+chip_peak_analysis.name+'.gff', 'wb') as peaks_gff_file:
+
+                    for line in gem_peak_file.readlines():
+                        vals = line.split('\t')
+
+                        position = int(vals[3].split(':')[1])
+
+                        peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                             ('NC_000913','.', 'gem_'+chip_peak_analysis.name, position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
+                        peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                             ('NC_000913','.', 'gem_'+chip_peak_analysis.name, vals[1], vals[2], float(vals[6]), '+', '.','.'))
+            except: None
+@timing
 def load_cuffnorm():
     cuffnorm_genes = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm/isoforms.attr_table','r')
     cuffnorm_genes.readline()
@@ -387,16 +403,16 @@ def load_cuffnorm():
         vals = line.split('\t')
         cuffnorm_gene_dict[vals[0]] = {'name':vals[4],'leftpos':vals[6].split(':')[1].split('-')[0],\
                                                   'rightpos':vals[6].split(':')[1].split('-')[1]}
-   
+
     cuffnorm_output = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm/isoforms.fpkm_table','r')
     header = cuffnorm_output.readline().rstrip('\n').split('\t')
-    #print [name[:-5]+'_'+str(int(name[-1])+1)+'_1.0' for i,name in enumerate(header[1:])]  
+    #print [name[:-5]+'_'+str(int(name[-1])+1)+'_1.0' for i,name in enumerate(header[1:])]
     exp_id_map = {i:session.query(data.RNASeqExperiment).filter_by(name=name[:-2]+'_'+str(int(name[-1])+1)+'_1.0').one().id\
                   for i,name in enumerate(header[1:])}
-              
+
     for line in cuffnorm_output.readlines():
         vals = line.split('\t')
-        
+
         try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
         except: continue
             #x = cuffnorm_gene_dict[vals[0]]
@@ -404,58 +420,34 @@ def load_cuffnorm():
             #                                                rightpos=x['rightpos'], strand='+')
 
         for i,val in enumerate(vals[1:]):
-        
+
             try: value = float(val)
             except: continue
-        
+
             session.get_or_create(data.GenomeData, data_set_id=exp_id_map[i-1],\
                                                    genome_region_id = gene.id,\
                                                    value=value)
     session.close()
-    
-@timing  
+
+@timing
 def load_cuffdiff():
     cuffdiff_output = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff/gene_exp.diff','r')
     header = cuffdiff_output.readline()
     diff_exps = {}
-    
-    #very terrible temporary hack, i blame this on the cuffdiff bug along with myself
-    bad_list = ['RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glucose_NH4Cl_O2\RNAseq_wt_glycerol_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delta-crp_fructose_NH4Cl_O2\RNAseq_wt_glycerol_NH4Cl_O2',\
-            'RNAseq_delta-crp_fructose_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glucose_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2']
-    
+
+
     session = base.Session()
     for line in cuffdiff_output.readlines():
         vals = line.split('\t')
-        
-        try: 
+
+        try:
             value = float(vals[9])
             pvalue = float(vals[11])
         except: continue
-        
+
         if pvalue > .25: continue
         if vals[4]+'\\'+vals[5] in bad_list: continue
-        
+
         if str(vals[4:6]) not in diff_exps.keys():
             x = vals[4].split('_')
             y = vals[5].split('_')
@@ -465,9 +457,9 @@ def load_cuffdiff():
                     exp_name += x[i]+'_'
                 else: exp_name += x[i]+'/'+y[i]+'_'
             exp_name = exp_name.rstrip('_')
-            
+
             diff_exp = session.get_or_create(data.DifferentialExpression, name=exp_name, norm_method='classic-fpkm',fdr=.05)
-            
+
             exp1 = session.query(data.Analysis).filter_by(name=vals[4]).one()
             exp2 = session.query(data.Analysis).filter_by(name=vals[5]).one()
             session.get_or_create(data.AnalysisComposition, analysis_id = diff_exp.id, data_set_id = exp1.id)
@@ -478,31 +470,31 @@ def load_cuffdiff():
         except: continue
             #x = {'name':vals[2], 'leftpos':vals[3].split(':')[1].split('-')[0],\
             #                     'rightpos':vals[3].split(':')[1].split('-')[1]}
-                                                                             
+
             #gene = session.get_or_create(base.GenomeRegion, name=x['name'], leftpos=x['leftpos'],\
             #                                                rightpos=x['rightpos'], strand='+')
 
-        
-        
-    
+
+
+
         session.get_or_create(data.DiffExpData, data_set_id=diff_exps[str(vals[4:6])],\
                                                genome_region_id = gene.id,\
                                                value=value, pval=pvalue)
 
 	session.close()
 
-@timing	
+@timing
 def load_gem(chip_peak_analyses):
     gem_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'
     session = base.Session()
     for chip_peak_analysis in chip_peak_analyses:
         gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
-        
+
         for line in gem_peak_file.readlines():
             vals = line.split('\t')
 
             position = int(vals[3].split(':')[1])
-        
+
             peak_region = session.get_or_create(base.GenomeRegion, leftpos=vals[1], rightpos=vals[2], strand='+')
 
             peak_data = session.get_or_create(data.ChIPPeakData, data_set_id=chip_peak_analysis.id, genome_region_id=peak_region.id,\
@@ -513,11 +505,11 @@ def load_gem(chip_peak_analyses):
 @timing
 def load_arraydata(file_path, type='ec2'):
     array_data_file = open(file_path)
-    
+
     header = array_data_file.readline().rstrip('\n').split('\t')
-    
+
     session = base.Session()
-    
+
     exp_id_map = {}
     for i,name in enumerate(header[2:]):
         try:
@@ -527,29 +519,43 @@ def load_arraydata(file_path, type='ec2'):
 
     for line in array_data_file.readlines():
         vals = line.split('\t')
-        
-        ##This code sucks right now and depend on components or load_cuffdiff/load_cuffnorm 
+
+        ##This code sucks right now and depend on components or load_cuffdiff/load_cuffnorm
         ##above being run first
-        
+
         gene = session.query(components.Gene).filter(or_(components.Gene.name == vals[0],\
                                                          components.Gene.locus_id == vals[0])).first()
         if not gene: continue
         """
-        except: 
+        except:
             try: gene = session.query(base.GenomeRegion).filter_by(name=vals[0]).first()
             except: continue
         """
-        
+
         for i,val in enumerate(vals[2:]):
-        
+
             try: value = float(val)
             except: continue
             try:
                 session.get_or_create(data.GenomeData, data_set_id=exp_id_map[i],\
                                                        genome_region_id = gene.id,\
-                                                       value=value) 
+                                                       value=value)
             except: None
-        
-    session.close()
-    
 
+    session.close()
+
+
+def make_genome_region_map():
+    session = base.Session()
+
+    genome_regions = session.query(GenomeRegion).all()
+
+    for genome_region_1 in genome_regions:
+        for genome_region_2 in genome_regions:
+            midpoint_1 = (genome_region_1.leftpos + genome_region_1.rightpos)/2
+            midpoint_2 = (genome_region_2.leftpos + genome_region_2.rightpos)/2
+            distance = midpoint_1 - midpoint_2
+            session.add(GenomeRegionMap(genome_region_1.id, genome_region_2.id, distance))
+
+    session.commit()
+    session.close()
