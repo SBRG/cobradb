@@ -1,7 +1,7 @@
-###To view a schema
+###View schemas using the wonderful draw.io
 
-1. Click on the schema file above and then hit the 'Raw' button on the next page
-2. Copy the URL linking to the text of the raw file
-3. Go to draw.io
-4. From 'File' menu dropdown choose 'open from' and then 'URL'
-5. Paste in the URL
+<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/steve-federowicz/om/master/docs/data_schema.xml#" target="_blank">data schema</a>
+
+<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/steve-federowicz/om/master/docs/component_schema.xml#" target="_blank">component schema</a>
+
+<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/steve-federowicz/om/master/docs/model_schema.xml#" target="_blank">model schema</a>
