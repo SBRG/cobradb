@@ -129,6 +129,11 @@ class GenomeRegionMap(Base):
 
         __table_args__ = (UniqueConstraint('genome_region_id_1','genome_region_id_2'),{})
 
+
+        def __repr__(self):
+            return "GenomeRegionMap (%d <--> %d) distance:%d" % (self.genome_region_id_1, self.genome_region_id_2, self.distance)
+
+
         def __init__(self, genome_region_id_1, genome_region_id_2, distance):
             self.genome_region_id_1 = genome_region_id_1
             self.genome_region_id_2 = genome_region_id_2

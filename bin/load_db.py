@@ -90,10 +90,10 @@ def load_experiment_sets(experiment_sets):
             exp = ome.query(ArrayExperiment).filter_by(name=exp_name).one()
             ome.get_or_create(AnalysisComposition, analysis_id = exp_analysis.id, data_set_id = exp.id)
 
-    default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':'', 'nf':'', 'k_min': 4, 'k_max': 22}
+    default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':'', 'nf':'', 'k_min': 4, 'k_max': 22, 'k_win':150}
 
     for exp_group in experiment_sets['ChIP']:
-        parameters = {'mrc':20, 'smooth':3, 'outNP':'', 'nrf':'', 'nf':'','k_min': 4, 'k_max': 22, 'k_win':150, 'q':1}
+        parameters = {'mrc':20, 'smooth':3, 'outNP':'', 'nrf':'', 'nf':'','k_min': 4, 'k_max': 22, 'k_win':150}
         if not set(parameters.items()) - set(default_parameters.items()):
             parameter_name = 'default'
         else:
@@ -196,8 +196,8 @@ if __name__ == "__main__":
                                                             filter(and_(Strain.name == 'delta-crp',
                                                                         ChIPExperiment.antibody == 'anti-crp')).one()
 
-    for chip_peak_analysis in session.query(ChIPPeakAnalysis).filter_by(id=342).all():
-        data_loading.run_gem(chip_peak_analysis, control_peak_analysis, debug=False)
+    for chip_peak_analysis in session.query(ChIPPeakAnalysis).all():
+        data_loading.run_gem(chip_peak_analysis, debug=False)
 
 
 
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     #data_loading.load_cuffdiff()
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_asv2.txt', type='asv2')
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_ec2.txt', type='ec2')
-
+    #data_loading.make_genome_region_map()
 
     genome_data = base.omics_database.genome_data
     genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])

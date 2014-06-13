@@ -503,7 +503,6 @@ def load_cuffdiff():
         except: continue
 
         if pvalue > .25: continue
-        if vals[4]+'\\'+vals[5] in bad_list: continue
 
         if str(vals[4:6]) not in diff_exps.keys():
             x = vals[4].split('_')
@@ -545,8 +544,10 @@ def load_gem(chip_peak_analyses):
     gem_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'
     session = base.Session()
     for chip_peak_analysis in chip_peak_analyses:
-        gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
-
+        try: gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
+        except:
+            print 'fuck'
+            continue
         for line in gem_peak_file.readlines():
             vals = line.split('\t')
 
@@ -595,18 +596,20 @@ def load_arraydata(file_path, type='ec2'):
 
     session.close()
 
-
+@timing
 def make_genome_region_map():
     session = base.Session()
 
-    genome_regions = session.query(GenomeRegion).all()
+    genome_regions = session.query(data.GenomeRegion).all()
 
     for genome_region_1 in genome_regions:
+        print genome_region_1
         for genome_region_2 in genome_regions:
             midpoint_1 = (genome_region_1.leftpos + genome_region_1.rightpos)/2
             midpoint_2 = (genome_region_2.leftpos + genome_region_2.rightpos)/2
             distance = midpoint_1 - midpoint_2
-            session.add(GenomeRegionMap(genome_region_1.id, genome_region_2.id, distance))
+            if abs(distance) > 1000 or distance == 0: continue
+            session.add(data.GenomeRegionMap(genome_region_1.id, genome_region_2.id, distance))
 
     session.commit()
     session.close()
