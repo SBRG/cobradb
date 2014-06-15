@@ -23,56 +23,56 @@ omics_database = connection.omics_database
 
 
 class GenomeRegion(Base):
-    __tablename__ = 'genome_region'    
-    
+    __tablename__ = 'genome_region'
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(10))
     leftpos = Column(Integer, nullable=False)
     rightpos = Column(Integer, nullable=False)
     strand = Column(String(1), nullable=False)
     type = Column(String(20))
-    
+
     __table_args__ = (UniqueConstraint('leftpos','rightpos','strand'),{})
 
-    __mapper_args__ = {'polymorphic_identity': 'genome_region', 
+    __mapper_args__ = {'polymorphic_identity': 'genome_region',
                        'polymorphic_on': type
                       }
-    
+
     def __repr__(self):
         return "GenomeRegion: %d-%d (%s)" % \
                 (self.leftpos, self.rightpos, self.strand)
-                
+
     def __init__(self, leftpos, rightpos, strand, name=None):
         self.leftpos = leftpos
         self.rightpos = rightpos
         self.strand = strand
         self.name = name
-        
-  
+
+
 class Component(Base):
     __tablename__ = 'component'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100))
     type = Column(String(20))
-   
+
     __table_args__ = (UniqueConstraint('name'),{})
-    
-    __mapper_args__ = {'polymorphic_identity': 'component', 
+
+    __mapper_args__ = {'polymorphic_identity': 'component',
                        'polymorphic_on': type
                       }
 
     def __init__(self, name):
         self.name = name
-        
+
     def __repr__(self):
         return "Component (#%d):  %s" % \
-            (self.id, self.name)  
-            
+            (self.id, self.name)
+
 
 class DataSource(Base):
     __tablename__ = 'data_source'
-    
+
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     lab = Column(String(100))
@@ -80,47 +80,66 @@ class DataSource(Base):
     #data_sets = relationship("DataSet")
 
     __table_args__ = (UniqueConstraint('name'),{})
-    
+
     def __repr__(self):
         return "Data Source %s (#%d)" % (self.name, self.id)
-    
+
     def __repr__dict__(self):
         return {"name":self.name,"wid":self.id,"values":{"lab":self.lab,"institution":self.institution}}
-    
+
     def __repr__json__(self):
         return json.dumps(self.__repr__dict__())
-    
+
     def __init__(self, name, lab=None, institution=None):
         self.name = name
         self.lab = lab
         self.institution = institution
 
-            
+
 class id2otherid(Base):
     __tablename__ = "id2otherid"
-    
+
     id = Column(Integer, primary_key=True)
     other_id = Column(String(100), primary_key=True)
-    
+
     id_data_source_id = Column(Integer, ForeignKey('data_source.id'))
     other_id_data_source_id = Column(Integer, ForeignKey('data_source.id'))
-    
+
     id_data_source = relationship("DataSource", primaryjoin = id_data_source_id == DataSource.id)
     other_id_data_source = relationship("DataSource", primaryjoin = other_id_data_source_id == DataSource.id)
-    
+
     __table_args__ = (UniqueConstraint('id','other_id'),{})
 
     def __repr__(self):
         return "%s in (%s)" % (self.other_id, str(self.other_id_data_source))
-    
+
     def __init__(self, id, other_id, id_data_source_id, other_id_data_source_id):
         self.id = id
         self.other_id = other_id
         self.id_data_source_id = id_data_source_id
         self.other_id_data_source_id = other_id_data_source_id
-        
 
-        
+
+class GenomeRegionMap(Base):
+        __tablename__ = 'genome_region_map'
+
+        genome_region_id_1 = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
+        genome_region_id_2 = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
+        distance = Column(Integer)
+
+        __table_args__ = (UniqueConstraint('genome_region_id_1','genome_region_id_2'),{})
+
+
+        def __repr__(self):
+            return "GenomeRegionMap (%d <--> %d) distance:%d" % (self.genome_region_id_1, self.genome_region_id_2, self.distance)
+
+
+        def __init__(self, genome_region_id_1, genome_region_id_2, distance):
+            self.genome_region_id_1 = genome_region_id_1
+            self.genome_region_id_2 = genome_region_id_2
+            self.distance = distance
+
+
 class _Session(_SA_Session):
     """an sqlalchemy session object to interact with the OME database
 
@@ -141,8 +160,8 @@ class _Session(_SA_Session):
 
     The Session will automatically set the search_path to settings.schema
     """
-    
-    
+
+
     def __init__(self, *args, **kwargs):
         super(_Session, self).__init__(*args, **kwargs)
         #self.execute("set search_path to %s;" % (settings.schema))
@@ -161,24 +180,24 @@ def get_or_create(session, class_type, **kwargs):
     these constraints. This is why every class that wants to use this
     method to be instantiated needs to have a UniqueConstraint defined.
     """
-    
+
     for constraint in list(class_type.__table_args__):
         if constraint.__class__.__name__ == 'UniqueConstraint':
             unique_cols = constraint.columns.keys()
-	
+
 	inherited_result = True
 	if '__mapper_args__' in class_type.__dict__ and 'inherits' in class_type.__mapper_args__:
 		inherited_class_type = class_type.__mapper_args__['inherits']
 		for constraint in list(inherited_class_type.__table_args__):
 			if constraint.__class__.__name__ == 'UniqueConstraint':
 				inherited_unique_cols = constraint.columns.keys()
-            
-		try: inherited_result = session.query(inherited_class_type).filter_by(**{k: kwargs[k] for k in inherited_unique_cols}).first()      
+
+		try: inherited_result = session.query(inherited_class_type).filter_by(**{k: kwargs[k] for k in inherited_unique_cols}).first()
 		except: None
-		
+
     try: result = session.query(class_type).filter_by(**kwargs).first()
     except: result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).first()
-    
+
     if not result or not inherited_result:
         result = class_type(**kwargs)
         session.add(result)
@@ -197,19 +216,18 @@ def update(session, object, **kwargs):
     #result = session.query(class_type).filter_by(**kwargs).first()
     #result = session.query(class_type).filter_by(name=kwargs['name']).first()
     #if result is None: return
-    
-    for key,value in kwargs.iteritems(): 
-        setattr(object,key,value) 
+
+    for key,value in kwargs.iteritems():
+        setattr(object,key,value)
     session.add(object)
     session.commit()
-    
+
     return object
-        
-        
+
+
 Session = sessionmaker(bind=engine, class_=_Session)
 
 
 if __name__ == "__main__":
     session = Session()
-    
-    
+

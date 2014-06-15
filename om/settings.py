@@ -64,15 +64,15 @@ config.add_section("EXECUTABLES")
 # overwrite defaults settings with settings from the file
 def load_settings_from_file(filepath="settings.ini", in_trnlib=True):
     """reload settings from a different settings file
-    
+
     filepath: The path to the settings file to use
-    
+
     in_trnlib: Whether or not the path given is a relative path from the trnlib
         directory"""
     if in_trnlib:
         filepath = __join(trnlib_directory, filepath)
     config.read(filepath)
-    
+
     # attempt to intellegently determine more difficult settings
     if not config.has_option("DATABASE", "user"):
         if "USERNAME" in __os.environ:  # windows
@@ -118,6 +118,8 @@ def load_settings_from_file(filepath="settings.ini", in_trnlib=True):
     self.R = _escape_space(config.get("EXECUTABLES", "R"))
     self.Rscript = _escape_space(config.get("EXECUTABLES", "Rscript"))
     self.primer3 = _escape_space(config.get("EXECUTABLES", "primer3"))
+    self.cufflinks = config.get("EXECUTABLES", "cufflinks")
+
     # make a psql string with the database options included
     self.hostname, self.port = postgres_host.split(":")
     self.psql_full = "%s --host=%s --username=%s --port=%s " % \
@@ -128,7 +130,8 @@ def load_settings_from_file(filepath="settings.ini", in_trnlib=True):
     self.home_directory = config.get("MISC", "home_directory")
     self.dropbox_directory = config.get("MISC", "dropbox_directory")
     self.data_directory = config.get("MISC", "data_directory")
-    
+
+
 load_settings_from_file()
 del SafeConfigParser, modules
 

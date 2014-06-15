@@ -50,6 +50,7 @@ def query_experiment_sets():
     ome = base.Session()
 
     experiment_sets['RNAseq'] = ome.query(func.array_agg(RNASeqExperiment.name),func.array_agg(RNASeqExperiment.file_name)).\
+                                          filter(RNASeqExperiment.normalization_factor == 1.).\
                                           group_by(RNASeqExperiment.strain_id, RNASeqExperiment.environment_id,\
                                           RNASeqExperiment.machine_id,RNASeqExperiment.sequencing_type).all()
 
@@ -58,6 +59,7 @@ def query_experiment_sets():
                                          ArrayExperiment.platform).all()
 
     experiment_sets['ChIP'] = ome.query(func.array_agg(ChIPExperiment.name),func.array_agg(ChIPExperiment.file_name)).\
+                                        filter(ChIPExperiment.normalization_factor == 1.).\
                                         group_by(ChIPExperiment.strain_id, ChIPExperiment.environment_id,\
                                         ChIPExperiment.antibody, ChIPExperiment.protocol_type,\
                                         ChIPExperiment.target).all()
@@ -80,7 +82,7 @@ def load_experiment_sets(experiment_sets):
             ome.get_or_create(AnalysisComposition, analysis_id = exp_analysis.id, data_set_id = exp.id)
 
     for exp_group in experiment_sets['array']:
-        exp_group_name = '_'.join(exp_group[0][0].split('_')[:-1])
+        exp_group_name = '_'.join(exp_group[0][0].split('_')[:-2])
         exp = ome.query(ArrayExperiment).filter_by(name=exp_group[0][0]).one()
         exp_analysis = ome.get_or_create(NormalizedExpression, name=exp_group_name, environment_id=exp.environment.id,\
                                          strain_id=exp.strain.id)
@@ -88,10 +90,10 @@ def load_experiment_sets(experiment_sets):
             exp = ome.query(ArrayExperiment).filter_by(name=exp_name).one()
             ome.get_or_create(AnalysisComposition, analysis_id = exp_analysis.id, data_set_id = exp.id)
 
-    default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':'', 'nf':'', 'k_min': 4, 'k_max': 22}
+    default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':'', 'nf':'', 'k_min': 4, 'k_max': 22, 'k_win':150}
 
     for exp_group in experiment_sets['ChIP']:
-        parameters = {'mrc':20, 'smooth':3, 'outNP':'', 'nrf':'', 'nf':'','k_min': 4, 'k_max': 22}
+        parameters = {'mrc':20, 'smooth':3, 'outNP':'', 'nrf':'', 'nf':'','k_min': 4, 'k_max': 22, 'k_win':150}
         if not set(parameters.items()) - set(default_parameters.items()):
             parameter_name = 'default'
         else:
@@ -183,8 +185,19 @@ if __name__ == "__main__":
 
     #data_loading.run_parallel_cuffquant()
     #data_loading.run_cuffnorm(experiment_sets['RNAseq'])
-    #data_loading.run_cuffdiff(experiment_sets['RNAseq'])
-    data_loading.run_gem(session.query(ChIPPeakAnalysis).filter_by(id=335).all(),debug=False)
+    """query all RNASeqExperiments grouped across replicates"""
+    rna_seq_exp_sets = session.query(NormalizedExpression).join(AnalysisComposition, NormalizedExpression.id == AnalysisComposition.analysis_id).\
+                                                           join(RNASeqExperiment, RNASeqExperiment.id == AnalysisComposition.data_set_id).all()
+    #data_loading.run_cuffdiff(rna_seq_exp_sets, debug=False)
+
+    control_peak_analysis = session.query(ChIPPeakAnalysis).join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
+                                                            join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
+                                                            join(Strain).\
+                                                            filter(and_(Strain.name == 'delta-crp',
+                                                                        ChIPExperiment.antibody == 'anti-crp')).one()
+
+    for chip_peak_analysis in session.query(ChIPPeakAnalysis).all():
+        data_loading.run_gem(chip_peak_analysis, debug=False)
 
 
 
@@ -193,6 +206,7 @@ if __name__ == "__main__":
     #data_loading.load_cuffdiff()
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_asv2.txt', type='asv2')
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_ec2.txt', type='ec2')
+    #data_loading.make_genome_region_map()
 
     genome_data = base.omics_database.genome_data
     genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])

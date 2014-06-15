@@ -4,6 +4,8 @@
 from om import base, data, components, settings, timing
 from os.path import split
 from math import log
+from itertools import combinations
+
 import os
 
 from numpy import zeros, roll
@@ -319,8 +321,44 @@ def run_cuffnorm(exp_sets):
              ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
              ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets])))
 
+
+def find_single_factor_pairwise_contrasts(data_sets):
+    data_set_contrasts = []
+    data_set_conditions = {}
+    for data_set in data_sets:
+        data_set_conditions[(data_set.strain, data_set.environment)] = data_set
+    for c in combinations(data_set_conditions.keys(), 2):
+        e1, e2 = sorted(c, key=str)
+        s1, c1 = e1
+        s2, c2 = e2
+        if s1 == s2:  # if the strains are the same
+           # single shift only
+            differences = (c1.carbon_source != c2.carbon_source) + \
+                          (c1.nitrogen_source != c2.nitrogen_source) + \
+                          (c1.electron_acceptor != c2.electron_acceptor)
+            if differences != 1:
+                continue
+        else:  # if the strains are different
+            if not (s1.name == "wt" or s2.name == "wt"):
+                continue
+            if c1 != c2:  # make sure the conditions are the same
+                continue
+        exp_1 = data_set_conditions[(s1, c1)]
+        exp_2 = data_set_conditions[(s2, c2)]
+        data_set_contrasts.append([exp_1,exp_2])
+    return data_set_contrasts
+
+
+def generate_cuffdiff_contrasts(normalized_expression_objects):
+    contrasts = find_single_factor_pairwise_contrasts(normalized_expression_objects)
+    with open(settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff/contrasts.txt', 'wb') as contrast_file:
+        contrast_file.write('condition_A\tcondition_B\n')
+        for contrast in contrasts:
+            contrast_file.write(contrast[0].name+'\t'+contrast[1].name+'\n')
+
+
 @timing
-def run_cuffdiff(exp_sets):
+def run_cuffdiff(normalized_expression_objects, debug=False):
     gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
     cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
     out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff'
@@ -329,43 +367,77 @@ def run_cuffdiff(exp_sets):
     os.mkdir(out_path)
     os.chdir(out_path)
 
-    os.system('cuffdiff -v -p %d --library-type fr-firststrand --FDR 0.05 -L %s %s %s' % (24,\
-             ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
-             ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets])))
+    generate_cuffdiff_contrasts(normalized_expression_objects)
+
+    if debug:
+        print settings.cufflinks+'/cuffdiff -v -p %d --library-type fr-firststrand --FDR 0.05 -C %s -L %s %s %s' % (24, out_path+'/contrasts.txt',
+                      ','.join([x.name for x in normalized_expression_objects]), gtf_file,
+                      ' '.join([','.join([cxb_dir+x.file_name.split('.')[0]+'/abundances.cxb' for x in exp.children]) for exp in normalized_expression_objects]))
+    else:
+        os.system(settings.cufflinks+'/cuffdiff -v -p %d --library-type fr-firststrand --FDR 0.05 -C %s -L %s %s %s' % (24, out_path+'/contrasts.txt',
+                      ','.join([x.name for x in normalized_expression_objects]), gtf_file,
+                      ' '.join([','.join([cxb_dir+x.file_name.split('.')[0]+'/abundances.cxb' for x in exp.children]) for exp in normalized_expression_objects])))
+
 
 @timing
-def run_gem(chip_peak_analyses, debug=False):
+def run_gem(chip_peak_analysis, control_chip_peak_analysis = None, debug=False):
     default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':''}
     gem_path = settings.home_directory+'/libraries/gem'
-    bam_dir = settings.dropbox_directory+'crp/data/ChIP/bam/'
+    bam_dir = settings.dropbox_directory+'/crp/data/ChIP/bam/'
     """ This could easily be parallelized """
 
-    for chip_peak_analysis in chip_peak_analyses:
-        outdir = chip_peak_analysis.name
-        out_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'+outdir
-        os.system('rm -r '+out_path)
-        os.mkdir(out_path)
-        os.chdir(out_path)
 
-        input_files = ' '.join(['--expt'+x.name+' '+bam_dir+x.file_name for x in chip_peak_analysis.children])
+    outdir = chip_peak_analysis.name
+    out_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'+outdir
+    os.system('rm -r '+out_path)
+    os.mkdir(out_path)
+    os.chdir(out_path)
 
-        params = json.loads(chip_peak_analysis.parameters)
-        parameter_string = ' '.join(['--'+y+' '+str(z) for y,z in params.iteritems()])
+    input_files = ' '.join(['--expt'+x.name+' '+bam_dir+x.file_name for x in chip_peak_analysis.children])
 
-
-        if debug:
-            print "java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
-                    (gem_path, gem_path, settings.dropbox_directory+'crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'crp/data/annotation',\
-                     input_files, parameter_string)
-
-        else:
-            os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s --f SAM %s" %\
-                      (gem_path, gem_path, settings.dropbox_directory+'crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'crp/data/annotation',\
-                       input_files, parameter_string))
+    if control_chip_peak_analysis:
+        from random import randint
+        """since every replicate needs a corresponding control replicate for GEMs and since we might have less or more
+           control replicates than experimental replicates, we are going to randomly sample from the set of control
+           replicates for each experimental replicate.  This should be fine because control replicates should be random
+           noise anyways. However, if specific control replicates are generated this function needs to be changed.
+        """
+        control_input_files = ' '.join(['--ctrl'+x.name+' '+bam_dir+control_chip_peak_analysis.children[randint(0,len(control_chip_peak_analysis.children))].file_name for i,x in enumerate(chip_peak_analysis.children)])
+    else:
+        control_input_files = ''
 
 
-            gem_peak_file = open(out_path+'/out_GPS_events.narrowPeak','r')
-            with open(out_path+'/'+chip_peak_analysis.name+'_gps.gff', 'wb') as peaks_gff_file:
+    params = json.loads(chip_peak_analysis.parameters)
+    parameter_string = ' '.join(['--'+y+' '+str(z) for y,z in params.iteritems()])
+
+
+    if debug:
+        print "java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s %s --f SAM %s" %\
+                     (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
+                     input_files, control_input_files, parameter_string)
+
+    else:
+        os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s %s --f SAM %s" %\
+                      (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
+                       input_files, control_input_files, parameter_string))
+
+
+        gem_peak_file = open(out_path+'/out_GPS_events.narrowPeak','r')
+        with open(out_path+'/'+chip_peak_analysis.name+'_gps.gff', 'wb') as peaks_gff_file:
+
+            for line in gem_peak_file.readlines():
+                vals = line.split('\t')
+
+                position = int(vals[3].split(':')[1])
+
+                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                         ('NC_000913','.', chip_peak_analysis.name+'_gps', position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
+                peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                                         ('NC_000913','.', chip_peak_analysis.name+'_gps', vals[1], vals[2], float(vals[6]), '+', '.','.'))
+
+        try:
+            gem_peak_file = open(out_path+'/out_GEM_events.narrowPeak','r')
+            with open(out_path+'/'+chip_peak_analysis.name+'_gem.gff', 'wb') as peaks_gff_file:
 
                 for line in gem_peak_file.readlines():
                     vals = line.split('\t')
@@ -373,26 +445,10 @@ def run_gem(chip_peak_analyses, debug=False):
                     position = int(vals[3].split(':')[1])
 
                     peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                         ('NC_000913','.', chip_peak_analysis.name+'_gps', position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
-                    peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
-                                         ('NC_000913','.', chip_peak_analysis.name+'_gps', vals[1], vals[2], float(vals[6]), '+', '.','.'))
-
-            try:
-                gem_peak_file = open(out_path+'/out_GEM_events.narrowPeak','r')
-                with open(out_path+'/'+chip_peak_analysis.name+'_gem.gff', 'wb') as peaks_gff_file:
-
-                    for line in gem_peak_file.readlines():
-                        vals = line.split('\t')
-
-                        position = int(vals[3].split(':')[1])
-
-                        peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
                                              ('NC_000913','.', chip_peak_analysis.name+'_gem', position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
-                        peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
+                    peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
                                              ('NC_000913','.', chip_peak_analysis.name+'_gem', vals[1], vals[2], float(vals[6]), '+', '.','.'))
-            except: None
-
-
+        except: None
 
 
 @timing
@@ -437,31 +493,6 @@ def load_cuffdiff():
     header = cuffdiff_output.readline()
     diff_exps = {}
 
-    #very terrible temporary hack, i blame this on the cuffdiff bug along with myself
-    bad_list = ['RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glucose_NH4Cl_O2\RNAseq_wt_glycerol_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_delta-crp_fructose_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_delta-crp_glucose_NH4Cl_O2',\
-            'RNAseq_delta-crp_fructose_NH4Cl_O2\RNAseq_wt_glycerol_NH4Cl_O2',\
-            'RNAseq_delta-crp_fructose_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_Ar3_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delAr1delAr2_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glucose_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delAr2_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_wt_fructose_NH4Cl_O2',\
-            'RNAseq_delta-crp_glycerol_NH4Cl_O2\RNAseq_wt_glucose_NH4Cl_O2']
-
     session = base.Session()
     for line in cuffdiff_output.readlines():
         vals = line.split('\t')
@@ -472,7 +503,6 @@ def load_cuffdiff():
         except: continue
 
         if pvalue > .25: continue
-        if vals[4]+'\\'+vals[5] in bad_list: continue
 
         if str(vals[4:6]) not in diff_exps.keys():
             x = vals[4].split('_')
@@ -514,8 +544,10 @@ def load_gem(chip_peak_analyses):
     gem_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'
     session = base.Session()
     for chip_peak_analysis in chip_peak_analyses:
-        gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
-
+        try: gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
+        except:
+            print 'fuck'
+            continue
         for line in gem_peak_file.readlines():
             vals = line.split('\t')
 
@@ -546,17 +578,11 @@ def load_arraydata(file_path, type='ec2'):
     for line in array_data_file.readlines():
         vals = line.split('\t')
 
-        ##This code sucks right now and depend on components or load_cuffdiff/load_cuffnorm
-        ##above being run first
 
-        gene = session.query(components.Gene).filter(or_(components.Gene.name == vals[0],\
-                                                         components.Gene.locus_id == vals[0])).first()
-        if not gene: continue
-        """
-        except:
-            try: gene = session.query(base.GenomeRegion).filter_by(name=vals[0]).first()
-            except: continue
-        """
+        try: gene = session.query(components.Gene).filter(or_(components.Gene.name == vals[0],\
+                                                         components.Gene.locus_id == vals[0])).one()
+        except: continue
+
 
         for i,val in enumerate(vals[2:]):
 
@@ -570,4 +596,20 @@ def load_arraydata(file_path, type='ec2'):
 
     session.close()
 
+@timing
+def make_genome_region_map():
+    session = base.Session()
 
+    genome_regions = session.query(data.GenomeRegion).all()
+
+    for genome_region_1 in genome_regions:
+        print genome_region_1
+        for genome_region_2 in genome_regions:
+            midpoint_1 = (genome_region_1.leftpos + genome_region_1.rightpos)/2
+            midpoint_2 = (genome_region_2.leftpos + genome_region_2.rightpos)/2
+            distance = midpoint_1 - midpoint_2
+            if abs(distance) > 1000 or distance == 0: continue
+            session.add(data.GenomeRegionMap(genome_region_1.id, genome_region_2.id, distance))
+
+    session.commit()
+    session.close()
