@@ -495,6 +495,87 @@ class ChIPPeakData(GenomeData):
         self.eventpos = eventpos
 
 
+
+ome = Session()
+
+AnalysisComposition2 = aliased(AnalysisComposition)
+AnalysisComposition3 = aliased(AnalysisComposition)
+NormalizedExpression2 = aliased(NormalizedExpression)
+
+
+chip_peak = ome.query(ChIPPeakAnalysis.id.label('chip_peak_id'),
+                          ChIPPeakAnalysis.environment_id.label('chip_peak_environment_id'),
+                          ChIPPeakAnalysis.strain_id.label('chip_peak_strain_id'),
+                          ChIPExperiment.target.label('chip_peak_target'),
+                          ChIPExperiment.antibody.label('chip_peak_antibody'),
+                          Strain.name.label('chip_peak_strain')).\
+                           join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
+                           join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
+                           join(Strain, ChIPExperiment.strain_id == Strain.id).\
+                           join(InVivoEnvironment, InVivoEnvironment.id == ChIPExperiment.environment_id).subquery()
+
+
+Strain2 = aliased(Strain)
+
+diff_exp_chip_peak = ome.query(DifferentialExpression.id.label('diff_exp_id'),
+                                   chip_peak.c.chip_peak_id,
+                                   chip_peak.c.chip_peak_target.label('target'),
+                                   chip_peak.c.chip_peak_antibody.label('antibody'),
+                                   chip_peak.c.chip_peak_strain.label('strain'),
+                                   InVivoEnvironment.carbon_source.label('carbon_source'),
+                                   InVivoEnvironment.nitrogen_source.label('nitrogen_source'),
+                                   InVivoEnvironment.electron_acceptor.label('electron_acceptor')).\
+                                    join(AnalysisComposition2, DifferentialExpression.id == AnalysisComposition2.analysis_id).\
+                                    join(AnalysisComposition3, DifferentialExpression.id == AnalysisComposition3.analysis_id).\
+                                    join(NormalizedExpression, AnalysisComposition2.data_set_id == NormalizedExpression.id).\
+                                    join(NormalizedExpression2, AnalysisComposition3.data_set_id == NormalizedExpression2.id).\
+                                    join(Strain, Strain.id == NormalizedExpression.strain_id).\
+                                    join(Strain2, Strain2.id == NormalizedExpression2.strain_id).\
+                                    join(InVivoEnvironment, InVivoEnvironment.id == NormalizedExpression.environment_id).\
+                                    filter(and_(NormalizedExpression.environment_id == NormalizedExpression2.environment_id,
+                                                NormalizedExpression.strain_id != NormalizedExpression2.strain_id)).\
+                                    join(chip_peak, and_(chip_peak.c.chip_peak_environment_id == NormalizedExpression.environment_id,
+                                                                  func.substr(chip_peak.c.chip_peak_antibody, 6,
+                                                                  func.length(chip_peak.c.chip_peak_antibody)) == 'crp',
+                                                             and_(Strain2.name == 'wt', Strain.name == 'delta-crp'))).\
+                                    filter(chip_peak.c.chip_peak_strain_id == Strain2.id).subquery()
+
+
+
+from om.components import Gene
+
+chip_peak_gene_expression = ome.query(ChIPPeakData.value.label('peak_value'),
+                                          GenomeRegion.id.label('genome_region_id'),
+                                          GenomeRegion.leftpos.label('leftpos'),
+                                          GenomeRegion.rightpos.label('rightpos'),
+                                          GenomeRegion.strand.label('strand'),
+                                          diff_exp_chip_peak.c.target.label('target'),
+                                          diff_exp_chip_peak.c.strain.label('strain'),
+                                          diff_exp_chip_peak.c.antibody.label('antibody'),
+                                          diff_exp_chip_peak.c.carbon_source.label('carbon_source'),
+                                          diff_exp_chip_peak.c.nitrogen_source.label('nitrogen_source'),
+                                          diff_exp_chip_peak.c.electron_acceptor.label('electron_acceptor'),
+                                          Gene.name.label('gene_name'),
+                                          DiffExpData.value.label('expression_value'),
+                                          DiffExpData.pval.label('pval')).\
+                                           join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
+                                           join(DiffExpData, DiffExpData.genome_region_id == GenomeRegionMap.genome_region_id_2).\
+                                           join(diff_exp_chip_peak, and_(DiffExpData.data_set_id == diff_exp_chip_peak.c.diff_exp_id,
+                                                                         ChIPPeakData.data_set_id == diff_exp_chip_peak.c.chip_peak_id)).\
+                                           join(Gene, Gene.id == DiffExpData.genome_region_id).\
+                                           join(GenomeRegion, GenomeRegion.id == GenomeRegionMap.genome_region_id_1).subquery()
+
+
+
+class ChIPPeakGeneExpression(Base):
+    __table__ = chip_peak_gene_expression
+
+    def __repr__(self):
+        return "ChIPPeakGeneExpression(%s, %s, %s): %d-%d %5.2f %s,%s,%s %s %5.2f %5.2f" % \
+            (self.target, self.strain, self.antibody, self.leftpos, self.rightpos, self.peak_value,
+             self.carbon_source, self.nitrogen_source, self.electron_acceptor, self.gene_name, self.expression_value, self.pval)
+
+
 def _load_data(collection,data):
     collection.insert(data)
 

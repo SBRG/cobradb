@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
     load_experiment_sets(experiment_sets)
 
-    #component_loading.load_genes(base, components)
+    component_loading.load_genes(base, components)
     #component_loading.load_proteins(base, components)
     #component_loading.load_bindsites(base, components)
     #component_loading.load_transcription_units(base, components)
@@ -196,17 +196,17 @@ if __name__ == "__main__":
                                                             filter(and_(Strain.name == 'delta-crp',
                                                                         ChIPExperiment.antibody == 'anti-crp')).one()
 
-    for chip_peak_analysis in session.query(ChIPPeakAnalysis).all():
-        data_loading.run_gem(chip_peak_analysis, debug=False)
+    #for chip_peak_analysis in session.query(ChIPPeakAnalysis).all():
+    #    data_loading.run_gem(chip_peak_analysis, debug=False)
 
 
 
-    #data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
+    data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
     #data_loading.load_cuffnorm()
-    #data_loading.load_cuffdiff()
+    data_loading.load_cuffdiff()
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_asv2.txt', type='asv2')
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_ec2.txt', type='ec2')
-    #data_loading.make_genome_region_map()
+    data_loading.make_genome_region_map()
 
     genome_data = base.omics_database.genome_data
     genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
