@@ -42,6 +42,9 @@ class GenomeRegion(Base):
         return "GenomeRegion: %d-%d (%s)" % \
                 (self.leftpos, self.rightpos, self.strand)
 
+    def __repr__dict__(self):
+        return {"name":self.name,"id":self.id,"leftpos":self.leftpos,"rightpos":self.rightpos,"strand":self.strand}
+
     def __init__(self, leftpos, rightpos, strand, name=None):
         self.leftpos = leftpos
         self.rightpos = rightpos
