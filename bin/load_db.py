@@ -1,5 +1,6 @@
 from om import base,settings,components,timing
 from om.data import *
+from om.model import *
 from om.loading import data_loading
 from om.loading import component_loading
 
@@ -18,12 +19,12 @@ def calculate_normalization_factors():
         directory = settings.dropbox_directory+'/crp/data/'+exp_type+'/bam'
         for file_name in os.listdir(directory):
             if file_name[-3:] != 'bam': continue
-            #mapped_reads[file_name] = int(subprocess.check_output(['samtools', 'flagstat', directory+'/'+file_name]).split('\n')[2].split()[0])
-            mapped_reads[file_name] = 30000000
+            mapped_reads[file_name] = int(subprocess.check_output(['samtools', 'flagstat', directory+'/'+file_name]).split('\n')[2].split()[0])
+            #mapped_reads[file_name] = 30000000
         mean_read_count = np.array(mapped_reads.values()).mean()
         for exp,value in mapped_reads.iteritems():
-            #mapped_read_norm_factor[exp] = mean_read_count/value
-            mapped_read_norm_factor[exp] = .9
+            mapped_read_norm_factor[exp] = mean_read_count/value
+            #mapped_read_norm_factor[exp] = .9
     return mapped_read_norm_factor
 
 @timing
@@ -159,7 +160,7 @@ if __name__ == "__main__":
 
     #if not query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
     #                    'are you sure you want to do this?'): sys.exit()
-
+    """
     base.Base.metadata.drop_all()
     base.omics_database.genome_data.drop()
     base.Base.metadata.create_all()
@@ -177,10 +178,10 @@ if __name__ == "__main__":
     load_experiment_sets(experiment_sets)
 
     component_loading.load_genes(base, components)
-    #component_loading.load_proteins(base, components)
-    #component_loading.load_bindsites(base, components)
-    #component_loading.load_transcription_units(base, components)
-
+    component_loading.load_proteins(base, components)
+    component_loading.load_bindsites(base, components)
+    component_loading.load_transcription_units(base, components)
+    """
     session = base.Session()
 
     #data_loading.run_parallel_cuffquant()
@@ -197,17 +198,17 @@ if __name__ == "__main__":
                                                                         ChIPExperiment.antibody == 'anti-crp')).one()
 
     #for chip_peak_analysis in session.query(ChIPPeakAnalysis).all():
-    #    data_loading.run_gem(chip_peak_analysis, debug=False)
+    #   data_loading.run_gem(chip_peak_analysis, debug=False)
 
 
 
-    data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
+    #data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
     #data_loading.load_cuffnorm()
-    data_loading.load_cuffdiff()
+    #data_loading.load_cuffdiff()
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_asv2.txt', type='asv2')
     #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_ec2.txt', type='ec2')
     data_loading.make_genome_region_map()
 
     genome_data = base.omics_database.genome_data
-    genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
+    #genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
     session.close()

@@ -42,6 +42,9 @@ class GenomeRegion(Base):
         return "GenomeRegion: %d-%d (%s)" % \
                 (self.leftpos, self.rightpos, self.strand)
 
+    def __repr__dict__(self):
+        return {"name":self.name,"id":self.id,"leftpos":self.leftpos,"rightpos":self.rightpos,"strand":self.strand}
+
     def __init__(self, leftpos, rightpos, strand, name=None):
         self.leftpos = leftpos
         self.rightpos = rightpos
@@ -69,6 +72,28 @@ class Component(Base):
         return "Component (#%d):  %s" % \
             (self.id, self.name)
 
+
+class Reaction(Base):
+    __tablename__ = 'reaction'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    abbreviation = Column(String(10))
+    name = Column(String(100))
+    long_name = Column(String(100))
+    type = Column(String(20))
+
+    __table_args__ = (UniqueConstraint('name'),{})
+
+    __mapper_args__ = {'polymorphic_identity': 'reaction',
+                       'polymorphic_on': type
+                      }
+
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return "Reaction (#%d):  %s" % \
+            (self.id, self.name)
 
 class DataSource(Base):
     __tablename__ = 'data_source'

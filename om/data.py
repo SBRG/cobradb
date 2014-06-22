@@ -4,7 +4,7 @@ from om.base import *
 
 from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
-    String, Float, ForeignKey, ForeignKeyConstraint, select
+    String, Float, ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint, select
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.sql.expression import join
@@ -504,15 +504,17 @@ NormalizedExpression2 = aliased(NormalizedExpression)
 
 
 chip_peak = ome.query(ChIPPeakAnalysis.id.label('chip_peak_id'),
-                          ChIPPeakAnalysis.environment_id.label('chip_peak_environment_id'),
-                          ChIPPeakAnalysis.strain_id.label('chip_peak_strain_id'),
-                          ChIPExperiment.target.label('chip_peak_target'),
-                          ChIPExperiment.antibody.label('chip_peak_antibody'),
-                          Strain.name.label('chip_peak_strain')).\
-                           join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
-                           join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
-                           join(Strain, ChIPExperiment.strain_id == Strain.id).\
-                           join(InVivoEnvironment, InVivoEnvironment.id == ChIPExperiment.environment_id).subquery()
+                      ChIPPeakAnalysis.environment_id.label('chip_peak_environment_id'),
+                      ChIPExperiment.target.label('chip_peak_target'),
+                      ChIPExperiment.antibody.label('chip_peak_antibody'),
+                      Strain.id.label('chip_peak_strain_id'),
+                      Strain.name.label('chip_peak_strain')).\
+                      join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
+                      join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
+                      join(Strain, ChIPExperiment.strain_id == Strain.id).\
+                      join(InVivoEnvironment, InVivoEnvironment.id == ChIPExperiment.environment_id).\
+                      group_by(ChIPPeakAnalysis.id, ChIPPeakAnalysis.environment_id, ChIPExperiment.target,
+                               ChIPExperiment.antibody, Strain.id).subquery()
 
 
 Strain2 = aliased(Strain)
@@ -542,38 +544,47 @@ diff_exp_chip_peak = ome.query(DifferentialExpression.id.label('diff_exp_id'),
 
 
 
-from om.components import Gene
+from om.components import Gene,TU,TUGenes
+
+GenomeRegion2 = aliased(GenomeRegion)
 
 chip_peak_gene_expression = ome.query(ChIPPeakData.value.label('peak_value'),
-                                          GenomeRegion.id.label('genome_region_id'),
-                                          GenomeRegion.leftpos.label('leftpos'),
-                                          GenomeRegion.rightpos.label('rightpos'),
-                                          GenomeRegion.strand.label('strand'),
-                                          diff_exp_chip_peak.c.target.label('target'),
-                                          diff_exp_chip_peak.c.strain.label('strain'),
-                                          diff_exp_chip_peak.c.antibody.label('antibody'),
-                                          diff_exp_chip_peak.c.carbon_source.label('carbon_source'),
-                                          diff_exp_chip_peak.c.nitrogen_source.label('nitrogen_source'),
-                                          diff_exp_chip_peak.c.electron_acceptor.label('electron_acceptor'),
-                                          Gene.name.label('gene_name'),
-                                          DiffExpData.value.label('expression_value'),
-                                          DiffExpData.pval.label('pval')).\
-                                           join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
-                                           join(DiffExpData, DiffExpData.genome_region_id == GenomeRegionMap.genome_region_id_2).\
-                                           join(diff_exp_chip_peak, and_(DiffExpData.data_set_id == diff_exp_chip_peak.c.diff_exp_id,
-                                                                         ChIPPeakData.data_set_id == diff_exp_chip_peak.c.chip_peak_id)).\
-                                           join(Gene, Gene.id == DiffExpData.genome_region_id).\
-                                           join(GenomeRegion, GenomeRegion.id == GenomeRegionMap.genome_region_id_1).subquery()
-
+                 ChIPPeakData.genome_region_id.label('peak_genome_region_id'),
+                 GenomeRegion.leftpos.label('leftpos'),
+                 GenomeRegion.rightpos.label('rightpos'),
+                 GenomeRegion.strand.label('strand'),
+                 diff_exp_chip_peak.c.target.label('target'),
+                 diff_exp_chip_peak.c.strain.label('strain'),
+                 diff_exp_chip_peak.c.antibody.label('antibody'),
+                 diff_exp_chip_peak.c.carbon_source.label('carbon_source'),
+                 diff_exp_chip_peak.c.nitrogen_source.label('nitrogen_source'),
+                 diff_exp_chip_peak.c.electron_acceptor.label('electron_acceptor'),
+                 TU.name.label('tu_name'),
+                 Gene.locus_id.label('locus_id'),
+                 GenomeRegion2.name.label('gene_name'),
+                 DiffExpData.genome_region_id.label('gene_genome_region_id'),
+                 DiffExpData.value.label('expression_value'),
+                 DiffExpData.pval.label('pval'),
+                 ChIPPeakData.data_set_id.label('chip_peak_id'),
+                 DiffExpData.data_set_id.label('diff_exp_id')).\
+                    join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
+                    join(TU, GenomeRegionMap.genome_region_id_2 == TU.genome_region_id).\
+                    join(TUGenes, TUGenes.tu_id == TU.id).\
+                    join(DiffExpData, DiffExpData.genome_region_id == TUGenes.gene_id).\
+                    join(diff_exp_chip_peak, and_(DiffExpData.data_set_id == diff_exp_chip_peak.c.diff_exp_id,
+                                                  ChIPPeakData.data_set_id == diff_exp_chip_peak.c.chip_peak_id)).\
+                    join(Gene, Gene.id == TUGenes.gene_id).\
+                    join(GenomeRegion, GenomeRegion.id == ChIPPeakData.genome_region_id).\
+                    join(GenomeRegion2, GenomeRegion2.id == TUGenes.gene_id).subquery()
 
 
 class ChIPPeakGeneExpression(Base):
     __table__ = chip_peak_gene_expression
 
     def __repr__(self):
-        return "ChIPPeakGeneExpression(%s, %s, %s): %d-%d %5.2f %s,%s,%s %s %5.2f %5.2f" % \
-            (self.target, self.strain, self.antibody, self.leftpos, self.rightpos, self.peak_value,
-             self.carbon_source, self.nitrogen_source, self.electron_acceptor, self.gene_name, self.expression_value, self.pval)
+        return "TF: %s, Gene: %s, %s, %5.2f, %5.2f Condition: %s, %s, %s Peak: %d-%d value:%5.2f" % \
+            (self.target, self.gene_name, self.locus_id, self.expression_value, self.pval,
+             self.carbon_source, self.nitrogen_source, self.electron_acceptor, self.leftpos, self.rightpos, self.peak_value)
 
 
 def _load_data(collection,data):

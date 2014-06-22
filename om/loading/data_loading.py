@@ -96,7 +96,7 @@ def count_coverage_5prime(samfile, flip=False):
         minus_strands.append(zeros((chromosome_sizes[reference],)))
     # iterate through each mapped read
     for i, read in enumerate(samfile):
-        if i > 1e3: break
+        #if i > 1e3: break
         if read.is_unmapped:
             continue
         if read.is_reverse:
@@ -214,7 +214,7 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
             counts = all_counts[reference][strand]
             entries = []
             for i in counts.nonzero()[0]:
-                #if abs(float(counts[i])) < loading_cutoff: continue
+                if abs(float(counts[i])) < loading_cutoff: continue
 
                 entries.append({
                                 "leftpos": int(i),
@@ -223,9 +223,9 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
                                 "strand": strand,
                                 "data_set_id": data_set_id})
 
-                #if i%50000 == 0:
-                #    genome_data.insert(entries)
-                #    entries = []
+                if i%50000 == 0:
+                    genome_data.insert(entries)
+                    entries = []
             genome_data.insert(entries)
     if not bulk_file_load:
         genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])
@@ -270,8 +270,8 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
                                            target=exp_type[1], file_name=exp_name, normalization_method=norm_method,\
                                                                                    normalization_factor=norm_factor)
 
-        #load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=2,\
-        #                   bulk_file_load=bulk_file_load, five_prime=True, norm_factor=norm_factor)
+        load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
+                           bulk_file_load=bulk_file_load, five_prime=True, norm_factor=norm_factor)
 
 
 
@@ -282,8 +282,8 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
                                            file_name=exp_name, normalization_method=norm_method,\
                                                                normalization_factor=norm_factor)
 
-        #load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
-        #                   bulk_file_load=bulk_file_load, five_prime=True, flip=True, norm_factor=norm_factor)
+        load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
+                          bulk_file_load=bulk_file_load, five_prime=False, flip=True, norm_factor=norm_factor)
 
     elif exp_type[0][0:7] == 'affyexp':
         experiment = session.get_or_create(data.ArrayExperiment, name=name, replicate=vals[5],\
@@ -544,10 +544,8 @@ def load_gem(chip_peak_analyses):
     gem_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'
     session = base.Session()
     for chip_peak_analysis in chip_peak_analyses:
-        try: gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
-        except:
-            print 'fuck'
-            continue
+        gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
+
         for line in gem_peak_file.readlines():
             vals = line.split('\t')
 
@@ -600,16 +598,23 @@ def load_arraydata(file_path, type='ec2'):
 def make_genome_region_map():
     session = base.Session()
 
+    data.GenomeRegionMap.__table__.drop()
+    data.GenomeRegionMap.__table__.create()
+
     genome_regions = session.query(data.GenomeRegion).all()
 
     for genome_region_1 in genome_regions:
-        print genome_region_1
+        #print genome_region_1
         for genome_region_2 in genome_regions:
+            if genome_region_1.id == genome_region_2.id: continue
+
             midpoint_1 = (genome_region_1.leftpos + genome_region_1.rightpos)/2
             midpoint_2 = (genome_region_2.leftpos + genome_region_2.rightpos)/2
-            distance = midpoint_1 - midpoint_2
-            if abs(distance) > 1000 or distance == 0: continue
-            session.add(data.GenomeRegionMap(genome_region_1.id, genome_region_2.id, distance))
+            midpoint_distance = midpoint_1 - midpoint_2
+            left_right_distance = genome_region_1.leftpos - genome_region_2.rightpos
+            right_left_distance = genome_region_1.rightpos - genome_region_2.leftpos
+            if abs(midpoint_distance) < 1000 or abs(left_right_distance) < 1000 or abs(right_left_distance) < 1000:
+                session.add(data.GenomeRegionMap(genome_region_1.id, genome_region_2.id, midpoint_distance))
 
     session.commit()
     session.close()
