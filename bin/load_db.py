@@ -11,37 +11,40 @@ import os,sys,math,shutil,subprocess
 
 
 
-def calculate_normalization_factors():
-    exp_types = ['ChIP','RNAseq']
+def calculate_normalization_factors(directory_path):
     mapped_read_norm_factor = {}
-    for exp_type in exp_types:
-        mapped_reads = {}
-        directory = settings.dropbox_directory+'/crp/data/'+exp_type+'/bam'
-        for file_name in os.listdir(directory):
-            if file_name[-3:] != 'bam': continue
-            mapped_reads[file_name] = int(subprocess.check_output(['samtools', 'flagstat', directory+'/'+file_name]).split('\n')[2].split()[0])
-            #mapped_reads[file_name] = 30000000
-        mean_read_count = np.array(mapped_reads.values()).mean()
-        for exp,value in mapped_reads.iteritems():
-            mapped_read_norm_factor[exp] = mean_read_count/value
-            #mapped_read_norm_factor[exp] = .9
+    mapped_reads = {}
+
+    for file_name in os.listdir(directory_path):
+        if file_name[-3:] != 'bam': continue
+        #mapped_reads[file_name] = int(subprocess.check_output(['samtools', 'flagstat', directory_path+'/'+file_name]).split('\n')[2].split()[0])
+        mapped_reads[file_name] = 30000000
+
+    mean_read_count = np.array(mapped_reads.values()).mean()
+
+    for exp,value in mapped_reads.iteritems():
+        #mapped_read_norm_factor[exp] = mean_read_count/value
+        mapped_read_norm_factor[exp] = .9
+
     return mapped_read_norm_factor
 
+
 @timing
-def load_raw_files(file_names):
+def load_raw_files(directory_path):
     """This will load raw .bam files and affymetrix .CEL files into the associated
     genome_data tables.  The raw signal will go into a mongoDB genome_data table and
     the rest will go into corresponding SQL tables
     """
-    mapped_read_norm_factor = calculate_normalization_factors()
-    for file_name in file_names:
+    mapped_read_norm_factor = calculate_normalization_factors(directory_path)
+
+    for file_name in os.listdir(directory_path):
         if file_name[-3:] != 'bam' and file_name[-3:] != 'CEL': continue
         try:
             norm_factor = mapped_read_norm_factor[file_name]
-            data_loading.name_based_experiment_loading(file_name, bulk_file_load=True, norm_factor=norm_factor)
-            data_loading.name_based_experiment_loading(file_name, bulk_file_load=True, norm_factor=1.)
+            data_loading.name_based_experiment_loading(file_name, directory_path, bulk_file_load=True, norm_factor=norm_factor)
+            #data_loading.name_based_experiment_loading(file_name, bulk_file_load=True, norm_factor=1.)
         except:
-            data_loading.name_based_experiment_loading(file_name, bulk_file_load=True)
+            data_loading.name_based_experiment_loading(file_name, directory_path, bulk_file_load=True)
 
 
 def query_experiment_sets():
@@ -51,7 +54,6 @@ def query_experiment_sets():
     ome = base.Session()
 
     experiment_sets['RNAseq'] = ome.query(func.array_agg(RNASeqExperiment.name),func.array_agg(RNASeqExperiment.file_name)).\
-                                          filter(RNASeqExperiment.normalization_factor == 1.).\
                                           group_by(RNASeqExperiment.strain_id, RNASeqExperiment.environment_id,\
                                           RNASeqExperiment.machine_id,RNASeqExperiment.sequencing_type).all()
 
@@ -60,7 +62,6 @@ def query_experiment_sets():
                                          ArrayExperiment.platform).all()
 
     experiment_sets['ChIP'] = ome.query(func.array_agg(ChIPExperiment.name),func.array_agg(ChIPExperiment.file_name)).\
-                                        filter(ChIPExperiment.normalization_factor == 1.).\
                                         group_by(ChIPExperiment.strain_id, ChIPExperiment.environment_id,\
                                         ChIPExperiment.antibody, ChIPExperiment.protocol_type,\
                                         ChIPExperiment.target).all()
@@ -107,7 +108,6 @@ def load_experiment_sets(experiment_sets):
         exp_analysis = ome.get_or_create(ChIPPeakAnalysis, name=exp_group_name, environment_id=exp.environment.id, strain_id=exp.strain.id,\
                                      parameters=json.dumps(parameters))
         for exp_name in exp_group[0]:
-            if exp_name.split('_')[-1] != '1.0': continue
             exp = ome.query(ChIPExperiment).filter_by(name=exp_name).one()
             ome.get_or_create(AnalysisComposition, analysis_id = exp_analysis.id, data_set_id = exp.id)
 
@@ -160,18 +160,16 @@ if __name__ == "__main__":
 
     #if not query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
     #                    'are you sure you want to do this?'): sys.exit()
-    """
+
     base.Base.metadata.drop_all()
     base.omics_database.genome_data.drop()
     base.Base.metadata.create_all()
 
-
-    file_names = os.listdir(settings.dropbox_directory+'/crp/data/ChIP/bam') + \
-                 os.listdir(settings.dropbox_directory+'/crp/data/RNAseq/bam') + \
-                 os.listdir(settings.dropbox_directory+'/om_data/Microarray/asv2') + \
-                 os.listdir(settings.dropbox_directory+'/om_data/Microarray/ec2')
-
-    load_raw_files(file_names)
+    load_raw_files(settings.dropbox_directory+'/om_data/ChIP/bam/crp')
+    load_raw_files(settings.dropbox_directory+'/om_data/ChIP/bam/yome')
+    load_raw_files(settings.dropbox_directory+'/om_data/RNAseq/bam')
+    load_raw_files(settings.dropbox_directory+'/om_data/Microarray/asv2')
+    load_raw_files(settings.dropbox_directory+'/om_data/Microarray/ec2')
 
     experiment_sets = query_experiment_sets()
 
@@ -181,34 +179,36 @@ if __name__ == "__main__":
     component_loading.load_proteins(base, components)
     component_loading.load_bindsites(base, components)
     component_loading.load_transcription_units(base, components)
-    """
+
     session = base.Session()
 
-    #data_loading.run_parallel_cuffquant()
+    #for exp in session.query(RNASeqExperiment).all(): data_loading.run_cuffquant(exp)
+
     #data_loading.run_cuffnorm(experiment_sets['RNAseq'])
     """query all RNASeqExperiments grouped across replicates"""
     rna_seq_exp_sets = session.query(NormalizedExpression).join(AnalysisComposition, NormalizedExpression.id == AnalysisComposition.analysis_id).\
                                                            join(RNASeqExperiment, RNASeqExperiment.id == AnalysisComposition.data_set_id).all()
     #data_loading.run_cuffdiff(rna_seq_exp_sets, debug=False)
 
-    control_peak_analysis = session.query(ChIPPeakAnalysis).join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
-                                                            join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
-                                                            join(Strain).\
-                                                            filter(and_(Strain.name == 'delta-crp',
-                                                                        ChIPExperiment.antibody == 'anti-crp')).one()
+    #control_peak_analysis = session.query(ChIPPeakAnalysis).join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
+    #                                                        join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
+    #                                                        join(Strain).\
+    #                                                        filter(and_(Strain.name == 'delta-crp',
+    #                                                                    ChIPExperiment.antibody == 'anti-crp')).one()
 
     #for chip_peak_analysis in session.query(ChIPPeakAnalysis).all():
-    #   data_loading.run_gem(chip_peak_analysis, debug=False)
+    #    try: data_loading.run_gem(chip_peak_analysis, debug=False)
+    #    except: print 'Faulty gem analysis: '+chip_peak_analysis.name
 
 
 
-    #data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
-    #data_loading.load_cuffnorm()
-    #data_loading.load_cuffdiff()
-    #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_asv2.txt', type='asv2')
-    #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_ec2.txt', type='ec2')
+    data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
+    data_loading.load_cuffnorm()
+    data_loading.load_cuffdiff()
+    data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_asv2.txt', type='asv2')
+    data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_ec2.txt', type='ec2')
     data_loading.make_genome_region_map()
 
     genome_data = base.omics_database.genome_data
-    #genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
+    genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
     session.close()

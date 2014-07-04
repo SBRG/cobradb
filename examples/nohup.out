@@ -5036,3 +5036,9 @@ WARNING:tornado.access:404 GET /files/data.tsv (72.197.214.22) 1.33ms referer=ht
 2014-06-22 00:06:02.171 [NotebookApp] Saving notebook at /Untitled0.ipynb
 2014-06-22 00:10:02.155 [NotebookApp] Saving notebook at /Untitled0.ipynb
 2014-06-22 00:16:02.217 [NotebookApp] Saving notebook at /Untitled0.ipynb
+INFO:tornado.access:302 GET / (137.110.118.65) 0.82ms
+WARNING:tornado.general:SSL Error on 45 ('66.249.84.173', 43096): [Errno 1] _ssl.c:507: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+2014-06-23 19:51:54.137 [NotebookApp] CRITICAL | received signal 15, stopping
+2014-06-23 19:51:54.138 [NotebookApp] Shutting down kernels
+2014-06-23 19:51:54.552 [NotebookApp] Kernel shutdown: 746cd1af-473a-48ac-a463-a13fd0f52f1b
+2014-06-23 19:51:54.959 [NotebookApp] Kernel shutdown: 8bb98eaf-9a63-4f14-a523-23f2bb7a1283

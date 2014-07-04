@@ -79,7 +79,7 @@ class ModelComponent(Base):
 class ReactionMatrix(Base):
     __tablename__ = 'reaction_matrix'
 
-    model_reaction_id = Column(Integer, ForeignKey('model_reaction.id'), primary_key=True)
+    model_reaction_id = Column(Integer, ForeignKey('model_reaction.reaction_id'), primary_key=True)
     model_component_id = Column(Integer, ForeignKey('model_component.id'), primary_key=True)
     stoichiometry = Column(Float)
 
@@ -99,7 +99,7 @@ class ReactionMatrix(Base):
 class GPR(Base):
     __tablename__ = 'gpr'
 
-    model_reaction_id = Column(Integer, ForeignKey('model_reaction.id'), primary_key=True)
+    model_reaction_id = Column(Integer, ForeignKey('model_reaction.reaction_id'), primary_key=True)
     gene_id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
 
     __table_args__ = (UniqueConstraint('model_reaction_id','gene_id'),{})

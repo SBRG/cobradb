@@ -36,6 +36,7 @@ def count_coverage(samfile, flip=False, include_insert=False):
         minus_strands.append(zeros((chromosome_sizes[reference],)))
     # iterate through each mapped read
     for i, read in enumerate(samfile):
+        #if i > 1e4: break
         if read.is_unmapped:
             continue
         # for paired and data get entire insert only from read 1
@@ -96,7 +97,7 @@ def count_coverage_5prime(samfile, flip=False):
         minus_strands.append(zeros((chromosome_sizes[reference],)))
     # iterate through each mapped read
     for i, read in enumerate(samfile):
-        #if i > 1e3: break
+        #if i > 1e4: break
         if read.is_unmapped:
             continue
         if read.is_reverse:
@@ -226,6 +227,7 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
                 if i%50000 == 0:
                     genome_data.insert(entries)
                     entries = []
+            if not entries: continue
             genome_data.insert(entries)
     if not bulk_file_load:
         genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])
@@ -233,7 +235,7 @@ def load_samfile_to_db(sam_filepath, data_set_id, loading_cutoff=0, bulk_file_lo
     samfile.close()
 
 @timing
-def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
+def name_based_experiment_loading(exp_name, directory_path, lab='palsson', institution='UCSD',
 								  bulk_file_load=False, norm_factor=1.):
     vals = exp_name.split('_')
     if len(vals) < 5: return
@@ -264,25 +266,25 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
 
     if exp_type[0][0:4] == 'chip':
 
-        experiment = session.get_or_create(data.ChIPExperiment, name=name+'_'+str(norm_factor), replicate=vals[5],\
+        experiment = session.get_or_create(data.ChIPExperiment, name=name, replicate=vals[5],\
                                            strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
-                                           protocol_type=exp_type[0], antibody=vals[6],\
+                                           protocol_type=exp_type[0], antibody=vals[6], directory_path=directory_path,\
                                            target=exp_type[1], file_name=exp_name, normalization_method=norm_method,\
                                                                                    normalization_factor=norm_factor)
 
-        load_samfile_to_db(settings.dropbox_directory+'/crp/data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
+        load_samfile_to_db(directory_path+'/'+exp_name, experiment.id, loading_cutoff=5,\
                            bulk_file_load=bulk_file_load, five_prime=True, norm_factor=norm_factor)
 
 
 
     elif exp_type[0][0:6] == 'RNAseq':
-        experiment = session.get_or_create(data.RNASeqExperiment, name=name+'_'+str(norm_factor), replicate=vals[5],\
+        experiment = session.get_or_create(data.RNASeqExperiment, name=name, replicate=vals[5],\
                                            strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
                                            machine_id='miseq', sequencing_type='unpaired',\
                                            file_name=exp_name, normalization_method=norm_method,\
                                                                normalization_factor=norm_factor)
 
-        load_samfile_to_db(settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
+        load_samfile_to_db(directory_path+'/'+exp_name, experiment.id, loading_cutoff=10,\
                           bulk_file_load=bulk_file_load, five_prime=False, flip=True, norm_factor=norm_factor)
 
     elif exp_type[0][0:7] == 'affyexp':
@@ -294,30 +296,35 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
     session.close()
 
 
-def run_cuffquant(exp):
+def run_cuffquant(exp, overwrite=False):
 
-    os.chdir(settings.dropbox_directory+'/crp/data/RNAseq/cxb')
-    gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
+    gtf_file = settings.dropbox_directory+'/om_data/annotation/e_coli_notRNA_rRNA.gtf'
 
-    out_path = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'+exp.name
+    out_path = settings.dropbox_directory+'/om_data/RNAseq/cxb/'+exp.name
+
+    try: os.chdir(out_path)
+    except: os.mkdir(out_path)
+
+    if 'abundances.cxb' in os.listdir(out_path) and not overwrite: return
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
     os.chdir(out_path)
-    exp_file = settings.dropbox_directory+'/crp/data/RNAseq/bam/'+exp.file_name
+    exp_file = settings.dropbox_directory+'/om_data/RNAseq/bam/'+exp.file_name
 
-    os.system('%s -p %d %s %s' % ('cuffquant', 8, gtf_file, exp_file))
+    os.system('%s -p %d %s %s' % (settings.cufflinks+'/cuffquant', 8, gtf_file, exp_file))
 
 @timing
 def run_cuffnorm(exp_sets):
-    gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
-    cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
-    out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm'
+    gtf_file = settings.dropbox_directory+'/om_data/annotation/e_coli_notRNA_rRNA.gtf'
+    cxb_dir = settings.dropbox_directory+'/om_data/RNAseq/cxb/'
+    out_path = settings.dropbox_directory+'/om_data/RNAseq/cuffnorm'
 
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
     os.chdir(out_path)
 
-    os.system('cuffnorm -p %d --library-type fr-firststrand -L %s %s %s' % (24,\
+
+    os.system(settings.cufflinks+'/cuffnorm -p %d --library-type fr-firststrand -L %s %s %s' % (24,\
              ','.join([x[0][0][:-2] for x in exp_sets]), gtf_file,\
              ' '.join([','.join([cxb_dir+x.split('.')[0]+'/abundances.cxb' for x in exp[0]]) for exp in exp_sets])))
 
@@ -351,7 +358,7 @@ def find_single_factor_pairwise_contrasts(data_sets):
 
 def generate_cuffdiff_contrasts(normalized_expression_objects):
     contrasts = find_single_factor_pairwise_contrasts(normalized_expression_objects)
-    with open(settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff/contrasts.txt', 'wb') as contrast_file:
+    with open(settings.dropbox_directory+'/om_data/RNAseq/cuffdiff/contrasts.txt', 'wb') as contrast_file:
         contrast_file.write('condition_A\tcondition_B\n')
         for contrast in contrasts:
             contrast_file.write(contrast[0].name+'\t'+contrast[1].name+'\n')
@@ -359,9 +366,9 @@ def generate_cuffdiff_contrasts(normalized_expression_objects):
 
 @timing
 def run_cuffdiff(normalized_expression_objects, debug=False):
-    gtf_file = settings.dropbox_directory+'/crp/data/annotation/e_coli_notRNA_rRNA.gtf'
-    cxb_dir = settings.dropbox_directory+'/crp/data/RNAseq/cxb/'
-    out_path = settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff'
+    gtf_file = settings.dropbox_directory+'/om_data/annotation/e_coli_notRNA_rRNA.gtf'
+    cxb_dir = settings.dropbox_directory+'/om_data/RNAseq/cxb/'
+    out_path = settings.dropbox_directory+'/om_data/RNAseq/cuffdiff'
 
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
@@ -380,21 +387,22 @@ def run_cuffdiff(normalized_expression_objects, debug=False):
 
 
 @timing
-def run_gem(chip_peak_analysis, control_chip_peak_analysis = None, debug=False):
+def run_gem(chip_peak_analysis, control_chip_peak_analysis = None, debug=False, overwrite=False):
     default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':''}
     gem_path = settings.home_directory+'/libraries/gem'
-    bam_dir = settings.dropbox_directory+'/crp/data/ChIP/bam/'
+    bam_dir = settings.dropbox_directory+'/om_data/ChIP/bam/'
     """ This could easily be parallelized """
 
 
     outdir = chip_peak_analysis.name
-    out_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'+outdir
+    out_path = settings.dropbox_directory+'/om_data/ChIP_peaks/gem/'+outdir
+
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
     os.chdir(out_path)
 
-    input_files = ' '.join(['--expt'+x.name+' '+bam_dir+x.file_name for x in chip_peak_analysis.children])
-
+    input_files = ' '.join(['--expt'+x.name+' '+x.directory_path+'/'+x.file_name for x in chip_peak_analysis.children])
+    print input_files
     if control_chip_peak_analysis:
         from random import randint
         """since every replicate needs a corresponding control replicate for GEMs and since we might have less or more
@@ -402,7 +410,7 @@ def run_gem(chip_peak_analysis, control_chip_peak_analysis = None, debug=False):
            replicates for each experimental replicate.  This should be fine because control replicates should be random
            noise anyways. However, if specific control replicates are generated this function needs to be changed.
         """
-        control_input_files = ' '.join(['--ctrl'+x.name+' '+bam_dir+control_chip_peak_analysis.children[randint(0,len(control_chip_peak_analysis.children))].file_name for i,x in enumerate(chip_peak_analysis.children)])
+        control_input_files = ' '.join(['--ctrl'+x.name+' '+x.directory_path+'/'+control_chip_peak_analysis.children[randint(0,len(control_chip_peak_analysis.children))].file_name for i,x in enumerate(chip_peak_analysis.children)])
     else:
         control_input_files = ''
 
@@ -413,12 +421,12 @@ def run_gem(chip_peak_analysis, control_chip_peak_analysis = None, debug=False):
 
     if debug:
         print "java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s %s --f SAM %s" %\
-                     (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
+                     (gem_path, gem_path, settings.dropbox_directory+'/om_data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/om_data/annotation',\
                      input_files, control_input_files, parameter_string)
 
     else:
         os.system("java -Xmx5G -jar %s/gem.jar --d %s/Read_Distribution_ChIP-exo.txt --g %s --genome %s %s %s --f SAM %s" %\
-                      (gem_path, gem_path, settings.dropbox_directory+'/crp/data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/crp/data/annotation',\
+                      (gem_path, gem_path, settings.dropbox_directory+'/om_data/annotation/ec_mg1655.sizes', settings.dropbox_directory+'/om_data/annotation',\
                        input_files, control_input_files, parameter_string))
 
 
@@ -453,7 +461,7 @@ def run_gem(chip_peak_analysis, control_chip_peak_analysis = None, debug=False):
 
 @timing
 def load_cuffnorm():
-    cuffnorm_genes = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm/isoforms.attr_table','r')
+    cuffnorm_genes = open(settings.dropbox_directory+'/om_data/RNAseq/cuffnorm/isoforms.attr_table','r')
     cuffnorm_genes.readline()
     cuffnorm_gene_dict = {}
     session = base.Session()
@@ -465,7 +473,7 @@ def load_cuffnorm():
     cuffnorm_output = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffnorm/isoforms.fpkm_table','r')
     header = cuffnorm_output.readline().rstrip('\n').split('\t')
     #print [name[:-5]+'_'+str(int(name[-1])+1)+'_1.0' for i,name in enumerate(header[1:])]
-    exp_id_map = {i:session.query(data.RNASeqExperiment).filter_by(name=name[:-2]+'_'+str(int(name[-1])+1)+'_1.0').one().id\
+    exp_id_map = {i:session.query(data.RNASeqExperiment).filter_by(name=name[:-2]+'_'+str(int(name[-1])+1)).one().id\
                   for i,name in enumerate(header[1:])}
 
     for line in cuffnorm_output.readlines():
@@ -489,7 +497,7 @@ def load_cuffnorm():
 
 @timing
 def load_cuffdiff():
-    cuffdiff_output = open(settings.dropbox_directory+'/crp/data/RNAseq/cuffdiff/gene_exp.diff','r')
+    cuffdiff_output = open(settings.dropbox_directory+'/om_data/RNAseq/cuffdiff/gene_exp.diff','r')
     header = cuffdiff_output.readline()
     diff_exps = {}
 
@@ -508,7 +516,11 @@ def load_cuffdiff():
             x = vals[4].split('_')
             y = vals[5].split('_')
             exp_name = ''
-            for i in range(len(x)):
+
+            if len(x) > len(y): rnge = len(y)
+            else: rnge = len(x)
+
+            for i in range(rnge):
                 if x[i] == y[i]:
                     exp_name += x[i]+'_'
                 else: exp_name += x[i]+'/'+y[i]+'_'
@@ -544,7 +556,8 @@ def load_gem(chip_peak_analyses):
     gem_path = settings.dropbox_directory+'/crp/data/ChIP_peaks/gem/'
     session = base.Session()
     for chip_peak_analysis in chip_peak_analyses:
-        gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
+        try: gem_peak_file = open(gem_path+chip_peak_analysis.name+'/out_GPS_events.narrowPeak','r')
+        except: continue
 
         for line in gem_peak_file.readlines():
             vals = line.split('\t')
@@ -601,20 +614,29 @@ def make_genome_region_map():
     data.GenomeRegionMap.__table__.drop()
     data.GenomeRegionMap.__table__.create()
 
-    genome_regions = session.query(data.GenomeRegion).all()
+    chip_peak_genome_regions = session.query(data.GenomeRegion).\
+                                        join(data.ChIPPeakData, data.ChIPPeakData.genome_region_id == data.GenomeRegion.id).all()
 
-    for genome_region_1 in genome_regions:
-        #print genome_region_1
-        for genome_region_2 in genome_regions:
-            if genome_region_1.id == genome_region_2.id: continue
+    tu_genome_regions = session.query(data.GenomeRegion).\
+                                 join(components.TU, components.TU.genome_region_id == data.GenomeRegion.id).all()
 
-            midpoint_1 = (genome_region_1.leftpos + genome_region_1.rightpos)/2
-            midpoint_2 = (genome_region_2.leftpos + genome_region_2.rightpos)/2
-            midpoint_distance = midpoint_1 - midpoint_2
-            left_right_distance = genome_region_1.leftpos - genome_region_2.rightpos
-            right_left_distance = genome_region_1.rightpos - genome_region_2.leftpos
-            if abs(midpoint_distance) < 1000 or abs(left_right_distance) < 1000 or abs(right_left_distance) < 1000:
-                session.add(data.GenomeRegionMap(genome_region_1.id, genome_region_2.id, midpoint_distance))
+    for genome_region_cp in chip_peak_genome_regions:
+        print genome_region_cp
+        for genome_region_tu in tu_genome_regions:
+            midpoint_cp = (genome_region_cp.leftpos + genome_region_cp.rightpos)/2
+            midpoint_tu = (genome_region_tu.leftpos + genome_region_tu.rightpos)/2
+            midpoint_distance = midpoint_cp - midpoint_tu
+
+            left_right_distance = genome_region_cp.leftpos - genome_region_tu.rightpos
+            right_left_distance = genome_region_cp.rightpos - genome_region_tu.leftpos
+
+            if abs(left_right_distance) < abs(right_left_distance) and left_right_distance < 1000 and genome_region_tu.strand == '-':
+                session.add(data.GenomeRegionMap(genome_region_cp.id, genome_region_tu.id, midpoint_distance))
+                session.add(data.GenomeRegionMap(genome_region_tu.id, genome_region_cp.id, midpoint_distance))
+
+            elif abs(right_left_distance) < abs(left_right_distance) and right_left_distance > -1000 and genome_region_tu.strand == '+':
+                session.add(data.GenomeRegionMap(genome_region_cp.id, genome_region_tu.id, midpoint_distance))
+                session.add(data.GenomeRegionMap(genome_region_tu.id, genome_region_cp.id, midpoint_distance))
 
     session.commit()
     session.close()
