@@ -282,8 +282,9 @@ class ChIPExperiment(DataSet):
     normalization_method = Column(String(100))
     normalization_factor = Column(Float, primary_key=True)
 
-    #terrrible hack right here
+    #terrrible hacks right here
     file_name = Column(String(100))
+    directory_path = Column(String(200))
 
     __mapper_args__ = { 'polymorphic_identity': 'chip_experiment' }
 
@@ -303,7 +304,7 @@ class ChIPExperiment(DataSet):
 
     def __init__(self, name, replicate, strain_id, environment_id, data_source_id,\
                        antibody, protocol_type, target, normalization_method,\
-                       normalization_factor, file_name):
+                       normalization_factor, file_name, directory_path):
 
         super(ChIPExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
         self.antibody = antibody
@@ -312,6 +313,7 @@ class ChIPExperiment(DataSet):
         self.normalization_method = normalization_method
         self.normalization_factor = normalization_factor
         self.file_name = file_name
+        self.directory_path = directory_path
 
 
 class AnalysisComposition(Base):
