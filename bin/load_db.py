@@ -16,16 +16,43 @@ def calculate_normalization_factors():
     mapped_read_norm_factor = {}
     for exp_type in exp_types:
         mapped_reads = {}
-        directory = settings.dropbox_directory+'/crp/data/'+exp_type+'/bam'
+        directory = settings.data_directory+'/'+exp_type+'/bam'
         for file_name in os.listdir(directory):
             if file_name[-3:] != 'bam': continue
-            mapped_reads[file_name] = int(subprocess.check_output(['samtools', 'flagstat', directory+'/'+file_name]).split('\n')[2].split()[0])
-            #mapped_reads[file_name] = 30000000
+            #mapped_reads[file_name] = int(subprocess.check_output(['samtools', 'flagstat', directory+'/'+file_name]).split('\n')[2].split()[0])
+            mapped_reads[file_name] = 30000000
         mean_read_count = np.array(mapped_reads.values()).mean()
         for exp,value in mapped_reads.iteritems():
-            mapped_read_norm_factor[exp] = mean_read_count/value
-            #mapped_read_norm_factor[exp] = .9
+            #mapped_read_norm_factor[exp] = mean_read_count/value
+            mapped_read_norm_factor[exp] = .9
     return mapped_read_norm_factor
+
+
+def generate_fastq_from_bam(bam_dir):
+    """make a fastq directory in the same location
+       this code would be unnecessary if the fastq
+       file generation was properly managed
+    """
+    os.chdir(bam_dir)
+    try:
+        os.system('rm -r '+bam_dir+'/fastq')
+        os.mkdir('fastq')
+    except:
+        os.mkdir('fastq')
+    os.chdir('fastq')
+
+    for bam_file in os.listdir(bam_dir):
+        if bam_file[-3:] != 'bam': continue
+        if int(subprocess.check_output(['samtools', 'flagstat', bam_dir+'/'+bam_file]).split('\n')[3].split()[0]) == 0:
+            #not paired end
+            os.system("bedtools bamtofastq -i %s -fq %s" % (bam_dir+'/'+bam_file, bam_file[:-3]+'fastq'))
+        else:
+            #paired end
+            os.system("samtools sort -n %s %s" % (bam_dir+'/'+bam_file, bam_dir+'/'+bam_file[:-3]+'sorted'))
+            os.system("bedtools bamtofastq -i %s -fq %s -fq2 %s" % (bam_dir+'/'+bam_file[:-3]+'sorted.bam',
+                                                                         bam_file[:-3]+'_R1'+'.fastq',
+                                                                         bam_file[:-3]+'_R2'+'.fastq'))
+
 
 @timing
 def load_raw_files(file_names):
@@ -38,7 +65,7 @@ def load_raw_files(file_names):
         if file_name[-3:] != 'bam' and file_name[-3:] != 'CEL': continue
         try:
             norm_factor = mapped_read_norm_factor[file_name]
-            data_loading.name_based_experiment_loading(file_name, bulk_file_load=True, norm_factor=norm_factor)
+            #data_loading.name_based_experiment_loading(file_name, bulk_file_load=True, norm_factor=norm_factor)
             data_loading.name_based_experiment_loading(file_name, bulk_file_load=True, norm_factor=1.)
         except:
             data_loading.name_based_experiment_loading(file_name, bulk_file_load=True)
@@ -160,16 +187,17 @@ if __name__ == "__main__":
 
     #if not query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
     #                    'are you sure you want to do this?'): sys.exit()
-    """
+
     base.Base.metadata.drop_all()
     base.omics_database.genome_data.drop()
     base.Base.metadata.create_all()
 
 
-    file_names = os.listdir(settings.dropbox_directory+'/crp/data/ChIP/bam') + \
-                 os.listdir(settings.dropbox_directory+'/crp/data/RNAseq/bam') + \
-                 os.listdir(settings.dropbox_directory+'/om_data/Microarray/asv2') + \
-                 os.listdir(settings.dropbox_directory+'/om_data/Microarray/ec2')
+    file_names = os.listdir(settings.data_directory+'/ChIP/bam') + \
+                 os.listdir(settings.data_directory+'/RNAseq/bam')# + \
+                 #os.listdir(settings.data_directory+'/ChIP/bam/yome') + \
+                 #os.listdir(settings.data_directory+'/Microarray/asv2') + \
+                 #os.listdir(settings.data_directory+'/Microarray/ec2')
 
     load_raw_files(file_names)
 
@@ -177,14 +205,22 @@ if __name__ == "__main__":
 
     load_experiment_sets(experiment_sets)
 
-    component_loading.load_genes(base, components)
-    component_loading.load_proteins(base, components)
-    component_loading.load_bindsites(base, components)
-    component_loading.load_transcription_units(base, components)
-    """
+
+    for genbank_file in os.listdir(settings.data_directory+'/annotation/GenBank'):
+        if genbank_file[-2:] != 'gb': continue
+        component_loading.load_genbank(genbank_file, base, components)
+
+    component_loading.load_metacyc_proteins(base, components)
+    #component_loading.load_metacyc_bindsites(base, components)
+    component_loading.load_metacyc_transcription_units(base, components)
+    #generate_fastq_from_bam(settings.dropbox_directory+'/om_data/ChIP/bam/crp')
+    #generate_fastq_from_bam(settings.dropbox_directory+'/om_data/ChIP/bam/yome')
+    #generate_fastq_from_bam(settings.data_directory+'/RNAseq/bam')
+
     session = base.Session()
 
-    #data_loading.run_parallel_cuffquant()
+    #for exp in ome.query(RNASeqExperiment).all(): data_loading.run_cuffquant(exp)
+
     #data_loading.run_cuffnorm(experiment_sets['RNAseq'])
     """query all RNASeqExperiments grouped across replicates"""
     rna_seq_exp_sets = session.query(NormalizedExpression).join(AnalysisComposition, NormalizedExpression.id == AnalysisComposition.analysis_id).\
@@ -205,9 +241,9 @@ if __name__ == "__main__":
     #data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
     #data_loading.load_cuffnorm()
     #data_loading.load_cuffdiff()
-    #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_asv2.txt', type='asv2')
-    #data_loading.load_arraydata(settings.dropbox_directory+'/om_data/Microarray/formatted_ec2.txt', type='ec2')
-    data_loading.make_genome_region_map()
+    #data_loading.load_arraydata(settings.data_directory+'/Microarray/formatted_asv2.txt', type='asv2')
+    #data_loading.load_arraydata(settings.data_directory+'/Microarray/formatted_ec2.txt', type='ec2')
+    #data_loading.make_genome_region_map()
 
     genome_data = base.omics_database.genome_data
     #genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])

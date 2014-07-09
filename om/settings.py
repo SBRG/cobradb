@@ -9,8 +9,8 @@ from sys import modules
 self = modules[__name__]
 
 # define various filepaths
-trnlib_directory = __join(__split(__abspath(__file__))[0], "")
-trn_directory = __join(__abspath(__join(trnlib_directory, "..")), "")
+omlib_directory = __join(__split(__abspath(__file__))[0], "")
+om_directory = __join(__abspath(__join(omlib_directory, "..")), "")
 
 def which(program):
     """returns path to an executable if it is found in the path"""
@@ -20,7 +20,7 @@ def which(program):
             return program
     else:
         paths_to_search = __os.environ["PATH"].split(__os.pathsep)
-        paths_to_search.extend((trnlib_directory, trn_directory))
+        paths_to_search.extend((omlib_directory, om_directory))
         for path in paths_to_search:
             exe_file = __join(path, program)
             if __isfile(exe_file) and __os.access(exe_file, __os.X_OK):
@@ -53,24 +53,23 @@ except:
         default_home = __os.environ["USERPROFILE"]
     except:
         default_home = ""
-default_dropbox = __join(default_home, "Dropbox", "")
-default_data_dir = __join(default_dropbox, "om_data", "")
+
+default_data_dir = __join(default_home, "om_data", "")
 config.set("MISC", "home_directory", default_home)
-config.set("MISC", "dropbox_directory", default_dropbox)
 config.set("MISC", "data_directory", default_data_dir)
-del default_home, default_dropbox, default_data_dir
+del default_home, default_data_dir
 config.add_section("EXECUTABLES")
 
 # overwrite defaults settings with settings from the file
-def load_settings_from_file(filepath="settings.ini", in_trnlib=True):
+def load_settings_from_file(filepath="settings.ini", in_omlib=True):
     """reload settings from a different settings file
 
     filepath: The path to the settings file to use
 
-    in_trnlib: Whether or not the path given is a relative path from the trnlib
+    in_omlib: Whether or not the path given is a relative path from the omlib
         directory"""
-    if in_trnlib:
-        filepath = __join(trnlib_directory, filepath)
+    if in_omlib:
+        filepath = __join(omlib_directory, filepath)
     config.read(filepath)
 
     # attempt to intellegently determine more difficult settings
@@ -128,7 +127,6 @@ def load_settings_from_file(filepath="settings.ini", in_trnlib=True):
     if self.entrez_email == "SET_ENTREZ_EMAIL": self.entrez_email = None
     #set home directory
     self.home_directory = config.get("MISC", "home_directory")
-    self.dropbox_directory = config.get("MISC", "dropbox_directory")
     self.data_directory = config.get("MISC", "data_directory")
 
 
@@ -136,8 +134,8 @@ load_settings_from_file()
 del SafeConfigParser, modules
 
 _base_site_file = \
-"""WSGIScriptAlias /trn TRNLIB_DIRserver.py
-<Directory TRNLIB_DIR>
+"""WSGIScriptAlias /om OMLIB_DIRserver.py
+<Directory OMLIB_DIR>
     WSGIScriptReloading On
     Order allow,deny
     Allow from 132.239
@@ -148,5 +146,5 @@ _base_site_file = \
 """
 
 def write_apache_site_file():
-    with open(trn_directory + "trn.site", "w") as outfile:
-        outfile.write(_base_site_file.replace("TRNLIB_DIR", trnlib_directory))
+    with open(om_directory + "om.site", "w") as outfile:
+        outfile.write(_base_site_file.replace("OMLIB_DIR", omlib_directory))

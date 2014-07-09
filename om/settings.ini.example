@@ -2,7 +2,7 @@
 postgres_host = localhost:5432
 postgres_database = om
 postgres_user = dbuser
-postgres_password = 
+postgres_password =
 mongo_host = localhost
 
 [MISC]

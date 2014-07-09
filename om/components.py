@@ -14,7 +14,7 @@ class Gene(GenomeRegion):
 
     id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
     locus_id = Column(String(20))
-    info = Column(String(200))
+    info = Column(String(300))
     long_name = Column(String(100))
 
     __mapper_args__ = { 'polymorphic_identity': 'gene' }
