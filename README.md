@@ -10,6 +10,8 @@ The OM framework is a systems biology and bioinformatics framework that helps to
 3. map computational models to highthroughput experimental data via cellular components
 ![alt tag](https://raw.githubusercontent.com/steve-federowicz/om/master/docs/om_overview.png)
 
+![alt tag](https://raw.githubusercontent.com/steve-federowicz/om/master/docs/om_overview.png)
+
 ==
 
 The framework is written entirely in python with great help from SQLalchemy. You can browse the schemas below to get a sense of the underlying database design or jump straight to the examples page. Enjoy!
