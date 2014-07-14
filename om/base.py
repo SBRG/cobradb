@@ -165,6 +165,8 @@ class GenomeRegionMap(Base):
             self.distance = distance
 
 
+
+
 class _Session(_SA_Session):
     """an sqlalchemy session object to interact with the OME database
 

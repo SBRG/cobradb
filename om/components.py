@@ -263,6 +263,41 @@ class Metabolite(Component):
 
 
 
+class GeneGrouping(Base):
+    __tablename__ = 'gene_grouping'
+
+    group_id = Column(Integer, ForeignKey('gene_group.id'), primary_key=True)
+    gene_id = Column(Integer, ForeignKey('gene.id'), primary_key=True)
+
+    __table_args__ = (UniqueConstraint('group_id','gene_id'),{})
+
+    def __init__(self, group_id, gene_id):
+        self.group_id = group_id
+        self.gene_id = gene_id
+
+
+
+class GeneGroup(Base):
+    __tablename__ = 'gene_group'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100))
+
+    genes = relationship("Gene", secondary="gene_grouping",\
+                                 primaryjoin = id == GeneGrouping.group_id,\
+                                 backref="groups")
+
+    __table_args__ = (UniqueConstraint('name'),{})
+
+    def __repr__(self):
+        return "Gene Group (#%d, %s): %s" % \
+            (self.id, self.name, ', '.join([g.name for g in self.genes]))
+
+    def __init__(self, name):
+        self.name = name
+
+
+
 
 
 

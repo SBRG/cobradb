@@ -269,12 +269,12 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
 
         experiment = session.get_or_create(data.ChIPExperiment, name=name+'_'+str(norm_factor), replicate=vals[5],\
                                            strain_id=strain.id, data_source_id=data_source.id, environment_id=environment.id,\
-                                           protocol_type=exp_type[0], antibody=vals[6],\
+                                           protocol_type=exp_type[0], antibody=vals[6], directory_path='',
                                            target=exp_type[1], file_name=exp_name, normalization_method=norm_method,\
                                                                                    normalization_factor=norm_factor)
 
-        #load_samfile_to_db(settings.dropbox_directory+'/om_data/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
-        #                   bulk_file_load=bulk_file_load, five_prime=True, norm_factor=norm_factor)
+        load_samfile_to_db(settings.data_directory+'/ChIP/bam/'+exp_name, experiment.id, loading_cutoff=5,\
+                           bulk_file_load=bulk_file_load, five_prime=True, norm_factor=norm_factor)
 
 
 
@@ -285,8 +285,8 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
                                            file_name=exp_name, normalization_method=norm_method,\
                                                                normalization_factor=norm_factor)
 
-        #load_samfile_to_db(settings.dropbox_directory+'/om_data/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
-        #                  bulk_file_load=bulk_file_load, five_prime=False, flip=True, norm_factor=norm_factor)
+        #load_samfile_to_db(settings.data_directory+'/RNAseq/bam/'+exp_name, experiment.id, loading_cutoff=10,\
+        #                   bulk_file_load=bulk_file_load, five_prime=False, flip=True, norm_factor=norm_factor)
 
     elif exp_type[0][0:7] == 'affyexp':
         experiment = session.get_or_create(data.ArrayExperiment, name=name, replicate=vals[5],\
@@ -299,8 +299,8 @@ def name_based_experiment_loading(exp_name, lab='palsson', institution='UCSD',
 
 def run_cuffquant(exp):
 
-    gtf_file = settings.dropbox_directory+'/om_data/annotation/e_coli_notRNA_rRNA.gtf'
-    cxb_dir = settings.dropbox_directory+'/om_data/RNAseq/cxb'
+    gtf_file = settings.data_directory+'/annotation/e_coli_notRNA_rRNA.gtf'
+    cxb_dir = settings.data_directory+'/RNAseq/cxb'
 
     try: os.chdir(cxb_dir)
     except: os.mkdir(cxb_dir)
@@ -312,15 +312,15 @@ def run_cuffquant(exp):
     except: None
     os.mkdir(out_path)
     os.chdir(out_path)
-    exp_file = settings.dropbox_directory+'/om_data/RNAseq/bam/'+exp.file_name
+    exp_file = settings.data_directory+'/RNAseq/bam/'+exp.file_name
     print '%s -p %d -v --library-type fr-firststrand %s %s' % ('cuffquant', 8, gtf_file, exp_file)
     os.system('%s -p %d -v --library-type fr-firststrand %s %s' % ('cuffquant', 8, gtf_file, exp_file))
 
 @timing
 def run_cuffnorm(exp_sets):
-    gtf_file = settings.dropbox_directory+'/om_data/annotation/e_coli_notRNA_rRNA.gtf'
-    cxb_dir = settings.dropbox_directory+'/om_data/RNAseq/cxb/'
-    out_path = settings.dropbox_directory+'/om_data/RNAseq/cuffnorm'
+    gtf_file = settings.data_directory+'/annotation/e_coli_notRNA_rRNA.gtf'
+    cxb_dir = settings.data_directory+'/RNAseq/cxb/'
+    out_path = settings.data_directory+'/RNAseq/cuffnorm'
 
     os.system('rm -r '+out_path)
     os.mkdir(out_path)
@@ -360,7 +360,7 @@ def find_single_factor_pairwise_contrasts(data_sets):
 
 def generate_cuffdiff_contrasts(normalized_expression_objects):
     contrasts = find_single_factor_pairwise_contrasts(normalized_expression_objects)
-    with open(settings.dropbox_directory+'/om_data/RNAseq/cuffdiff/contrasts.txt', 'wb') as contrast_file:
+    with open(settings.data_directory+'/RNAseq/cuffdiff/contrasts.txt', 'wb') as contrast_file:
         contrast_file.write('condition_A\tcondition_B\n')
         for contrast in contrasts:
             contrast_file.write(contrast[0].name+'\t'+contrast[1].name+'\n')
@@ -368,9 +368,9 @@ def generate_cuffdiff_contrasts(normalized_expression_objects):
 
 @timing
 def run_cuffdiff(normalized_expression_objects, debug=False):
-    gtf_file = settings.dropbox_directory+'/om_data/annotation/e_coli_notRNA_rRNA.gtf'
-    cxb_dir = settings.dropbox_directory+'/om_data/RNAseq/cxb/'
-    out_path = settings.dropbox_directory+'/om_data/RNAseq/cuffdiff'
+    gtf_file = settings.data_directory+'/annotation/e_coli_notRNA_rRNA.gtf'
+    cxb_dir = settings.data_directory+'/RNAseq/cxb/'
+    out_path = settings.data_directory+'/RNAseq/cuffdiff'
 
     os.system('rm -r '+out_path)
     os.mkdir(out_path)

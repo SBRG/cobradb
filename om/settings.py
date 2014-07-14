@@ -128,7 +128,7 @@ def load_settings_from_file(filepath="settings.ini", in_omlib=True):
     #set home directory
     self.home_directory = config.get("MISC", "home_directory")
     self.data_directory = config.get("MISC", "data_directory")
-
+    self.dropbox_directory = config.get("MISC", "dropbox_directory")
 
 load_settings_from_file()
 del SafeConfigParser, modules

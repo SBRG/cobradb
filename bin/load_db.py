@@ -194,10 +194,10 @@ if __name__ == "__main__":
 
 
     file_names = os.listdir(settings.data_directory+'/ChIP/bam') + \
-                 os.listdir(settings.data_directory+'/RNAseq/bam')# + \
+                 os.listdir(settings.data_directory+'/RNAseq/bam')+ \
+                 os.listdir(settings.data_directory+'/microarray/asv2') + \
+                 os.listdir(settings.data_directory+'/microarray/ec2')
                  #os.listdir(settings.data_directory+'/ChIP/bam/yome') + \
-                 #os.listdir(settings.data_directory+'/Microarray/asv2') + \
-                 #os.listdir(settings.data_directory+'/Microarray/ec2')
 
     load_raw_files(file_names)
 
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         component_loading.load_genbank(genbank_file, base, components)
 
     component_loading.load_metacyc_proteins(base, components)
-    #component_loading.load_metacyc_bindsites(base, components)
+    component_loading.load_metacyc_bindsites(base, components)
     component_loading.load_metacyc_transcription_units(base, components)
     #generate_fastq_from_bam(settings.dropbox_directory+'/om_data/ChIP/bam/crp')
     #generate_fastq_from_bam(settings.dropbox_directory+'/om_data/ChIP/bam/yome')
@@ -238,13 +238,16 @@ if __name__ == "__main__":
 
 
 
-    #data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
-    #data_loading.load_cuffnorm()
-    #data_loading.load_cuffdiff()
-    #data_loading.load_arraydata(settings.data_directory+'/Microarray/formatted_asv2.txt', type='asv2')
-    #data_loading.load_arraydata(settings.data_directory+'/Microarray/formatted_ec2.txt', type='ec2')
-    #data_loading.make_genome_region_map()
+    data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
+    data_loading.load_cuffnorm()
+    data_loading.load_cuffdiff()
+    data_loading.load_arraydata(settings.data_directory+'/microarray/formatted_asv2.txt', type='asv2')
+    data_loading.load_arraydata(settings.data_directory+'/microarray/formatted_ec2.txt', type='ec2')
+    data_loading.make_genome_region_map()
 
     genome_data = base.omics_database.genome_data
-    #genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
+
+    @timing
+    genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
+
     session.close()

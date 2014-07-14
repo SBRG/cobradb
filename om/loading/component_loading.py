@@ -154,30 +154,39 @@ def get_gene_with_metacyc(session, base, components, gene_entry):
     return gene
 
 
+def update_gene_with_metacyc(session, base, components, gene_entry):
+    vals = scrub_metacyc_entry(gene_entry, args=['UNIQUE-ID','ACCESSION-1','LEFT-END-POSITION',\
+                                                          'RIGHT-END-POSITION','TRANSCRIPTION-DIRECTION',\
+                                                          'COMMON-NAME'])
+    if vals is None: return None
+
+    gene = get_gene_with_metacyc(session, base, components, gene_entry)
+    if not gene: return None
+
+    gene.long_name = vals['COMMON-NAME'][0]
+
+    session.add(gene)
+    session.flush()
+
 
 def get_protein_with_metacyc(session, base, components, protein_entry):
     vals = scrub_metacyc_entry(protein_entry,extra_args=['GENE'])
     if vals is None: return None
 
     """First see if the gene exists from genbank, if not log an error message and return"""
-    try:
-        gene_entry = metacyc_genes[vals['GENE'][0]]
-        gene_vals = scrub_metacyc_entry(gene_entry, args=['UNIQUE-ID','ACCESSION-1','LEFT-END-POSITION',\
-                                                          'RIGHT-END-POSITION','TRANSCRIPTION-DIRECTION',\
-                                                          'COMMON-NAME'])
 
+    try: gene_entry = metacyc_genes[vals['GENE'][0]]
+    except:
+        print 'MetaCyc issue, gene: '+vals['GENE'][0]+' does not exist'
+        return None
 
-        gene = session.query(components.Gene).filter(or_(components.Gene.locus_id == vals['ACCESSION-1'][0],\
-                                                         components.Gene.name == vals['COMMON-NAME'][0])).first()
-        if gene is None:
-            print 'Exception, MetaCyc gene:'+vals['ACCESSION-1'][0]+' not found in genbank'
-            return None
+    gene = get_gene_with_metacyc(session, base, components, gene_entry)
 
-    except: return None
 
     """If the gene exists in genbank, then the protein should exist in genbank as well,
        if not log an error message and return
     """
+
     try:
         return session.query(components.Protein).filter(components.Protein.gene_id == gene.id).one()
     except:
@@ -189,10 +198,12 @@ def update_protein_with_metacyc(session, base, components, protein_entry):
 
     protein = get_protein_with_metacyc(session, base, components, protein_entry)
     if not protein: return None
-    protein.long_name = vals['COMMON-NAME']
 
-    session.merge(protein)
-    session.commit()
+    protein.long_name = vals['COMMON-NAME'][0]
+
+    session.add(protein)
+    session.flush()
+
 
 
 def get_or_create_metacyc_ligand(session, base, components, ligand_entry):
@@ -299,7 +310,8 @@ def load_genbank(genbank_file, base, components):
         om_gene = {'long_name':''}
         om_protein = {'long_name':''}
 
-        if feature.type == 'CDS' and 'product' in feature.qualifiers:  #Only cares for coding sequences which are not pseudogenes
+        if feature.type == 'CDS' or feature.type == 'tRNA' or \
+           feature.type == 'ncRNA' or feature.type == 'rRNA':
 
             om_gene['name'] = feature.qualifiers['gene'][0]
             om_gene['leftpos'] = feature.location.start
@@ -308,8 +320,12 @@ def load_genbank(genbank_file, base, components):
             if feature.strand == 1: om_gene['strand'] = '+'
             elif feature.strand == -1: om_gene['strand'] = '-'
 
+
             om_gene['locus_id'] = feature.qualifiers['locus_tag'][0]
-            om_gene['info'] = feature.qualifiers['product'][0]
+
+
+            try: om_gene['info'] = feature.qualifiers['product'][0]  #if pseudogene
+            except: om_gene['info'] = feature.qualifiers['note'][0]  #use note field for info
 
             if 'function' in feature.qualifiers:
                 om_gene['info'] = om_gene['info'] + ',' + feature.qualifiers['function'][0]
@@ -319,10 +335,12 @@ def load_genbank(genbank_file, base, components):
             session.add(gene)
             session.flush()
 
-            om_protein['name'] = feature.qualifiers['protein_id'][0]
-            om_protein['gene_id'] = gene.id
+            if 'product' in feature.qualifiers and feature.type == 'CDS':
 
-            session.add(components.Protein(**om_protein))
+                om_protein['name'] = feature.qualifiers['protein_id'][0]
+                om_protein['gene_id'] = gene.id
+
+                session.add(components.Protein(**om_protein))
 
     session.commit()
     session.close()

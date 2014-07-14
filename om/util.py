@@ -6,9 +6,10 @@ from IPython.display import HTML
 from matplotlib import pylab as plt
 import pandas as pd
 import cobra
+import cPickle as pickle
 
-
-model = cobra.io.read_sbml_model(settings.dropbox_directory+'/om_data/annotation/iJO1366.xml')
+model = pickle.load(open(settings.data_directory+'/models/iJO1366.pickle', "rb"))
+#model = cobra.io.load_matlab_model(settings.data_directory+'/models/iJO1366')
 
 
 
@@ -96,3 +97,22 @@ def get_indirect_regulation_frame(rxn, factors=['ArcA','Fnr'], condition=None):
             df['value'].ix[factor,gene_name] = -1*float(array_regulation[0].fold_change)
 
     return df
+
+
+def add_gene_group(name, genes):
+    session = Session()
+
+    if ome.query(GeneGroup).filter(GeneGroup.name == name).all(): return
+
+    gene_group = GeneGroup(name)
+    session.add(gene_group)
+
+    for gene in genes:
+        if isinstance(gene, basestring):
+            gene = session.query(Gene).filter(or_(Gene.name == gene, Gene.locus_id == gene)).first()
+
+        if gene: session.add(GeneGrouping(gene_group.id, gene.id))
+
+    session.flush()
+    session.commit()
+    session.close()
