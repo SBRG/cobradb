@@ -525,7 +525,8 @@ diff_exp_chip_peak = ome.query(DifferentialExpression.id.label('diff_exp_id'),
                                    chip_peak.c.chip_peak_id,
                                    chip_peak.c.chip_peak_target.label('target'),
                                    chip_peak.c.chip_peak_antibody.label('antibody'),
-                                   chip_peak.c.chip_peak_strain.label('strain'),
+                                   Strain.name.label('strain1'),
+                                   Strain2.name.label('strain2'),
                                    InVivoEnvironment.carbon_source.label('carbon_source'),
                                    InVivoEnvironment.nitrogen_source.label('nitrogen_source'),
                                    InVivoEnvironment.electron_acceptor.label('electron_acceptor')).\
@@ -541,7 +542,7 @@ diff_exp_chip_peak = ome.query(DifferentialExpression.id.label('diff_exp_id'),
                                     join(chip_peak, and_(chip_peak.c.chip_peak_environment_id == NormalizedExpression.environment_id,
                                                                   func.substr(chip_peak.c.chip_peak_antibody, 6,
                                                                   func.length(chip_peak.c.chip_peak_antibody)) == 'crp',
-                                                             and_(Strain2.name == 'wt', Strain.name == 'delta-crp'))).\
+                                                             and_(Strain2.name == 'wt', Strain.name != 'wt'))).\
                                     filter(chip_peak.c.chip_peak_strain_id == Strain2.id).subquery()
 
 
@@ -556,7 +557,8 @@ chip_peak_gene_expression = ome.query(ChIPPeakData.value.label('peak_value'),
                  GenomeRegion.rightpos.label('rightpos'),
                  GenomeRegion.strand.label('strand'),
                  diff_exp_chip_peak.c.target.label('target'),
-                 diff_exp_chip_peak.c.strain.label('strain'),
+                 diff_exp_chip_peak.c.strain1.label('strain1'),
+                 diff_exp_chip_peak.c.strain2.label('strain2'),
                  diff_exp_chip_peak.c.antibody.label('antibody'),
                  diff_exp_chip_peak.c.carbon_source.label('carbon_source'),
                  diff_exp_chip_peak.c.nitrogen_source.label('nitrogen_source'),
@@ -584,8 +586,8 @@ class ChIPPeakGeneExpression(Base):
     __table__ = chip_peak_gene_expression
 
     def __repr__(self):
-        return "TF: %s, Gene: %s, %s, %5.2f, %5.2f Condition: %s, %s, %s Peak: %d-%d value:%5.2f" % \
-            (self.target, self.gene_name, self.locus_id, self.expression_value, self.pval,
+        return "TF: %s, Gene: %s, %s, %5.2f, %5.2f %s-->%s Condition: %s, %s, %s Peak: %d-%d value:%5.2f" % \
+            (self.target, self.gene_name, self.locus_id, self.expression_value, self.pval, self.strain1, self.strain2,
              self.carbon_source, self.nitrogen_source, self.electron_acceptor, self.leftpos, self.rightpos, self.peak_value)
 
 
