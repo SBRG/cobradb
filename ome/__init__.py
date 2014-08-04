@@ -2,7 +2,7 @@ from time import time as _time
 from sys import stdout as _stdout
 from os.path import split as _split
 from pkgutil import extend_path
-__path__ = extend_path(__path__, "om")
+__path__ = extend_path(__path__, "ome")
 del extend_path
 import settings
 

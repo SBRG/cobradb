@@ -9,7 +9,7 @@ from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
     String, Float, ForeignKey, and_, or_, not_, distinct, select
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
-from om import settings
+from ome import settings
 import pymongo
 
 
@@ -18,21 +18,39 @@ engine = create_engine("postgresql://%s:%s@%s/%s" %
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 
-connection = pymongo.Connection()
-omics_database = connection.omics_database
+#connection = pymongo.Connection()
+#omics_database = connection.omics_database
+
+
+class Genome(Base):
+    __tablename__ = 'genome'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    genbank_id = Column(String(200))
+    ncbi_id = Column(String(100))
+    organism = Column(String(200))
+
+
+    __table_args__ = (UniqueConstraint('genbank_id'),{})
+
+    def __init__(self, genbank_id, ncbi_id, organism):
+        self.genbank_id = genbank_id
+        self.ncbi_id = ncbi_id
+        self.organism = organism
 
 
 class GenomeRegion(Base):
     __tablename__ = 'genome_region'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    genome_id = Column(Integer, ForeignKey('genome.id'))
     name = Column(String(10))
     leftpos = Column(Integer, nullable=False)
     rightpos = Column(Integer, nullable=False)
     strand = Column(String(1), nullable=False)
     type = Column(String(20))
 
-    __table_args__ = (UniqueConstraint('leftpos','rightpos','strand'),{})
+    __table_args__ = (UniqueConstraint('leftpos','rightpos','strand','genome_id'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'genome_region',
                        'polymorphic_on': type
@@ -45,10 +63,11 @@ class GenomeRegion(Base):
     def __repr__dict__(self):
         return {"name":self.name,"id":self.id,"leftpos":self.leftpos,"rightpos":self.rightpos,"strand":self.strand}
 
-    def __init__(self, leftpos, rightpos, strand, name=None):
+    def __init__(self, leftpos, rightpos, strand, genome_id, name=None):
         self.leftpos = leftpos
         self.rightpos = rightpos
         self.strand = strand
+        self.genome_id = genome_id
         self.name = name
 
 
@@ -56,7 +75,9 @@ class Component(Base):
     __tablename__ = 'component'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    biggid = Column(String)
     name = Column(String(100))
+    formula = Column(String)
     type = Column(String(20))
 
     __table_args__ = (UniqueConstraint('name'),{})
@@ -65,19 +86,22 @@ class Component(Base):
                        'polymorphic_on': type
                       }
 
-    def __init__(self, name):
+    def __init__(self, name, biggid, formula):
         self.name = name
+        self.biggid = biggid
+        self.formula = formula
 
     def __repr__(self):
         return "Component (#%d):  %s" % \
             (self.id, self.name)
 
 
+
 class Reaction(Base):
     __tablename__ = 'reaction'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    abbreviation = Column(String(10))
+    biggid = Column(String(10))
     name = Column(String(100))
     long_name = Column(String(100))
     type = Column(String(20))
@@ -88,8 +112,10 @@ class Reaction(Base):
                        'polymorphic_on': type
                       }
 
-    def __init__(self, name):
+    def __init__(self, name, biggid, long_name):
         self.name = name
+        self.biggid = biggid
+        self.long_name = long_name
 
     def __repr__(self):
         return "Reaction (#%d):  %s" % \

@@ -25,8 +25,8 @@ class Gene(GenomeRegion):
                                  self.strand)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, locus_id, info=None, long_name=None):
-        super(Gene, self).__init__(leftpos, rightpos, strand, name)
+    def __init__(self, name, leftpos, rightpos, strand, genome_id, locus_id, info=None, long_name=None):
+        super(Gene, self).__init__(leftpos, rightpos, strand, genome_id, name)
         self.locus_id = locus_id
         self.info = info
         self.long_name = long_name
@@ -125,11 +125,12 @@ class DNA(Component):
                       }
 
 
-    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None):
+    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None, genome_id=None):
         super(DNA, self).__init__(name)
         session = Session()
         self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
-                                              rightpos=rightpos, strand=strand).id
+                                                      rightpos=rightpos, genome_id=genome_id,
+                                                      strand=strand).id
         session.close()
 
     def __repr__(self):
@@ -148,8 +149,8 @@ class DnaBindingSite(DNA):
     width = Column(Integer)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, centerpos, width):
-        super(DnaBindingSite, self).__init__(name, leftpos, rightpos, strand)
+    def __init__(self, name, leftpos, rightpos, strand, genome_id, centerpos, width):
+        super(DnaBindingSite, self).__init__(name, leftpos, rightpos, strand, genome_id)
         self.centerpos = centerpos
         self.width = width
 
@@ -164,11 +165,12 @@ class RNA(Component):
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
 
 
-    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None):
+    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None, genome_id=None):
         super(RNA, self).__init__(name)
         session = Session()
         self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
-                                              rightpos=rightpos, strand=strand).id
+                                                      rightpos=rightpos, strand=strand,
+                                                      genome_id=genome_id).id
         session.close()
 
     def __repr__(self):
@@ -211,8 +213,8 @@ class TU(RNA):
             return self.genome_region.rightpos
     """
 
-    def __init__(self, name, leftpos, rightpos, strand, long_name=None):
-        super(TU, self).__init__(name, leftpos, rightpos, strand)
+    def __init__(self, name, leftpos, rightpos, strand, genome_id, long_name=None):
+        super(TU, self).__init__(name, leftpos, rightpos, strand, genome_id)
         self.long_name = long_name
 
     def __repr__(self):

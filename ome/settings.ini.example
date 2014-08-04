@@ -1,6 +1,6 @@
 [DATABASE]
 postgres_host = localhost:5432
-postgres_database = om
+postgres_database = ome
 postgres_user = dbuser
 postgres_password =
 mongo_host = localhost
