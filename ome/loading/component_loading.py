@@ -322,7 +322,14 @@ def load_genbank(genbank_file, base, components):
         if feature.type == 'CDS' or feature.type == 'tRNA' or \
            feature.type == 'ncRNA' or feature.type == 'rRNA':
 
-            ome_gene['name'] = feature.qualifiers['gene'][0]
+            try: locus_tag = feature.qualifiers['locus_tag'][0]  #if no locus_tag
+            except: continue                                     #continue
+
+            try: ome_gene['name'] = feature.qualifiers['gene'][0]  #if no name
+            except: ome_gene['name'] = locus_tag                   #name = locus_tag
+
+            ome_gene['locus_id'] = locus_tag
+
             ome_gene['leftpos'] = feature.location.start
             ome_gene['rightpos'] = feature.location.end
             ome_gene['genome_id'] = genome.id
@@ -330,8 +337,6 @@ def load_genbank(genbank_file, base, components):
             if feature.strand == 1: ome_gene['strand'] = '+'
             elif feature.strand == -1: ome_gene['strand'] = '-'
 
-
-            ome_gene['locus_id'] = feature.qualifiers['locus_tag'][0]
 
 
             try: ome_gene['info'] = feature.qualifiers['product'][0]  #if pseudogene
@@ -341,13 +346,16 @@ def load_genbank(genbank_file, base, components):
                 ome_gene['info'] = ome_gene['info'] + ',' + feature.qualifiers['function'][0]
                 ome_protein['long_name'] = feature.qualifiers['function'][0]
 
+            if len(ome_gene['name']) > 15: continue  #some weird genbank names are too long and misformed
+
             gene = components.Gene(**ome_gene)
             session.add(gene)
             session.flush()
 
             if 'product' in feature.qualifiers and feature.type == 'CDS':
 
-                ome_protein['name'] = feature.qualifiers['protein_id'][0]
+                try: ome_protein['name'] = feature.qualifiers['protein_id'][0]  #if no protein_id
+                except: continue                                                #don't make a protein entry
                 ome_protein['gene_id'] = gene.id
 
                 session.add(components.Protein(**ome_protein))

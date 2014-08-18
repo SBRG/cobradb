@@ -44,7 +44,7 @@ class GenomeRegion(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     genome_id = Column(Integer, ForeignKey('genome.id'))
-    name = Column(String(10))
+    name = Column(String(15))
     leftpos = Column(Integer, nullable=False)
     rightpos = Column(Integer, nullable=False)
     strand = Column(String(1), nullable=False)
