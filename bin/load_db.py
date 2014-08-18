@@ -1,4 +1,4 @@
-from om import base,settings,components,timing
+from om import base,settings,components,data,timing
 from om.data import *
 from om.model import *
 from om.loading import data_loading
@@ -9,66 +9,100 @@ import simplejson as json
 import numpy as np
 import os,sys,math,shutil,subprocess
 
+from IPython import embed
 
-
-def calculate_normalization_factors():
-    exp_types = ['ChIP','RNAseq']
-    mapped_read_norm_factor = {}
-    for exp_type in exp_types:
-        mapped_reads = {}
-        directory = settings.data_directory+'/'+exp_type+'/bam'
-        for file_name in os.listdir(directory):
-            if file_name[-3:] != 'bam': continue
-            #mapped_reads[file_name] = int(subprocess.check_output(['samtools', 'flagstat', directory+'/'+file_name]).split('\n')[2].split()[0])
-            mapped_reads[file_name] = 30000000
-        mean_read_count = np.array(mapped_reads.values()).mean()
-        for exp,value in mapped_reads.iteritems():
-            #mapped_read_norm_factor[exp] = mean_read_count/value
-            mapped_read_norm_factor[exp] = .9
-    return mapped_read_norm_factor
-
-
-def generate_fastq_from_bam(bam_dir):
-    """make a fastq directory in the same location
-       this code would be unnecessary if the fastq
-       file generation was properly managed
-    """
-    os.chdir(bam_dir)
-    try:
-        os.system('rm -r '+bam_dir+'/fastq')
-        os.mkdir('fastq')
-    except:
-        os.mkdir('fastq')
-    os.chdir('fastq')
-
-    for bam_file in os.listdir(bam_dir):
-        if bam_file[-3:] != 'bam': continue
-        if int(subprocess.check_output(['samtools', 'flagstat', bam_dir+'/'+bam_file]).split('\n')[3].split()[0]) == 0:
-            #not paired end
-            os.system("bedtools bamtofastq -i %s -fq %s" % (bam_dir+'/'+bam_file, bam_file[:-3]+'fastq'))
-        else:
-            #paired end
-            os.system("samtools sort -n %s %s" % (bam_dir+'/'+bam_file, bam_dir+'/'+bam_file[:-3]+'sorted'))
-            os.system("bedtools bamtofastq -i %s -fq %s -fq2 %s" % (bam_dir+'/'+bam_file[:-3]+'sorted.bam',
-                                                                         bam_file[:-3]+'_R1'+'.fastq',
-                                                                         bam_file[:-3]+'_R2'+'.fastq'))
 
 
 @timing
-def load_raw_files(file_names):
-    """This will load raw .bam files and affymetrix .CEL files into the associated
-    genome_data tables.  The raw signal will go into a mongoDB genome_data table and
-    the rest will go into corresponding SQL tables
+def load_raw_files(directory_path, group_name='default', normalize=True, overwrite=False, raw=True):
+    """This will load raw .bam files, .gff files, and affymetrix .CEL files into the associated
+    genome_data tables.  A genome object must also be supplied for proper mappping. The raw signal
+    will go into a mongoDB genome_data table and the rest will go into corresponding SQL tables.
+    This function will by default assume name based loading, however, it can also be configured
+    to read a metadata file with corresponding experiment details.
     """
-    mapped_read_norm_factor = calculate_normalization_factors()
-    for file_name in file_names:
-        if file_name[-3:] != 'bam' and file_name[-3:] != 'CEL': continue
-        try:
-            norm_factor = mapped_read_norm_factor[file_name]
-            #data_loading.name_based_experiment_loading(file_name, bulk_file_load=True, norm_factor=norm_factor)
-            data_loading.name_based_experiment_loading(file_name, bulk_file_load=True, norm_factor=1.)
-        except:
-            data_loading.name_based_experiment_loading(file_name, bulk_file_load=True)
+    session = base.Session()
+
+    parseable_file_extensions = ['bam','sorted.bam','fastq','fastq.gz','R1.fastq.gz','R2.fastq.gz','CEL','gff']
+    experiments = []
+
+    fastq_experiment_paths = {}
+
+    for file_name in os.listdir(directory_path):
+        if file_name[0:4] == 'chip': file_name = 'ChIP'+file_name[4:] #scrub misnamed files
+
+        file_prefix = file_name.split('.')[0]
+        file_suffix = '.'.join(file_name.split('.')[1:])
+
+
+        """if an inner directory is found, load that into a separate experiment group"""
+        if os.path.isdir(directory_path+'/'+file_name):
+
+            load_raw_files(directory_path+'/'+file_name, group_name=file_name, normalize=False)
+
+
+        if file_suffix not in parseable_file_extensions: continue
+
+        """if the experiment was split across multiple sequencing runs the fastq files will be split
+           and they will be preceded by an integer e.g. 1_exp_name, 2_exp_name, etc...
+        """
+
+        if file_name[0] in ['1','2','3']:
+          file_prefix,fastq_paths = get_split_fastq_files(file_name, directory_path)
+          fastq_experiment_paths[file_prefix] = fastq_paths
+
+        elif file_suffix in ['fastq','fastq.gz','R1.fastq.gz','R2.fastq.gz']:
+          #print file_prefix
+          try: fastq_experiment_paths[file_prefix].append(file_name)
+          except: fastq_experiment_paths[file_prefix] = [file_name]
+
+        experiment = data_loading.create_name_based_experiment(session, file_prefix, group_name)
+
+        experiments.append(experiment)
+
+
+    for experiment in set(experiments):
+      if experiment.name in fastq_experiment_paths.keys():
+          data_loading.run_bowtie2(experiment, fastq_experiment_paths[experiment.name], overwrite=overwrite, debug=False)
+
+
+    if normalize:
+        normalization_factors = data_loading.calculate_normalization_factors(experiments[0].type, group_name)
+    else:
+        normalization_factors = {exp.name: 1. for exp in experiments}
+
+
+    for experiment in set(experiments):
+        if not raw: continue
+
+        if experiment.type == 'chip_experiment':
+            print experiment.name,'aaa'
+            norm_factor = normalization_factors[experiment.name]
+            if experiment.protocol_type == 'ChIPexo':
+                data_loading.load_raw_experiment_data(experiment, loading_cutoff=5., flip=False, five_prime=True, norm_factor=norm_factor)
+            elif experiment.protocol_type == 'ChIPchip':
+                data_loading.load_raw_gff_to_db(experiment)
+
+        elif experiment.type == 'rnaseq_experiment':
+            norm_factor = normalization_factors[experiment.name]
+            data_loading.load_raw_experiment_data(experiment, loading_cutoff=10., flip=True, five_prime=False, norm_factor=norm_factor)
+
+    session.close()
+
+
+def get_split_fastq_files(file_name, directory_path):
+    fastq_files = []
+
+    file_prefix = file_name.split('.')[0]
+    file_suffix = '.'.join(file_name.split('.')[1:])
+
+    #suffix = '_'.join(file_name.split('_')[1:])
+
+    for file_name2 in os.listdir(directory_path):
+        file_prefix2 = file_name2.split('.')[0]
+        if file_name2[0] in ['1','2','3'] and file_prefix[2:] == file_prefix2[2:]:
+            fastq_files.append(file_name2)
+    return file_prefix[2:],fastq_files
 
 
 def query_experiment_sets():
@@ -77,17 +111,15 @@ def query_experiment_sets():
 
     ome = base.Session()
 
-    experiment_sets['RNAseq'] = ome.query(func.array_agg(RNASeqExperiment.name),func.array_agg(RNASeqExperiment.file_name)).\
-                                          filter(RNASeqExperiment.normalization_factor == 1.).\
+    experiment_sets['RNAseq'] = ome.query(func.array_agg(RNASeqExperiment.name)).\
                                           group_by(RNASeqExperiment.strain_id, RNASeqExperiment.environment_id,\
-                                          RNASeqExperiment.machine_id,RNASeqExperiment.sequencing_type).all()
+                                                   RNASeqExperiment.machine_id,RNASeqExperiment.sequencing_type).all()
 
-    experiment_sets['array'] = ome.query(func.array_agg(ArrayExperiment.name),func.array_agg(ArrayExperiment.file_name)).\
+    experiment_sets['array'] = ome.query(func.array_agg(ArrayExperiment.name)).\
                                          group_by(ArrayExperiment.strain_id, ArrayExperiment.environment_id,\
                                          ArrayExperiment.platform).all()
 
-    experiment_sets['ChIP'] = ome.query(func.array_agg(ChIPExperiment.name),func.array_agg(ChIPExperiment.file_name)).\
-                                        filter(ChIPExperiment.normalization_factor == 1.).\
+    experiment_sets['ChIP'] = ome.query(func.array_agg(ChIPExperiment.name)).\
                                         group_by(ChIPExperiment.strain_id, ChIPExperiment.environment_id,\
                                         ChIPExperiment.antibody, ChIPExperiment.protocol_type,\
                                         ChIPExperiment.target).all()
@@ -101,9 +133,12 @@ def load_experiment_sets(experiment_sets):
     ome = base.Session()
 
     for exp_group in experiment_sets['RNAseq']:
-        exp_group_name = '_'.join(exp_group[0][0].split('_')[:-2])
+        vals = exp_group[0][0].split('_')
+        if len(vals) > 6: exp_group_name = '_'.join(vals[0:5]+vals[-1:])
+        else: exp_group_name = '_'.join(vals[0:5])
+
         exp = ome.query(RNASeqExperiment).filter_by(name=exp_group[0][0]).one()
-        exp_analysis = ome.get_or_create(NormalizedExpression, name=exp_group_name, environment_id=exp.environment.id,\
+        exp_analysis = ome.get_or_create(NormalizedExpression, replicate=1, name=exp_group_name, environment_id=exp.environment.id,\
                                          strain_id=exp.strain.id)
         for exp_name in exp_group[0]:
             exp = ome.query(RNASeqExperiment).filter_by(name=exp_name).one()
@@ -112,7 +147,7 @@ def load_experiment_sets(experiment_sets):
     for exp_group in experiment_sets['array']:
         exp_group_name = '_'.join(exp_group[0][0].split('_')[:-2])
         exp = ome.query(ArrayExperiment).filter_by(name=exp_group[0][0]).one()
-        exp_analysis = ome.get_or_create(NormalizedExpression, name=exp_group_name, environment_id=exp.environment.id,\
+        exp_analysis = ome.get_or_create(NormalizedExpression, replicate=1, name=exp_group_name, environment_id=exp.environment.id,\
                                          strain_id=exp.strain.id)
         for exp_name in exp_group[0]:
             exp = ome.query(ArrayExperiment).filter_by(name=exp_name).one()
@@ -128,59 +163,20 @@ def load_experiment_sets(experiment_sets):
             parameter_name = '_'.join([y+'-'+str(z) for y,z in dict(set(parameters.items()) - set(default_parameters.items())).iteritems()])
 
 
-        exp_group_name = '_'.join(exp_group[0][0].split('_')[0:5]+exp_group[0][0].split('_')[6:7]+[parameter_name,'peaks'])
+        vals = exp_group[0][0].split('_')
+        exp_group_name = '_'.join(vals[0:5]+vals[6:]+[parameter_name,'peaks'])
+
+
         exp = ome.query(ChIPExperiment).filter_by(name=exp_group[0][0]).one()
 
+
         exp_analysis = ome.get_or_create(ChIPPeakAnalysis, name=exp_group_name, environment_id=exp.environment.id, strain_id=exp.strain.id,\
-                                     parameters=json.dumps(parameters))
+                                                           parameters=json.dumps(parameters), replicate=1)
         for exp_name in exp_group[0]:
-            if exp_name.split('_')[-1] != '1.0': continue
             exp = ome.query(ChIPExperiment).filter_by(name=exp_name).one()
             ome.get_or_create(AnalysisComposition, analysis_id = exp_analysis.id, data_set_id = exp.id)
 
     ome.close()
-
-
-def run_parallel_cuffquant():
-    from IPython.parallel import Client
-
-    c = Client()
-    c[:].execute('from PrototypeDB.loading import load_data')
-    v = c[:]
-    d = v.map(lambda x:load_data.run_cuffquant(x), [exp for exp in ome.query(RNASeqExperiment).all()])
-
-
-def query_yes_no(question, default="yes"):
-    """Ask a yes/no question via raw_input() and return their answer.
-
-    "question" is a string that is presented to the user.
-    "default" is the presumed answer if the user just hits <Enter>.
-        It must be "yes" (the default), "no" or None (meaning
-        an answer is required of the user).
-
-    The "answer" return value is one of "yes" or "no".
-    """
-    valid = {"yes":True,   "y":True,  "ye":True,
-             "no":False,     "n":False}
-    if default == None:
-        prompt = " [y/n] "
-    elif default == "yes":
-        prompt = " [Y/n] "
-    elif default == "no":
-        prompt = " [y/N] "
-    else:
-        raise ValueError("invalid default answer: '%s'" % default)
-
-    while True:
-        sys.stdout.write(question + prompt)
-        choice = raw_input().lower()
-        if default is not None and choice == '':
-            return valid[default]
-        elif choice in valid:
-            return valid[choice]
-        else:
-            sys.stdout.write("Please respond with 'yes' or 'no' "\
-                             "(or 'y' or 'n').\n")
 
 
 if __name__ == "__main__":
@@ -192,62 +188,53 @@ if __name__ == "__main__":
     base.omics_database.genome_data.drop()
     base.Base.metadata.create_all()
 
+    load_raw_files(settings.data_directory+'/chip_experiment/fastq/crp', group_name='crp', normalize=False, raw=False)
+    load_raw_files(settings.data_directory+'/chip_experiment/fastq/yome', group_name='yome', normalize=False, raw=False)
 
-    file_names = os.listdir(settings.data_directory+'/ChIP/bam') + \
-                 os.listdir(settings.data_directory+'/RNAseq/bam')+ \
-                 os.listdir(settings.data_directory+'/microarray/asv2') + \
-                 os.listdir(settings.data_directory+'/microarray/ec2')
-                 #os.listdir(settings.data_directory+'/ChIP/bam/yome') + \
+    load_raw_files(settings.data_directory+'/chip_experiment/gff', group_name='trn', normalize=False, raw=False)
 
-    load_raw_files(file_names)
+    load_raw_files(settings.data_directory+'/rnaseq_experiment/fastq', normalize=False, raw=False)
+    #load_raw_files(settings.data_directory+'/rnaseq_experiment/bam', normalize=True)
+    #load_raw_files(settings.data_directory+'/chip_experiment/bam', normalize=False)
+    load_raw_files(settings.data_directory+'/microarray/asv2', raw=False)
+    load_raw_files(settings.data_directory+'/microarray/ec2', raw=False)
+
 
     experiment_sets = query_experiment_sets()
-
     load_experiment_sets(experiment_sets)
 
-
-    for genbank_file in os.listdir(settings.data_directory+'/annotation/GenBank'):
-        if genbank_file[-2:] != 'gb': continue
-        component_loading.load_genbank(genbank_file, base, components)
-
-    component_loading.load_metacyc_proteins(base, components)
-    component_loading.load_metacyc_bindsites(base, components)
-    component_loading.load_metacyc_transcription_units(base, components)
-    #generate_fastq_from_bam(settings.dropbox_directory+'/om_data/ChIP/bam/crp')
-    #generate_fastq_from_bam(settings.dropbox_directory+'/om_data/ChIP/bam/yome')
-    #generate_fastq_from_bam(settings.data_directory+'/RNAseq/bam')
-
+    component_loading.load_genomes(base, components)
     session = base.Session()
+    genome = session.query(base.Genome).first()
 
-    #for exp in ome.query(RNASeqExperiment).all(): data_loading.run_cuffquant(exp)
-
-    #data_loading.run_cuffnorm(experiment_sets['RNAseq'])
-    """query all RNASeqExperiments grouped across replicates"""
-    rna_seq_exp_sets = session.query(NormalizedExpression).join(AnalysisComposition, NormalizedExpression.id == AnalysisComposition.analysis_id).\
-                                                           join(RNASeqExperiment, RNASeqExperiment.id == AnalysisComposition.data_set_id).all()
-    #data_loading.run_cuffdiff(rna_seq_exp_sets, debug=False)
-
-    control_peak_analysis = session.query(ChIPPeakAnalysis).join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
-                                                            join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
-                                                            join(Strain).\
-                                                            filter(and_(Strain.name == 'delta-crp',
-                                                                        ChIPExperiment.antibody == 'anti-crp')).one()
-
-    #for chip_peak_analysis in session.query(ChIPPeakAnalysis).all():
-    #   data_loading.run_gem(chip_peak_analysis, debug=False)
+    #component_loading.load_metacyc_proteins(base, components, genome)
+    #component_loading.load_metacyc_bindsites(base, components, genome)
+    #component_loading.load_metacyc_transcription_units(base, components, genome)
 
 
+    component_loading.write_genome_annotation_gff(base, components, genome)
 
-    data_loading.load_gem(session.query(ChIPPeakAnalysis).all())
-    data_loading.load_cuffnorm()
-    data_loading.load_cuffdiff()
-    data_loading.load_arraydata(settings.data_directory+'/microarray/formatted_asv2.txt', type='asv2')
-    data_loading.load_arraydata(settings.data_directory+'/microarray/formatted_ec2.txt', type='ec2')
-    data_loading.make_genome_region_map()
+    #data_loading.run_cuffquant(base, data, genome, debug=False)
+    #data_loading.run_cuffnorm(base, data, genome, debug=False, overwrite=True)
+    #data_loading.run_cuffdiff(base, data, genome, debug=False, overwrite=True)
+    #data_loading.run_gem(base, data, genome, debug=True)
 
-    genome_data = base.omics_database.genome_data
 
-    @timing
-    genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
+    #data_loading.load_gem(session.query(ChIPPeakAnalysis).all(), base, data, genome)
+    #data_loading.load_nimblescan(session.query(ChIPPeakAnalysis).all(), base, data, genome)
+
+    #data_loading.load_cuffnorm(base, data)
+    #data_loading.load_cuffdiff()
+
+    #data_loading.load_arraydata(settings.data_directory+'/microarray/formatted_asv2.txt', type='asv2')
+    #data_loading.load_arraydata(settings.data_directory+'/microarray/formatted_ec2.txt', type='ec2')
+
+    #data_loading.run_array_ttests(base, data, genome)
+
+    #data_loading.make_genome_region_map()
+
+    #genome_data = base.omics_database.genome_data
+
+    #genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
 
     session.close()
