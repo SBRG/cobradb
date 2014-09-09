@@ -188,8 +188,8 @@ if __name__ == "__main__":
     base.omics_database.genome_data.drop()
     base.Base.metadata.create_all()
 
-    load_raw_files(settings.data_directory+'/chip_experiment/fastq/crp', group_name='crp', normalize=False, raw=False)
-    load_raw_files(settings.data_directory+'/chip_experiment/fastq/yome', group_name='yome', normalize=False, raw=False)
+    load_raw_files(settings.data_directory+'/chip_experiment/fastq/crp', group_name='crp', normalize=False, raw=True)
+    load_raw_files(settings.data_directory+'/chip_experiment/fastq/yome', group_name='yome', normalize=False, raw=True)
 
     load_raw_files(settings.data_directory+'/chip_experiment/gff', group_name='trn', normalize=False, raw=False)
 

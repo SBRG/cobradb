@@ -191,6 +191,7 @@ def get_protein_with_metacyc(session, base, components, protein_entry):
     except:
         return None
 
+
 def update_protein_with_metacyc(session, base, components, protein_entry):
     vals = scrub_metacyc_entry(protein_entry,extra_args=['GENE'])
     if vals is None: return None
@@ -202,7 +203,6 @@ def update_protein_with_metacyc(session, base, components, protein_entry):
 
     session.add(protein)
     session.flush()
-
 
 
 def get_or_create_metacyc_ligand(session, base, components, ligand_entry):
