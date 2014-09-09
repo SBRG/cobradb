@@ -75,8 +75,8 @@ class Component(Base):
     __tablename__ = 'component'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    biggid = Column(String)
-    name = Column(String(100))
+    
+    name = Column(String)
     formula = Column(String)
     type = Column(String(20))
 
@@ -86,10 +86,8 @@ class Component(Base):
                        'polymorphic_on': type
                       }
 
-    def __init__(self, name, biggid, formula):
+    def __init__(self, name):
         self.name = name
-        self.biggid = biggid
-        self.formula = formula
 
     def __repr__(self):
         return "Component (#%d):  %s" % \
@@ -101,9 +99,9 @@ class Reaction(Base):
     __tablename__ = 'reaction'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    biggid = Column(String(10))
-    name = Column(String(100))
-    long_name = Column(String(100))
+    biggid = Column(String)
+    name = Column(String)
+    long_name = Column(String)
     type = Column(String(20))
 
     __table_args__ = (UniqueConstraint('name'),{})
@@ -112,7 +110,7 @@ class Reaction(Base):
                        'polymorphic_on': type
                       }
 
-    def __init__(self, name, biggid, long_name):
+    def __init__(self, name, biggid, long_name=""):
         self.name = name
         self.biggid = biggid
         self.long_name = long_name

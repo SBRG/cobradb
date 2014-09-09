@@ -1,4 +1,4 @@
-from om.base import *
+from ome.base import *
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
@@ -25,7 +25,7 @@ class Gene(GenomeRegion):
                                  self.strand)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, genome_id, locus_id, info=None, long_name=None):
+    def __init__(self, name, leftpos, rightpos, strand, genome_id=None, locus_id=None, info=None, long_name=None):
         super(Gene, self).__init__(leftpos, rightpos, strand, genome_id, name)
         self.locus_id = locus_id
         self.info = info
@@ -248,16 +248,21 @@ class Metabolite(Component):
     __mapper_args__ = { 'polymorphic_identity': 'metabolite' }
 
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-
-    long_name = Column(String(200))
+    kegg_id = Column(String)
+    cas_number = Column(String)
+    biggid = Column(String)
     formula = Column(String(200))
     smiles = Column(String(200))
-    def __init__(self, name, long_name, formula="", smiles=""):
+    long_name = Column(String)
+    
+    def __init__(self, name, kegg_id, cas_number, formula, long_name, smiles=None):
         super(Metabolite, self).__init__(name)
-        self.long_name = long_name
         self.formula = formula
         self.smiles = smiles
-
+        self.kegg_id = kegg_id
+        self.cas_number = cas_number
+        self.long_name = long_name
+    
 
     def __repr__(self):
         return "Small Molecule (#%d, %s)" % \
