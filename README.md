@@ -1,7 +1,7 @@
-The OM Framework
+The OME Framework
 ==
 
-The OM framework is a systems biology and bioinformatics framework that helps to enable a broad array of iterative and evolving systems biology workflows.
+The OME framework is a systems biology and bioinformatics framework that helps to enable a broad array of iterative and evolving systems biology workflows.
 
 ###Its core features are 
 
