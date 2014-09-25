@@ -11,7 +11,7 @@ from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from ome import settings
 import pymongo
-
+from sqlalchemy.schema import Sequence
 
 engine = create_engine("postgresql://%s:%s@%s/%s" %
     (settings.postgres_user, settings.postgres_password, settings.postgres_host, settings.postgres_database))
@@ -25,32 +25,40 @@ metadata = MetaData(bind=engine)
 class Genome(Base):
     __tablename__ = 'genome'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    genbank_id = Column(String(200))
+    id = Column(Integer, primary_key=True)
+    bioproject_id = Column(String(200))
     ncbi_id = Column(String(100))
     organism = Column(String(200))
+    
+    __table_args__ = (UniqueConstraint('bioproject_id'),{})
 
-
-    __table_args__ = (UniqueConstraint('genbank_id'),{})
-
-    def __init__(self, genbank_id, ncbi_id, organism):
-        self.genbank_id = genbank_id
+    def __init__(self, bioproject_id, ncbi_id, organism):
+        self.bioproject_id = bioproject_id
         self.ncbi_id = ncbi_id
         self.organism = organism
 
+class Chromosome(Base):
+    __tablename__ = 'chromosome'
 
+    id = Column(Integer, Sequence('wids'), primary_key=True)
+    genome_id = Column(Integer, ForeignKey('genome.id'))
+    genbank_id = Column(String(100))
+    __table_args__ = (UniqueConstraint('genome_id', 'genbank_id'),{})
+    def __init__(self, genome_id, genbank_id):
+        self.genome_id = genome_id
+        self.genbank_id = genbank_id
+        
 class GenomeRegion(Base):
     __tablename__ = 'genome_region'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, Sequence('wids'), primary_key=True)
     genome_id = Column(Integer, ForeignKey('genome.id'))
     name = Column(String(15))
-    leftpos = Column(Integer, nullable=False)
-    rightpos = Column(Integer, nullable=False)
-    strand = Column(String(1), nullable=False)
+    leftpos = Column(Integer)
+    rightpos = Column(Integer)
+    strand = Column(String(1))
     type = Column(String(20))
 
-    __table_args__ = (UniqueConstraint('leftpos','rightpos','strand','genome_id'),{})
+    __table_args__ = (UniqueConstraint('name','leftpos','rightpos','strand','genome_id'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'genome_region',
                        'polymorphic_on': type
@@ -80,7 +88,7 @@ class Component(Base):
     formula = Column(String)
     type = Column(String(20))
 
-    __table_args__ = (UniqueConstraint('name'),{})
+    #__table_args__ = (UniqueConstraint('name'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'component',
                        'polymorphic_on': type
@@ -110,7 +118,7 @@ class Reaction(Base):
                        'polymorphic_on': type
                       }
 
-    def __init__(self, name, biggid, long_name=""):
+    def __init__(self, name, long_name, biggid=""):
         self.name = name
         self.biggid = biggid
         self.long_name = long_name
@@ -145,26 +153,27 @@ class DataSource(Base):
         self.institution = institution
 
 
-class id2otherid(Base):
-    __tablename__ = "id2otherid"
+class Synonyms(Base):
+    __tablename__ = "synonyms"
 
     id = Column(Integer, primary_key=True)
-    other_id = Column(String(100), primary_key=True)
-
+    synonym = Column(String)
+    gene_id = Column(Integer, ForeignKey('gene.id'))
     id_data_source_id = Column(Integer, ForeignKey('data_source.id'))
     other_id_data_source_id = Column(Integer, ForeignKey('data_source.id'))
-
+    type = Column(String)
     id_data_source = relationship("DataSource", primaryjoin = id_data_source_id == DataSource.id)
     other_id_data_source = relationship("DataSource", primaryjoin = other_id_data_source_id == DataSource.id)
 
-    __table_args__ = (UniqueConstraint('id','other_id'),{})
+    __table_args__ = (UniqueConstraint('id','synonym','type'),{})
 
     def __repr__(self):
-        return "%s in (%s)" % (self.other_id, str(self.other_id_data_source))
+        return "%s in (%s)" % (self.synonym, str(self.other_id_data_source))
 
-    def __init__(self, id, other_id, id_data_source_id, other_id_data_source_id):
-        self.id = id
-        self.other_id = other_id
+    def __init__(self, synonym, id_data_source_id, other_id_data_source_id, gene_id, type):
+        self.type = type
+        self.synonym = synonym
+        self.gene_id = gene_id
         self.id_data_source_id = id_data_source_id
         self.other_id_data_source_id = other_id_data_source_id
 

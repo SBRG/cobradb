@@ -2,7 +2,7 @@ from ome.base import *
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
-    String, Float, ForeignKey, select
+    String, Float, ForeignKey, select, Boolean
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.schema import UniqueConstraint,PrimaryKeyConstraint
 
@@ -250,19 +250,20 @@ class Metabolite(Component):
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
     kegg_id = Column(String)
     cas_number = Column(String)
-    biggid = Column(String)
+    name = Column(String)
     formula = Column(String(200))
     smiles = Column(String(200))
     long_name = Column(String)
-    
-    def __init__(self, name, kegg_id, cas_number, formula, long_name, smiles=None):
+    flag = Column(Boolean)
+    def __init__(self, name, kegg_id, cas_number, formula, long_name, flag, smiles=None):
         super(Metabolite, self).__init__(name)
         self.formula = formula
         self.smiles = smiles
         self.kegg_id = kegg_id
         self.cas_number = cas_number
         self.long_name = long_name
-    
+        self.name = name
+        self.flag = flag
 
     def __repr__(self):
         return "Small Molecule (#%d, %s)" % \
