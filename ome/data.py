@@ -1,6 +1,6 @@
 """Module to implement ORM for the experimental portion of the OME database"""
 
-from om.base import *
+from ome.base import *
 
 from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
@@ -162,10 +162,13 @@ class DataSet(Base):
     data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
     data_source = relationship("DataSource")
 
+    group_name = Column(String(100))
+
+
     __mapper_args__ = {'polymorphic_identity': 'data_set',
                        'polymorphic_on': type}
 
-    __table_args__ = (UniqueConstraint('id','replicate'),{})
+    __table_args__ = (UniqueConstraint('name','replicate', 'group_name'),{})
 
     def __repr__(self):
         return "Data Set (#%d):  %s" % \
@@ -183,7 +186,7 @@ class DataSet(Base):
     def __repr__json__(self):
         return json.dumps(self.__repr__dict__())
 
-    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, data_source_id=None):
+    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, data_source_id=None, group_name=None):
 
         session = Session()
         if strain_id is None:
@@ -196,11 +199,13 @@ class DataSet(Base):
             data_source_id = session.get_or_create(DataSource, name='generic', lab='generic', institution='generic').id
         session.close()
 
+
         self.name = name
         self.replicate = replicate
         self.strain_id = strain_id
         self.environment_id = environment_id
         self.data_source_id = data_source_id
+        self.group_name = group_name
 
 
 class ArrayExperiment(DataSet):
@@ -210,15 +215,14 @@ class ArrayExperiment(DataSet):
     platform = Column(String(10))
 
     #terrrible hack right here
-    file_name = Column(String(100))
+    #file_name = Column(String(100))
 
     __mapper_args__ = { 'polymorphic_identity': 'array_experiment' }
 
     def __init__(self, name, replicate, strain_id, environment_id, data_source_id,\
-                       platform, file_name):
-        super(ArrayExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
+                       platform, group_name=None):
+        super(ArrayExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id, group_name)
         self.platform = platform
-        self.file_name = file_name
 
     def __repr__(self):
         return "Array Experiment (#%d, %s):  %s  %d" % \
@@ -234,23 +238,25 @@ class ArrayExperiment(DataSet):
 
 
 class RNASeqExperiment(DataSet):
-    __tablename__ = 'rna_seq_experiment'
+    __tablename__ = 'rnaseq_experiment'
 
     id = Column(Integer, ForeignKey('data_set.id', ondelete='CASCADE'), primary_key=True)
 
     sequencing_type = Column(String(20))
     machine_id = Column(String(20))
+
     normalization_method = Column(String(100))
-    normalization_factor = Column(Float, primary_key=True)
+    normalization_factor = Column(Float)
+
 
     #terrrible hack right here
-    file_name = Column(String(100))
+    #file_name = Column(String(100))
 
-    __mapper_args__ = { 'polymorphic_identity': 'rna_seq_experiment' }
+    __mapper_args__ = { 'polymorphic_identity': 'rnaseq_experiment' }
 
     def __repr__(self):
-        return "RNASeqExperiment (#%d, %s):  %s" % \
-            (self.id, self.name, self.replicate)
+        return "RNASeqExperiment (#%d, %s):  %s  %s" % \
+            (self.id, self.name, self.replicate, self.group_name)
 
     def __repr__dict__(self):
         data_set = DataSet.__repr__dict__(self)
@@ -262,14 +268,15 @@ class RNASeqExperiment(DataSet):
         return data_set
 
     def __init__(self, name, replicate, strain_id, environment_id, data_source_id,\
-                       sequencing_type, machine_id, file_name, normalization_method,\
-                       normalization_factor):
-        super(RNASeqExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
+                       sequencing_type, machine_id, group_name=None, normalization_method=None,\
+                       normalization_factor=None):
+        super(RNASeqExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id, group_name)
         self.sequencing_type = sequencing_type
         self.machine_id = machine_id
+
         self.normalization_method = normalization_method
         self.normalization_factor = normalization_factor
-        self.file_name = file_name
+
 
 
 class ChIPExperiment(DataSet):
@@ -279,12 +286,14 @@ class ChIPExperiment(DataSet):
     antibody = Column(String(20))
     protocol_type = Column(String(20))
     target = Column(String(20))
+
     normalization_method = Column(String(100))
-    normalization_factor = Column(Float, primary_key=True)
+    normalization_factor = Column(Float)
+
 
     #terrrible hacks right here
-    file_name = Column(String(100))
-    directory_path = Column(String(200))
+    #file_name = Column(String(100))
+    #directory_path = Column(String(200))
 
     __mapper_args__ = { 'polymorphic_identity': 'chip_experiment' }
 
@@ -303,17 +312,16 @@ class ChIPExperiment(DataSet):
         return dataset
 
     def __init__(self, name, replicate, strain_id, environment_id, data_source_id,\
-                       antibody, protocol_type, target, normalization_method,\
-                       normalization_factor, file_name, directory_path):
+                       antibody, protocol_type, target, group_name=None, normalization_method=None,\
+                       normalization_factor=None):
 
-        super(ChIPExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id)
+        super(ChIPExperiment, self).__init__(name, replicate, strain_id, environment_id, data_source_id, group_name)
         self.antibody = antibody
         self.protocol_type = protocol_type
         self.target = target
         self.normalization_method = normalization_method
         self.normalization_factor = normalization_factor
-        self.file_name = file_name
-        self.directory_path = directory_path
+
 
 
 class AnalysisComposition(Base):
@@ -341,8 +349,8 @@ class Analysis(DataSet):
     __mapper_args__ = {'polymorphic_identity': 'analysis',
                        'polymorphic_on': 'type'}
 
-    def __init__(self, name, replicate=1, strain_id=None, environment_id=None):
-        super(Analysis, self).__init__(name, replicate, strain_id, environment_id)
+    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, group_name=None):
+        super(Analysis, self).__init__(name, replicate, strain_id, environment_id, group_name=group_name)
 
     def __repr__(self):
         return "Analysis (#%d):  %s" % \
@@ -356,14 +364,15 @@ class ChIPPeakAnalysis(Analysis):
     method = Column(String(30))
     parameters = Column(String(200))
 
+
     __mapper_args__ = { 'polymorphic_identity': 'chip_peak_analysis' }
 
     def __repr__(self):
         return "ChIP Peak Analysis (#%d, %s): %s" % \
                 (self.id, self.name, self.environment)
 
-    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, method=None, parameters=None):
-        super(ChIPPeakAnalysis, self).__init__(name, replicate, strain_id, environment_id)
+    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, method=None, parameters=None, group_name=None):
+        super(ChIPPeakAnalysis, self).__init__(name, replicate, strain_id, environment_id, group_name=group_name)
         self.method = method
         self.parameters = parameters
 
@@ -374,18 +383,24 @@ class NormalizedExpression(Analysis):
     id = Column(Integer, ForeignKey('analysis.id', ondelete='CASCADE'), primary_key=True)
     norm_method = Column(String(40))
     dispersion_method = Column(String(20))
+    expression_type = Column(String(20))
 
     __mapper_args__ = {'polymorphic_identity': 'normalized_expression'}
 
 
-    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, norm_method=None, dispersion_method=None):
-        super(NormalizedExpression, self).__init__(name, replicate, strain_id, environment_id)
+    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, group_name=None,
+                                                                               norm_method=None,
+                                                                               dispersion_method=None,
+                                                                               expression_type=None):
+        super(NormalizedExpression, self).__init__(name, replicate, strain_id, environment_id, group_name)
         self.norm_method = norm_method
         self.dispersion_method = dispersion_method
+        self.expression_type = expression_type
+
 
     def __repr__(self):
-        return "Expression Data (#%d):  %s" % \
-            (self.id, self.name)
+        return "Expression Data (#%d):  %s  %s" % \
+            (self.id, self.name, self.expression_type)
 
 
 class DifferentialExpression(Analysis):
@@ -398,8 +413,8 @@ class DifferentialExpression(Analysis):
     __mapper_args__ = {'polymorphic_identity': 'differential_expression'}
 
 
-    def __init__(self, name, norm_method, fdr):
-        super(DifferentialExpression, self).__init__(name)
+    def __init__(self, name, replicate=1, group_name=None, norm_method=None, fdr=None):
+        super(DifferentialExpression, self).__init__(name, replicate, group_name=group_name)
         self.norm_method = norm_method
         self.fdr = fdr
 
@@ -444,13 +459,14 @@ class DiffExpData(GenomeData):
     __tablename__ = 'diff_exp_data'
 
     data_set_id = Column(Integer, primary_key=True)
-    diff_exp_analysis = relationship('DifferentialExpression')
     genome_region_id = Column(Integer, primary_key=True)
+
+    diff_exp_analysis = relationship('DifferentialExpression')
 
     pval = Column(Float)
 
     __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
-                                           ['genome_data.data_set_id', 'genome_data.genome_region_id']),\
+                                           ['genome_data.data_set_id', 'genome_data.genome_region_id'], ondelete='CASCADE'),\
                       UniqueConstraint('data_set_id','genome_region_id'),{})
 
     __mapper_args__ = { 'polymorphic_identity': 'diff_exp_data' }
@@ -467,8 +483,9 @@ class DiffExpData(GenomeData):
 class ChIPPeakData(GenomeData):
     __tablename__ = 'chip_peak_data'
 
-    data_set_id = Column(Integer, ForeignKey('data_set.id', ondelete="CASCADE"), primary_key=True)
+    data_set_id = Column(Integer, primary_key=True)
     genome_region_id = Column(Integer, primary_key=True)
+
     peak_analysis = relationship('Analysis')
     eventpos = Column(Integer)
     pval = Column(Float)
@@ -482,7 +499,7 @@ class ChIPPeakData(GenomeData):
         return func.ceil(ChIPPeakData.eventpos/400) * 400
 
     __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
-                                           ['genome_data.data_set_id', 'genome_data.genome_region_id']),\
+                                           ['genome_data.data_set_id', 'genome_data.genome_region_id'], ondelete='CASCADE'),\
                       UniqueConstraint('data_set_id','genome_region_id'),{})
 
     __mapper_args__ = { 'polymorphic_identity': 'chip_peak_data' }
@@ -498,58 +515,185 @@ class ChIPPeakData(GenomeData):
 
 
 
+class RegulatoryNetwork(Base):
+    __tablename__ = 'regulatory_network'
+
+    reg_gene_id = Column(Integer, ForeignKey('genome_region.id', ondelete="CASCADE"), primary_key=True)
+    regd_gene_id = Column(Integer, ForeignKey('genome_region.id', ondelete="CASCADE"), primary_key=True)
+    direction = Column(String(3))
+    evidence = Column(String(40))
+
+    reg_gene = relationship('GenomeRegion',
+                             primaryjoin = reg_gene_id == GenomeRegion.id, backref='regulates')
+
+    regd_gene = relationship('GenomeRegion',
+                              primaryjoin = regd_gene_id == GenomeRegion.id, backref='regulation')
+
+    __table_args__ = (UniqueConstraint('reg_gene_id','regd_gene_id'),{})
+
+
+    def __repr__(self):
+        return "Regulation: %s --> %s --> %s, %s" % \
+            (self.reg_gene.name, self.direction, self.regd_gene.name, self.evidence)
+
+
+    def __init__(self, reg_gene_id, regd_gene_id, direction, evidence):
+        self.reg_gene_id = reg_gene_id
+        self.regd_gene_id = regd_gene_id
+        self.direction = direction
+        self.evidence = evidence
+
+
+
 ome = Session()
+from om.components import Gene,TU,TUGenes
+
+
+grouped = ome.query(func.distinct(ChIPPeakData.data_set_id).label('data_set_id'),\
+                    func.max(ChIPPeakData.value).label('value'),\
+                    ChIPPeakData.grouped_eventpos.label('eventpos'),\
+                    GenomeRegion.strand.label('strand')).\
+                    join(GenomeRegion).\
+                    group_by(ChIPPeakData.data_set_id, ChIPPeakData.grouped_eventpos, GenomeRegion.strand).subquery()
+
+
+
+
+gene_expression_data = ome.query(
+          Gene.id.label('gene_id'),
+          Gene.name.label('gene_name'),
+          Gene.locus_id.label('locus_id'),
+          Strain.id.label('strain_id'),
+          Strain.name.label('strain'),
+          InVivoEnvironment.id.label('environment_id'),
+          InVivoEnvironment.carbon_source.label('carbon_source'),
+          InVivoEnvironment.nitrogen_source.label('nitrogen_source'),
+          InVivoEnvironment.electron_acceptor.label('electron_acceptor'),
+          DataSet.type.label('dataset_type'),
+          DataSet.group_name.label('group_name'),
+          func.max(DataSet.id).label('max_dataset_id'),
+          func.avg(GenomeData.value).label('value'),
+          func.stddev_pop(GenomeData.value).label('stddev')).\
+    join(GenomeData, DataSet, Strain, InVivoEnvironment).\
+    group_by(Gene.id, DataSet.group_name, Strain.id, DataSet.type, InVivoEnvironment.id,
+             Gene.locus_id, Gene.name, Strain.name, InVivoEnvironment.carbon_source,
+                                                    InVivoEnvironment.nitrogen_source,
+                                                    InVivoEnvironment.electron_acceptor).order_by(DataSet.type, InVivoEnvironment.id).subquery()
+
+
+
+class GeneExpressionData(Base):
+    __table__ = gene_expression_data
+
+    __mapper_args__ = {
+        'primary_key':[gene_expression_data.c.gene_id, gene_expression_data.c.max_dataset_id]
+    }
+
+
+    def __repr__(self):
+        return "Gene: (%s, %s), Value: %5.2f, std:%5.2f, Condition: %s, %s, %s, Strain: %s, %s %s" % \
+            (self.locus_id, self.gene_name, self.value, self.stddev, self.carbon_source,
+             self.nitrogen_source, self.electron_acceptor, self.strain, self.dataset_type, self.group_name)
+
+
 
 AnalysisComposition2 = aliased(AnalysisComposition)
 AnalysisComposition3 = aliased(AnalysisComposition)
 NormalizedExpression2 = aliased(NormalizedExpression)
 
 
-chip_peak = ome.query(ChIPPeakAnalysis.id.label('chip_peak_id'),
-                      ChIPPeakAnalysis.environment_id.label('chip_peak_environment_id'),
-                      ChIPExperiment.target.label('chip_peak_target'),
-                      ChIPExperiment.antibody.label('chip_peak_antibody'),
-                      Strain.id.label('chip_peak_strain_id'),
-                      Strain.name.label('chip_peak_strain')).\
+chip_peak = ome.query(ChIPPeakAnalysis.id.label('id'),
+                      ChIPPeakAnalysis.environment_id.label('environment_id'),
+                      ChIPPeakAnalysis.group_name.label('chip_peak_group'),
+                      ChIPExperiment.target.label('target'),
+                      ChIPExperiment.antibody.label('antibody'),
+                      Strain.id.label('strain_id'),
+                      Strain.name.label('strain')).\
                       join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
                       join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
                       join(Strain, ChIPExperiment.strain_id == Strain.id).\
-                      join(InVivoEnvironment, InVivoEnvironment.id == ChIPExperiment.environment_id).\
-                      group_by(ChIPPeakAnalysis.id, ChIPPeakAnalysis.environment_id, ChIPExperiment.target,
-                               ChIPExperiment.antibody, Strain.id).subquery()
+                      group_by(ChIPPeakAnalysis.id, ChIPPeakAnalysis.environment_id, ChIPPeakAnalysis.group_name,
+                               ChIPExperiment.target, ChIPExperiment.antibody, Strain.id).subquery()
 
 
 Strain2 = aliased(Strain)
 
-diff_exp_chip_peak = ome.query(DifferentialExpression.id.label('diff_exp_id'),
-                                   chip_peak.c.chip_peak_id,
-                                   chip_peak.c.chip_peak_target.label('target'),
-                                   chip_peak.c.chip_peak_antibody.label('antibody'),
-                                   Strain.name.label('strain1'),
-                                   Strain2.name.label('strain2'),
-                                   InVivoEnvironment.carbon_source.label('carbon_source'),
-                                   InVivoEnvironment.nitrogen_source.label('nitrogen_source'),
-                                   InVivoEnvironment.electron_acceptor.label('electron_acceptor')).\
-                                    join(AnalysisComposition2, DifferentialExpression.id == AnalysisComposition2.analysis_id).\
-                                    join(AnalysisComposition3, DifferentialExpression.id == AnalysisComposition3.analysis_id).\
-                                    join(NormalizedExpression, AnalysisComposition2.data_set_id == NormalizedExpression.id).\
-                                    join(NormalizedExpression2, AnalysisComposition3.data_set_id == NormalizedExpression2.id).\
-                                    join(Strain, Strain.id == NormalizedExpression.strain_id).\
-                                    join(Strain2, Strain2.id == NormalizedExpression2.strain_id).\
-                                    join(InVivoEnvironment, InVivoEnvironment.id == NormalizedExpression.environment_id).\
-                                    filter(and_(NormalizedExpression.environment_id == NormalizedExpression2.environment_id,
-                                                NormalizedExpression.strain_id != NormalizedExpression2.strain_id)).\
-                                    join(chip_peak, and_(chip_peak.c.chip_peak_environment_id == NormalizedExpression.environment_id,
-                                                                  func.substr(chip_peak.c.chip_peak_antibody, 6,
-                                                                  func.length(chip_peak.c.chip_peak_antibody)) == 'crp',
-                                                             and_(Strain2.name == 'wt', Strain.name != 'wt'))).\
-                                    filter(chip_peak.c.chip_peak_strain_id == Strain2.id).subquery()
+
+
+diff_exp = ome.query(DifferentialExpression.id.label('id'),
+                     Strain.name.label('strain1'),
+                     Strain2.name.label('strain2'),
+                     InVivoEnvironment.id.label('environment_id'),
+                     InVivoEnvironment.carbon_source.label('carbon_source'),
+                     InVivoEnvironment.nitrogen_source.label('nitrogen_source'),
+                     InVivoEnvironment.electron_acceptor.label('electron_acceptor'),
+                     InVivoEnvironment.supplements.label('supplements'),
+                     NormalizedExpression.expression_type.label('expression_type')).\
+                    join(AnalysisComposition2, DifferentialExpression.id == AnalysisComposition2.analysis_id).\
+                    join(AnalysisComposition3, DifferentialExpression.id == AnalysisComposition3.analysis_id).\
+                    join(NormalizedExpression, AnalysisComposition2.data_set_id == NormalizedExpression.id).\
+                    join(NormalizedExpression2, AnalysisComposition3.data_set_id == NormalizedExpression2.id).\
+                    join(Strain, Strain.id == NormalizedExpression.strain_id).\
+                    join(Strain2, Strain2.id == NormalizedExpression2.strain_id).\
+                    join(InVivoEnvironment, InVivoEnvironment.id == NormalizedExpression.environment_id).\
+                    filter(and_(NormalizedExpression.environment_id == NormalizedExpression2.environment_id,
+                                NormalizedExpression.strain_id != NormalizedExpression2.strain_id)).subquery()
+
+
+diff_exp_chip_peak = ome.query(diff_exp.c.id.label('diff_exp_id'),
+                               chip_peak.c.id.label('chip_peak_id'),
+                               chip_peak.c.chip_peak_group,
+                               chip_peak.c.target,
+                               chip_peak.c.antibody,
+                               diff_exp.c.strain1,
+                               diff_exp.c.strain2,
+                               diff_exp.c.environment_id,
+                               diff_exp.c.carbon_source,
+                               diff_exp.c.nitrogen_source,
+                               diff_exp.c.electron_acceptor,
+                               diff_exp.c.supplements,
+                               diff_exp.c.expression_type).\
+                               join(chip_peak, and_(chip_peak.c.environment_id == diff_exp.c.environment_id,
+                                                    func.lower(chip_peak.c.target) == func.substr(diff_exp.c.strain1, 7, func.length(diff_exp.c.strain1)),
+                                                    diff_exp.c.strain2 == 'wt', chip_peak.c.strain == 'wt')).subquery()
 
 
 
-from om.components import Gene,TU,TUGenes
+
 
 GenomeRegion2 = aliased(GenomeRegion)
+
+
+chip_peak_gene = ome.query(ChIPPeakData.value.label('peak_value'),
+                           ChIPPeakData.genome_region_id.label('peak_genome_region_id'),
+                           GenomeRegion.leftpos.label('leftpos'),
+                           GenomeRegion.rightpos.label('rightpos'),
+                           GenomeRegion.strand.label('strand'),
+                           chip_peak.c.target.label('target'),
+                           chip_peak.c.strain_id.label('strain_id'),
+                           chip_peak.c.strain.label('strain'),
+                           chip_peak.c.antibody.label('antibody'),
+                           chip_peak.c.environment_id.label('environment_id'),
+                           InVivoEnvironment.carbon_source.label('carbon_source'),
+                           InVivoEnvironment.nitrogen_source.label('nitrogen_source'),
+                           InVivoEnvironment.electron_acceptor.label('electron_acceptor'),
+                           InVivoEnvironment.supplements.label('supplements'),
+                           TU.name.label('tu_name'),
+                           Gene.id.label('gene_id'),
+                           Gene.locus_id.label('locus_id'),
+                           GenomeRegion2.name.label('gene_name'),
+                           ChIPPeakData.data_set_id.label('chip_peak_id')).\
+                    join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
+                    join(TU, GenomeRegionMap.genome_region_id_2 == TU.genome_region_id).\
+                    join(TUGenes, TUGenes.tu_id == TU.id).\
+                    join(Gene, Gene.id == TUGenes.gene_id).\
+                    join(GenomeRegion, GenomeRegion.id == ChIPPeakData.genome_region_id).\
+                    join(chip_peak, chip_peak.c.id == ChIPPeakData.data_set_id).\
+                    join(InVivoEnvironment, InVivoEnvironment.id == chip_peak.c.environment_id).\
+                    join(GenomeRegion2, GenomeRegion2.id == TUGenes.gene_id).subquery()
+
+
+
 
 chip_peak_gene_expression = ome.query(ChIPPeakData.value.label('peak_value'),
                  ChIPPeakData.genome_region_id.label('peak_genome_region_id'),
@@ -560,16 +704,20 @@ chip_peak_gene_expression = ome.query(ChIPPeakData.value.label('peak_value'),
                  diff_exp_chip_peak.c.strain1.label('strain1'),
                  diff_exp_chip_peak.c.strain2.label('strain2'),
                  diff_exp_chip_peak.c.antibody.label('antibody'),
+                 diff_exp_chip_peak.c.environment_id.label('environment_id'),
                  diff_exp_chip_peak.c.carbon_source.label('carbon_source'),
                  diff_exp_chip_peak.c.nitrogen_source.label('nitrogen_source'),
                  diff_exp_chip_peak.c.electron_acceptor.label('electron_acceptor'),
                  TU.name.label('tu_name'),
+                 Gene.id.label('gene_id'),
                  Gene.locus_id.label('locus_id'),
                  GenomeRegion2.name.label('gene_name'),
+                 DiffExpData.type.label('dataset_type'),
                  DiffExpData.genome_region_id.label('gene_genome_region_id'),
-                 DiffExpData.value.label('expression_value'),
+                 DiffExpData.value.label('value'),
                  DiffExpData.pval.label('pval'),
                  ChIPPeakData.data_set_id.label('chip_peak_id'),
+                 ChIPPeakAnalysis.group_name.label('chip_peak_group'),
                  DiffExpData.data_set_id.label('diff_exp_id')).\
                     join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
                     join(TU, GenomeRegionMap.genome_region_id_2 == TU.genome_region_id).\
@@ -579,20 +727,110 @@ chip_peak_gene_expression = ome.query(ChIPPeakData.value.label('peak_value'),
                                                   ChIPPeakData.data_set_id == diff_exp_chip_peak.c.chip_peak_id)).\
                     join(Gene, Gene.id == TUGenes.gene_id).\
                     join(GenomeRegion, GenomeRegion.id == ChIPPeakData.genome_region_id).\
-                    join(GenomeRegion2, GenomeRegion2.id == TUGenes.gene_id).subquery()
+                    join(GenomeRegion2, GenomeRegion2.id == TUGenes.gene_id).\
+                    join(ChIPPeakAnalysis, ChIPPeakAnalysis.id == ChIPPeakData.data_set_id).subquery()
+
+
+
+
+
+class ChIPPeakGene(Base):
+    __table__ = chip_peak_gene
+
+    def __repr__(self):
+        return "TF: %s, Gene: (%s, %s), Condition: %s, %s, %s Peak: %d-%d value:%5.2f" % \
+            (self.target, self.gene_name, self.locus_id,
+             self.carbon_source, self.nitrogen_source, self.electron_acceptor, self.leftpos, self.rightpos, self.peak_value)
+
 
 
 class ChIPPeakGeneExpression(Base):
     __table__ = chip_peak_gene_expression
 
     def __repr__(self):
-        return "TF: %s, Gene: %s, %s, %5.2f, %5.2f %s-->%s Condition: %s, %s, %s Peak: %d-%d value:%5.2f" % \
-            (self.target, self.gene_name, self.locus_id, self.expression_value, self.pval, self.strain1, self.strain2,
+        return "TF: %s, Gene: (%s, %s), %5.2f, %5.2f %s-->%s Condition: %s, %s, %s Peak: %d-%d value:%5.2f" % \
+            (self.target, self.gene_name, self.locus_id, self.value, self.pval, self.strain1, self.strain2,
              self.carbon_source, self.nitrogen_source, self.electron_acceptor, self.leftpos, self.rightpos, self.peak_value)
 
+InVivoEnvironment2 = aliased(InVivoEnvironment)
 
-def _load_data(collection,data):
-    collection.insert(data)
+differential_gene_expression_data = ome.query(DiffExpData.value.label('value'),
+                                           DiffExpData.pval.label('pval'),
+                                           DiffExpData.data_set_id.label('diff_exp_id'),
+                                           NormalizedExpression.id.label('expression_id'),
+                                           NormalizedExpression.expression_type.label('dataset_type'),
+                                           Gene.id.label('gene_id'),
+                                           Gene.locus_id.label('locus_id'),
+                                           Gene.name.label('gene_name'),
+                                           Strain.name.label('strain1'),
+                                           Strain2.name.label('strain2'),
+                                           InVivoEnvironment.id.label('environment_id_1'),
+                                           InVivoEnvironment.carbon_source.label('carbon_source1'),
+                                           InVivoEnvironment.nitrogen_source.label('nitrogen_source1'),
+                                           InVivoEnvironment.electron_acceptor.label('electron_acceptor1'),
+                                           InVivoEnvironment.supplements.label('supplements1'),
+                                           InVivoEnvironment2.id.label('environment_id_2'),
+                                           InVivoEnvironment2.carbon_source.label('carbon_source2'),
+                                           InVivoEnvironment2.nitrogen_source.label('nitrogen_source2'),
+                                           InVivoEnvironment2.electron_acceptor.label('electron_acceptor2'),
+                                           InVivoEnvironment2.supplements.label('supplements2'),).\
+                                        join(Gene).\
+                                        join(DifferentialExpression).\
+                                        join(AnalysisComposition, DifferentialExpression.id == AnalysisComposition.analysis_id).\
+                       					join(AnalysisComposition2, DifferentialExpression.id == AnalysisComposition2.analysis_id).\
+                       					join(NormalizedExpression, AnalysisComposition.data_set_id == NormalizedExpression.id).\
+                       					join(NormalizedExpression2, AnalysisComposition2.data_set_id == NormalizedExpression2.id).\
+                       					join(Strain, NormalizedExpression.strain_id == Strain.id).\
+                       					join(Strain2, NormalizedExpression2.strain_id == Strain2.id).\
+                       					join(InVivoEnvironment, NormalizedExpression.environment_id == InVivoEnvironment.id).\
+                       					join(InVivoEnvironment2, NormalizedExpression2.environment_id == InVivoEnvironment2.id).\
+                        				 filter(or_(InVivoEnvironment.id != InVivoEnvironment2.id, Strain.id != Strain2.id)).subquery()
+
+
+class DifferentialGeneExpressionData(Base):
+    __table__ = differential_gene_expression_data
+
+    def diff_name(self):
+        args = dict.fromkeys(['strain','carbon_source','nitrogen_source','electron_acceptor'], '')
+
+        if self.strain1 == self.strain2: args['strain'] = self.strain1
+        else: args['strain'] = self.strain1+'/'+self.strain2
+
+        if self.carbon_source1 == self.carbon_source2: args['carbon_source'] = self.carbon_source1
+        else: args['carbon_source'] = self.carbon_source1+'/'+self.carbon_source2
+
+        if self.nitrogen_source1 == self.nitrogen_source2: args['nitrogen_source'] = self.nitrogen_source1
+        else: args['nitrogen_source'] = self.nitrogen_source1+'/'+self.nitrogen_source2
+
+        if self.electron_acceptor1 == self.electron_acceptor2: args['electron_acceptor'] = self.electron_acceptor1
+        else: args['electron_acceptor'] = self.electron_acceptor1+'/'+self.electron_acceptor2
+
+        if self.supplements1 == self.supplements2: args['supplements'] = self.supplements1
+        else: args['supplements'] = self.supplements1+'/'+self.supplements2
+
+        if args['supplements'] == '':
+            return '_'.join([self.dataset_type, args['strain'], args['carbon_source'], args['nitrogen_source'], args['electron_acceptor']])
+        else:
+            return '_'.join([self.dataset_type, args['strain'], args['carbon_source'], args['nitrogen_source'], args['electron_acceptor'], args['supplements']])
+
+    def __repr__(self):
+        args = dict.fromkeys(['strain','carbon_source','nitrogen_source','electron_acceptor'], '')
+        if self.strain1 == self.strain2: args['strain'] = self.strain1
+        else: args['strain'] = self.strain1+'/'+self.strain2
+
+        if self.carbon_source1 == self.carbon_source2: args['carbon_source'] = self.carbon_source1
+        else: args['carbon_source'] = self.carbon_source1+'/'+self.carbon_source2
+
+        if self.nitrogen_source1 == self.nitrogen_source2: args['nitrogen_source'] = self.nitrogen_source1
+        else: args['nitrogen_source'] = self.nitrogen_source1+'/'+self.nitrogen_source2
+
+        if self.electron_acceptor1 == self.electron_acceptor2: args['electron_acceptor'] = self.electron_acceptor1
+        else: args['electron_acceptor'] = self.electron_acceptor1+'/'+self.electron_acceptor2
+
+        return "Gene: (%s, %s), %s, %s, %s, %s, Fold Change: %5.2f, FDR: %5.2f" % \
+				    	  (self.locus_id, self.gene_name, args['strain'], args['carbon_source'],
+					  								  args['nitrogen_source'], args['electron_acceptor'],
+					  								  self.value, self.pval)
 
 
 def load_genome_data(file_path, data_set_id, bulk_file_load=False, loading_cutoff=0):

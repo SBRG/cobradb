@@ -1,6 +1,6 @@
 import sys, os, math, re
 
-from sqlalchemy import text, or_
+from sqlalchemy import text, or_, and_, func
 
 from ome import settings, timing
 
@@ -132,21 +132,22 @@ def parse_gpr(gpr):
     return gprs
 
 
-def scrub_metacyc_entry(entry, args=['UNIQUE-ID','COMMON-NAME','TYPES'],extra_args=[]):
+def scrub_metacyc_entry(entry, args=['UNIQUE-ID','TYPES'],extra_args=[]):
     try:
         return {arg: entry[arg] for arg in args+extra_args}
     except:
         return None
 
 
-def get_gene_with_metacyc(session, base, components, gene_entry):
+def get_gene_with_metacyc(session, base, components, genome, gene_entry):
     vals = scrub_metacyc_entry(gene_entry, args=['UNIQUE-ID','ACCESSION-1','LEFT-END-POSITION',\
                                                           'RIGHT-END-POSITION','TRANSCRIPTION-DIRECTION',\
                                                           'COMMON-NAME'])
     if vals is None: return None
 
-    gene = session.query(components.Gene).filter(or_(components.Gene.locus_id == vals['ACCESSION-1'][0],\
-                                                     components.Gene.name == vals['COMMON-NAME'][0])).first()
+    gene = session.query(components.Gene).filter(and_(components.Gene.genome_id == genome.id,
+                                                      or_(components.Gene.locus_id == vals['ACCESSION-1'][0],
+                                                          components.Gene.name == vals['COMMON-NAME'][0]))).first()
     if gene is None:
         print 'Exception, MetaCyc gene:'+vals['ACCESSION-1'][0]+' not found in genbank'
 
@@ -168,7 +169,7 @@ def update_gene_with_metacyc(session, base, components, gene_entry):
     session.flush()
 
 
-def get_protein_with_metacyc(session, base, components, protein_entry):
+def get_protein_with_metacyc(session, base, components, genome, protein_entry):
     vals = scrub_metacyc_entry(protein_entry,extra_args=['GENE'])
     if vals is None: return None
 
@@ -179,7 +180,7 @@ def get_protein_with_metacyc(session, base, components, protein_entry):
         print 'MetaCyc issue, gene: '+vals['GENE'][0]+' does not exist'
         return None
 
-    gene = get_gene_with_metacyc(session, base, components, gene_entry)
+    gene = get_gene_with_metacyc(session, base, components, genome, gene_entry)
 
 
     """If the gene exists in genbank, then the protein should exist in genbank as well,
@@ -191,12 +192,11 @@ def get_protein_with_metacyc(session, base, components, protein_entry):
     except:
         return None
 
-
-def update_protein_with_metacyc(session, base, components, protein_entry):
-    vals = scrub_metacyc_entry(protein_entry,extra_args=['GENE'])
+def update_protein_with_metacyc(session, base, components, genome, protein_entry):
+    vals = scrub_metacyc_entry(protein_entry,extra_args=['GENE', 'COMMON-NAME'])
     if vals is None: return None
 
-    protein = get_protein_with_metacyc(session, base, components, protein_entry)
+    protein = get_protein_with_metacyc(session, base, components, genome, protein_entry)
     if not protein: return None
 
     protein.long_name = vals['COMMON-NAME'][0]
@@ -205,44 +205,55 @@ def update_protein_with_metacyc(session, base, components, protein_entry):
     session.flush()
 
 
+
 def get_or_create_metacyc_ligand(session, base, components, ligand_entry):
-    vals = scrub_metacyc_entry(ligand_entry,extra_args=['SMILES'])
+    vals = scrub_metacyc_entry(ligand_entry,extra_args=['COMMON-NAME','SMILES'])
     if vals is None: return None
 
     name = vals['COMMON-NAME'][0].replace('\'','[prime]')
     markup = re.compile("<.+?>")
     name = markup.sub("", name)
 
-    return session.get_or_create(components.SmallMolecule, name=vals['UNIQUE-ID'][0],\
+    return session.get_or_create(components.Metabolite, name=vals['UNIQUE-ID'][0],\
                                  long_name=name, smiles=vals['SMILES'][0])
 
 
-def get_or_create_metacyc_protein_complex(session, base, components, protein_complex_entry):
-    vals = scrub_metacyc_entry(protein_complex_entry,extra_args=['COMPONENTS'])
+def get_or_create_metacyc_protein_complex(session, base, components, genome, protein_complex_entry):
+    #if protein_complex_entry['UNIQUE-ID'][0] == 'CPLX0-226': print protein_complex_entry
+    #print protein_complex_entry['UNIQUE-ID'][0]
+    vals = scrub_metacyc_entry(protein_complex_entry,extra_args=['COMMON-NAME','COMPONENTS'])
     if vals is None: return None
 
     protein_complex = session.get_or_create(components.Complex, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
 
     for component in vals['COMPONENTS']:
-        try: component_vals = scrub_metacyc_entry(metacyc_proteins[component])
-        except:
-            try: component_vals = scrub_metacyc_entry(metacyc_ligands[component])
-            except: continue
+
+        component_vals = None
+        complex_component = None
+
+        if component in metacyc_proteins:
+            component_vals = scrub_metacyc_entry(metacyc_proteins[component])
+
+        elif component in metacyc_ligands:
+            component_vals = scrub_metacyc_entry(metacyc_ligands[component])
+
+        elif component in metacyc_protein_cplxs:
+            component_vals = scrub_metacyc_entry(metacyc_protein_cplxs[component])
 
         if component_vals is None: continue
 
         if 'Protein-Complexes' in component_vals['TYPES']:
-            complex_component = get_or_create_metacyc_protein_complex(session, base, components, metacyc_proteins[component])
+            complex_component = get_or_create_metacyc_protein_complex(session, base, components, genome, metacyc_proteins[component])
+
+        elif 'Protein-Small-Molecule-Complexes' in component_vals['TYPES']:
+            complex_component = get_or_create_metacyc_protein_complex(session, base, components, genome, metacyc_protein_cplxs[component])
 
         elif 'Polypeptides' in component_vals['TYPES']:
-            complex_component = get_protein_with_metacyc(session, base, components, metacyc_proteins[component])
+            complex_component = get_protein_with_metacyc(session, base, components, genome, metacyc_proteins[component])
 
-        else:
-            try:
-                complex_component = get_or_create_metacyc_ligand(metacyc_ligands[component])
-            except:
-                #TODO: Add in the rest of complex type additions here
-                continue
+        elif 'Compounds' in component_vals['TYPES']:
+            complex_component = get_or_create_metacyc_ligand(session, base, components, metacyc_ligands[component])
+
         if complex_component is None: continue
 
         session.get_or_create(components.ComplexComposition, complex_id=protein_complex.id,\
@@ -252,7 +263,10 @@ def get_or_create_metacyc_protein_complex(session, base, components, protein_com
 
 
 def get_or_create_metacyc_transcription_unit(session, base, components, genome, tu_entry):
-    vals = scrub_metacyc_entry(tu_entry,extra_args=['COMPONENTS'])
+
+    vals = scrub_metacyc_entry(tu_entry,extra_args=['COMPONENTS', 'COMMON-NAME'])
+    if vals is None:
+        vals = scrub_metacyc_entry(tu_entry,extra_args=['COMPONENTS'])
     if vals is None: return None
 
     genes = []
@@ -260,13 +274,14 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome, 
     for metacyc_component in vals['COMPONENTS']:
         try:
             gene_entry = metacyc_genes[metacyc_component]
-            genes.append(get_gene_with_metacyc(session, base, components, gene_entry))
+            genes.append(get_gene_with_metacyc(session, base, components, genome, gene_entry))
         except: None
         try:
             promoter_entry = metacyc_promoters[metacyc_component]
             tss_vals = scrub_metacyc_entry(promoter_entry,extra_args=['ABSOLUTE-PLUS-1-POS'])
             tss = tss_vals['ABSOLUTE-PLUS-1-POS'][0]
         except: None
+
     if len(genes) == 0: return
 
     try:
@@ -319,8 +334,7 @@ def load_genbank(genbank_file, base, components):
         ome_protein = {'long_name':''}
 
 
-        if feature.type == 'CDS' or feature.type == 'tRNA' or \
-           feature.type == 'ncRNA' or feature.type == 'rRNA':
+        if feature.type == 'CDS':
 
             try: locus_tag = feature.qualifiers['locus_tag'][0]  #if no locus_tag
             except: continue                                     #continue
@@ -358,7 +372,7 @@ def load_genbank(genbank_file, base, components):
                 except: continue                                                #don't make a protein entry
                 ome_protein['gene_id'] = gene.id
 
-                #session.add(components.Protein(**ome_protein))
+                session.add(components.Protein(**ome_protein))
 
     session.commit()
     session.close()
@@ -368,6 +382,7 @@ def load_genbank(genbank_file, base, components):
 def load_genomes(base, components):
     for genbank_file in os.listdir(settings.data_directory+'/annotation/GenBank'):
         if genbank_file[-2:] != 'gb': continue
+        if genbank_file != 'NC_000913.2.gb': continue
         load_genbank(genbank_file, base, components)
 
 
@@ -379,50 +394,45 @@ def load_motifs(base, components):
 @timing
 def load_metacyc_proteins(base, components, genome):
     session = base.Session()
-    ##First load annotation file containing merger of metacyc and NCBI
-    metacyc_ID = session.get_or_create(base.DataSource, name="metacyc").id
-
-
 
     for unique_id,entry in metacyc_proteins.iteritems():
 
         vals = scrub_metacyc_entry(entry)
         if vals is None: continue
 
-        if 'Protein-Complexes' in vals['TYPES']:
-            get_or_create_metacyc_protein_complex(session, base, components, entry)
+        if 'Protein-Complexes' in vals['TYPES'] or 'Protein-Small-Molecule-Complexes' in vals['TYPES']:
+            get_or_create_metacyc_protein_complex(session, base, components, genome, entry)
 
         elif 'Polypeptides' in vals['TYPES']:
-            update_protein_with_metacyc(session, base, components, entry)
+            update_protein_with_metacyc(session, base, components, genome, entry)
 
+    session.close()
+
+@timing
+def load_metacyc_protein_cplxs(base, components, genome):
+    session = base.Session()
 
     for unique_id,entry in metacyc_protein_cplxs.iteritems():
 
         vals = scrub_metacyc_entry(entry)
         if vals is None: continue
 
-        if 'Protein-Complexes' in vals['TYPES'] or 'Protein-Small-Molecule-Complexes' in vals['TYPES']:
+        if 'Protein-Complexes' or 'Protein-Small-Molecule-Complexes' in vals['TYPES']:
             get_or_create_metacyc_protein_complex(session, base, components, entry)
 
-        elif 'Polypeptides' in vals['TYPES']:
-            get_or_create_metacyc_protein(session, base, components, entry)
 
 
 @timing
 def load_metacyc_transcription_units(base, components, genome):
+
     session = base.Session()
     ##First load annotation file containing merger of metacyc and NCBI
     metacyc_ID = session.get_or_create(base.DataSource, name="metacyc").id
 
 
-
     for unique_id,entry in metacyc_tus.iteritems():
 
-        vals = scrub_metacyc_entry(entry,extra_args=['COMPONENTS'])
-        if vals is None: continue
-
-        if 'Transcription-Units' in vals['TYPES']:
-            get_or_create_metacyc_transcription_unit(session, base, components, genome, entry)
+        get_or_create_metacyc_transcription_unit(session, base, components, genome, entry)
 
     session.close()
 
@@ -528,57 +538,54 @@ def load_metacyc_promoters(ome, metacyc_ID=None):
 
 
 @timing
-def load_kegg_pathways(session):
-    # this table should probably get re-designed properly with a pathways table
-    # and a separate pathway genes secondary table - TODO
-    kegg_pathways = open(settings.data_directory + '/annotation/KEGG/ecoli_KEGG_pathways.txt','r')
-    kegg_dataset = get_or_create(session, Dataset, name="kegg")
+def load_kegg_pathways(base, components):
+
+    session = base.Session()
+    kegg_pathways = open(settings.data_directory+'/annotation/KEGG/ecoli_KEGG_pathways.txt','r')
+    kegg_dataset = session.get_or_create(base.DataSource, name="kegg")
     for line in kegg_pathways.readlines():
         vals = line.rstrip('\r\n').split('\t')
         bnums = vals[2].split(',')
         pathway_ID = vals[0]
         pathway_name = vals[1].strip()
-        kegg_pathway = Pathway(name=pathway_name)
+        kegg_pathway = session.get_or_create(components.GeneGroup, name = pathway_name)
         for bnum in bnums:
-            kegg_pathway.genes.append(
-                session.query(Gene).filter_by(bnum=bnum).first())
-        session.add(kegg_pathway)
-        session.commit()
-        id_entry = id2otherid(dataset=kegg_dataset, otherid=pathway_ID)
-        id_entry.id = kegg_pathway.id
-        session.add(id_entry)
-        session.commit()
+            gene = session.query(components.Gene).filter_by(locus_id=bnum).first()
+            if not gene: continue
+            session.get_or_create(components.GeneGrouping, group_id = kegg_pathway.id, gene_id = gene.id)
+    session.commit()
+    session.close()
 
 
 @timing
-def load_regulatory_network(ome):
-    sigma_network = open('../../reconstruction/regulonDB/network_sigma_gene.txt','r')
-    #sigma_dict = {'Sigma19':'', 'Sigma24':'', 'Sigma38':'b2741'
-    for line in sigma_network.readlines():
-        vals = line.split('\t')
-        if vals[0] != 'Sigma38': continue
-        try:
-            rpoS = 'rpoS'
-            rpoS_bnum = 'b2741'
-            #print "INSERT INTO regulatory_network(reg_gene, reg_bnum, regd_gene, regd_bnum, direction) " + \
-            #            "VALUES ('%s', '%s', '%s', '%s', '%s');"%(rpoS, rpoS_bnum, vals[1], vals[3], vals[2])
-            #ome.execute("INSERT INTO regulatory_network(reg_gene, reg_bnum, regd_gene, regd_bnum, direction) VALUES ('%s', '%s', '%s', '%s', '%s');"%(rpoS, rpoS_bnum, vals[1], vals[3], vals[2]))
-            ome.commit()
-        except: None
-    sigma_network.close()
+def load_regulatory_network(base, components, data, genome):
 
-    regulatory_network = open(settings.trn_directory + 'reconstruction/regulonDB/regDB_regulatory_network.txt','r')
+    data.RegulatoryNetwork.__table__.drop()
+    data.RegulatoryNetwork.__table__.create()
+
+
+    session = base.Session()
+    regulatory_network = open(settings.data_directory+'/annotation/regulondb_gene_reg_network.txt','r')
     for line in regulatory_network.readlines():
         vals = line.split('\t')
-        if len(vals) < 5: continue
-        quality = ''
-        evidence = ''
-        if len(vals) >= 6:
-            evidence, quality = parse_evidence(vals[6].strip())
-        ome.execute("INSERT INTO regulatory_network(reg_gene, reg_bnum, regd_gene, regd_bnum, direction, quality, evidence) " + \
-                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s');"%(vals[1], vals[2], vals[3], vals[4], vals[5], quality, evidence))
-        ome.commit()
-    regulatory_network.close()
+
+
+        reg_gene = session.query(components.Gene).filter(and_(func.lower(components.Gene.name) == vals[0].lower(),
+                                                              components.Gene.genome_id == genome.id)).first()
+
+        regd_gene = session.query(components.Gene).filter(and_(func.lower(components.Gene.name) == vals[1].lower(),
+                                                               components.Gene.genome_id == genome.id)).first()
+
+        if reg_gene is None or regd_gene is None: continue
+
+        session.get_or_create(data.RegulatoryNetwork, reg_gene_id=reg_gene.id, regd_gene_id=regd_gene.id,
+                                                      direction=vals[2],
+                                                      evidence=vals[3])
+
+
+    session.flush()
+    session.commit()
+    session.close()
 
 
 
@@ -590,7 +597,7 @@ def write_genome_annotation_gff(base, components, genome):
 
     with open(settings.data_directory+'/annotation/'+genome.ncbi_id+'.gff', 'wb') as gff_file:
 
-        for gene in session.query(components.Gene).all():
+        for gene in session.query(components.Gene).filter(components.Gene.genome_id == genome.id).all():
 
             info_string = 'gene_id "%s"; transcript_id "%s"; gene_name "%s";' % (gene.locus_id, gene.locus_id, gene.name)
 
