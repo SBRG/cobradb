@@ -1,3 +1,5 @@
+Note!! Installation and setup coming very soon, until then this will be VERY difficult to install
+
 The OME Framework
 ==
 
