@@ -1,8 +1,8 @@
 from ome.base import *
 
-from sqlalchemy.orm import relationship, backref, column_property
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
-    String, Float, ForeignKey, select
+    String, Float, ForeignKey, select, Boolean
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.schema import UniqueConstraint,PrimaryKeyConstraint
 
@@ -25,7 +25,7 @@ class Gene(GenomeRegion):
                                  self.strand)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, genome_id, locus_id, info=None, long_name=None):
+    def __init__(self, name, leftpos, rightpos, strand, genome_id=None, locus_id=None, info=None, long_name=None):
         super(Gene, self).__init__(leftpos, rightpos, strand, genome_id, name)
         self.locus_id = locus_id
         self.info = info
@@ -160,7 +160,7 @@ class RNA(Component):
 
     __mapper_args__ = { 'polymorphic_identity': 'rna' }
 
-    id = Column(Integer, ForeignKey('component.id', ondelete='CASCADE'), primary_key=True)
+    id = Column(Integer, ForeignKey('component.id'), primary_key=True)
     type = Column(String(20))
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
 
@@ -196,31 +196,22 @@ class TU(RNA):
 
     __mapper_args__ = { 'polymorphic_identity': 'tu' }
 
-    id = Column(Integer, ForeignKey('rna.id', ondelete='CASCADE'), primary_key=True)
+    id = Column(Integer, ForeignKey('rna.id'), primary_key=True)
     genome_region = relationship("GenomeRegion")
     genes = relationship("Gene", secondary="tu_genes",\
                                  primaryjoin = id == TUGenes.tu_id,\
                                  backref="tu")
-    strand = column_property(select([GenomeRegion.strand]).\
-                                where(GenomeRegion.id == id))
-
-    leftpos = column_property(select([GenomeRegion.leftpos]).\
-                                where(GenomeRegion.id == id))
-
-    rightpos = column_property(select([GenomeRegion.rightpos]).\
-                                where(GenomeRegion.id == id))
 
     long_name = Column(String(200))
 
-
+    """
     @hybrid_property
     def tss(self):
-        if self.strand == '+':
-            return self.leftpos
+        if self.genome_region.strand == '+':
+            return self.genome_region.leftpos
         else:
-            return self.rightpos
-
-
+            return self.genome_region.rightpos
+    """
 
     def __init__(self, name, leftpos, rightpos, strand, genome_id, long_name=None):
         super(TU, self).__init__(name, leftpos, rightpos, strand, genome_id)
@@ -257,16 +248,22 @@ class Metabolite(Component):
     __mapper_args__ = { 'polymorphic_identity': 'metabolite' }
 
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-
-    long_name = Column(String(200))
+    kegg_id = Column(String)
+    cas_number = Column(String)
+    name = Column(String)
     formula = Column(String(200))
     smiles = Column(String(200))
-    def __init__(self, name, long_name, formula="", smiles=""):
+    long_name = Column(String)
+    flag = Column(Boolean)
+    def __init__(self, name, kegg_id, cas_number, formula, long_name, flag, smiles=None):
         super(Metabolite, self).__init__(name)
-        self.long_name = long_name
         self.formula = formula
         self.smiles = smiles
-
+        self.kegg_id = kegg_id
+        self.cas_number = cas_number
+        self.long_name = long_name
+        self.name = name
+        self.flag = flag
 
     def __repr__(self):
         return "Small Molecule (#%d, %s)" % \
@@ -277,8 +274,8 @@ class Metabolite(Component):
 class GeneGrouping(Base):
     __tablename__ = 'gene_grouping'
 
-    group_id = Column(Integer, ForeignKey('gene_group.id', ondelete="CASCADE"), primary_key=True)
-    gene_id = Column(Integer, ForeignKey('gene.id', ondelete="CASCADE"), primary_key=True)
+    group_id = Column(Integer, ForeignKey('gene_group.id'), primary_key=True)
+    gene_id = Column(Integer, ForeignKey('gene.id'), primary_key=True)
 
     __table_args__ = (UniqueConstraint('group_id','gene_id'),{})
 
@@ -301,8 +298,8 @@ class GeneGroup(Base):
     __table_args__ = (UniqueConstraint('name'),{})
 
     def __repr__(self):
-        return "Gene Group (#%d, %s) %d genes" % \
-            (self.id, self.name, len(self.genes))
+        return "Gene Group (#%d, %s): %s" % \
+            (self.id, self.name, ', '.join([g.name for g in self.genes]))
 
     def __init__(self, name):
         self.name = name

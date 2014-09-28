@@ -2,7 +2,7 @@ import sys, os, math, re
 
 from sqlalchemy import text, or_, and_, func
 
-from ome import settings, timing
+from om import settings, timing
 
 
 def getAttributes(file_name):
@@ -319,39 +319,57 @@ def load_genbank(genbank_file, base, components):
 
     session = base.Session()
     gb_file = SeqIO.read(settings.data_directory+'/annotation/GenBank/'+genbank_file,'gb')
+    bioproject_id = ''
+    for value in gb_file.dbxrefs[0].split():
+        if 'BioProject' in value:
+            bioproject_id = value.split(':')[1]
+             
+    if not session.query(base.Genome).filter(base.Genome.bioproject_id == bioproject_id).count() or bioproject_id =='':
+        ome_genome = {'ncbi_id'    : gb_file.id,
+                    'bioproject_id'    : bioproject_id,
+                    'organism'   : gb_file.annotations['organism']}
+        genome = base.Genome(**ome_genome)
+        session.add(genome)
+        session.flush()
+        ome_chromosome = {'genbank_id': gb_file.annotations['gi'],'genome_id':genome.id}
+        chromosome = base.Chromosome(**ome_chromosome)
+        session.add(chromosome)
+    else:
+        genome = session.query(base.Genome).filter(base.Genome.bioproject_id == bioproject_id).first()
+        ome_chromosome = {'genbank_id': gb_file.annotations['gi'],'genome_id':genome.id}
+        chromosome = base.Chromosome(**ome_chromosome)
+        session.add(chromosome)
 
-    ome_genome = {'genbank_id' : gb_file.annotations['gi'],
-                  'ncbi_id'    : gb_file.id,
-                  'organism'   : gb_file.annotations['organism']}
-
-    genome = base.Genome(**ome_genome)
-    session.add(genome)
-    session.flush()
-
-
+    
     for feature in gb_file.features:
         ome_gene = {'long_name':''}
         ome_protein = {'long_name':''}
 
 
         if feature.type == 'CDS':
-
-            try: locus_tag = feature.qualifiers['locus_tag'][0]  #if no locus_tag
-            except: continue                                     #continue
-
-            try: ome_gene['name'] = feature.qualifiers['gene'][0]  #if no name
-            except: ome_gene['name'] = locus_tag                   #name = locus_tag
+            if 'locus_tag' in feature.qualifiers:
+                locus_tag = feature.qualifiers['locus_tag'][0]
+            else:
+                if 'gene' in feature.qualifiers:
+                    locus_tag = feature.qualifiers['gene'][0]
+                  
+            
+            if 'gene' in feature.qualifiers:
+                ome_gene['name'] = feature.qualifiers['gene'][0]
+            else:
+                if 'locus_tag' in feature.qualifiers:
+                    ome_gene['name'] = feature.qualifiers['locus_tag'][0]
 
             ome_gene['locus_id'] = locus_tag
 
-            ome_gene['leftpos'] = feature.location.start
-            ome_gene['rightpos'] = feature.location.end
+            ome_gene['leftpos'] = int(feature.location.start)
+            ome_gene['rightpos'] = int(feature.location.end)
             ome_gene['genome_id'] = genome.id
 
             if feature.strand == 1: ome_gene['strand'] = '+'
             elif feature.strand == -1: ome_gene['strand'] = '-'
 
-
+            
 
             try: ome_gene['info'] = feature.qualifiers['product'][0]  #if pseudogene
             except: ome_gene['info'] = feature.qualifiers['note'][0]  #use note field for info
@@ -361,11 +379,36 @@ def load_genbank(genbank_file, base, components):
                 ome_protein['long_name'] = feature.qualifiers['function'][0]
 
             if len(ome_gene['name']) > 15: continue  #some weird genbank names are too long and misformed
-
-            gene = components.Gene(**ome_gene)
-            session.add(gene)
-            session.flush()
-
+            if not session.query(components.Gene).filter(components.Gene.name == ome_gene['name']).filter(components.Gene.leftpos == int(feature.location.start)).filter(components.Gene.rightpos == int(feature.location.end)).filter(components.Gene.strand == ome_gene['strand']).filter(components.Gene.genome_id == ome_gene['genome_id']).count():
+                gene = components.Gene(**ome_gene)
+                session.add(gene)
+                session.flush()
+            else:
+                 gene = session.query(components.Gene).filter(components.Gene.name == ome_gene['name']).filter(components.Gene.leftpos == int(feature.location.start)).filter(components.Gene.rightpos == int(feature.location.end)).filter(components.Gene.strand == ome_gene['strand']).filter(components.Gene.genome_id == ome_gene['genome_id']).first()
+            if 'db_xref' in feature.qualifiers:
+                for ref in feature.qualifiers['db_xref']:
+                    splitrefs = ref.split(':')
+                    ome_synonym = {}
+                    ome_synonym['synonym'] =splitrefs[1]
+                    ome_synonym['gene_id']=gene.id
+                    ome_synonym['type']=splitrefs[0]
+                    ome_synonym['id_data_source_id'] = None
+                    ome_synonym['other_id_data_source_id'] = None
+                    synonym = base.Synonyms(**ome_synonym)
+                    session.add(synonym)
+            if 'gene_synonym' in feature.qualifiers:
+                
+                for ref in feature.qualifiers['gene_synonym']:
+                    syn = ref.split(';')
+                    for value in syn:
+                        ome_synonym = {}
+                        ome_synonym['synonym'] =value
+                        ome_synonym['gene_id']=gene.id
+                        ome_synonym['type']='gene synonym'
+                        ome_synonym['id_data_source_id'] = None
+                        ome_synonym['other_id_data_source_id'] = None               
+                        synonym = base.Synonyms(**ome_synonym)
+                        session.add(synonym)
             if 'product' in feature.qualifiers and feature.type == 'CDS':
 
                 try: ome_protein['name'] = feature.qualifiers['protein_id'][0]  #if no protein_id
