@@ -3,13 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.schema import Sequence
-from ome import base
-engine = create_engine("postgresql://dbuser@localhost:5432/bigg2")
+from ome.base import *
 
-Base = declarative_base(bind=engine)
-metadata = MetaData(bind=engine)
-
-Session = sessionmaker(bind=engine)
 session = Session()
 #session.execute('CREATE EXTENSION pg_trgm;')
 #session.execute('CREATE INDEX reaction_name_trigram_idx ON reaction USING gin (to_tsvector("english",name));')
@@ -17,11 +12,15 @@ session = Session()
 #session.execute('CREATE INDEX component_name_trigram_idx ON reaction USING gin (to_tsvector("english",name));')
 #session.execute('CREATE INDEX gene_name_trigram_idx ON reaction USING gin (to_tsvector("english",name));')
 
+"""
 class Gene(Base):
     __tablename__='gene'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     #name = Column(String)
     biggid = Column(String)
+"""
+
+
 class Model_Gene(Base):
     __tablename__='model_gene'
     id = Column(Integer, Sequence('wids'), primary_key=True)
@@ -33,8 +32,8 @@ class GPR_Matrix(Base):
     id = Column(Integer, Sequence('wids'), primary_key=True)
     model_gene_id = Column(Integer, ForeignKey('model_gene.id'), nullable=False)
     model_reaction_id = Column(Integer, ForeignKey('model_reaction.id'), nullable=False)
-    
-        
+
+"""
 class Component(Base):
     __tablename__='component'
     id = Column(Integer, Sequence('wids'), primary_key=True)
@@ -43,10 +42,13 @@ class Component(Base):
     name = Column(String)
     formula = Column(String)
     #keggid = Column(Integer)
-    
+
+
 class Metabolite(Base):
     __tablename__='metabolite'
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
+"""
+
 
 class Compartmentalized_Component(Base):
     __tablename__='compartmentalized_component'
@@ -54,18 +56,18 @@ class Compartmentalized_Component(Base):
     component_id = Column(Integer, ForeignKey('component.id'), nullable=False)
     compartment_id = Column(Integer, ForeignKey('compartment.id'), nullable=False)
     UniqueConstraint('compartment_id', 'component_id')
-    
+
 class Model_Compartmentalized_Component(Base):
     __tablename__='model_compartmentalized_component'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     model_id = Column(Integer, ForeignKey('model.id'), nullable=False)
     compartmentalized_component_id = Column(Integer, ForeignKey('compartmentalized_component.id'), nullable=False)
-    
+
 class Compartment(Base):
     __tablename__='compartment'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     name = Column(String, unique = True)
-    
+
 class Model(Base):
     __tablename__='model'
     id = Column(Integer, Sequence('wids'), primary_key=True)
@@ -73,7 +75,7 @@ class Model(Base):
     biggid = Column(String)
     firstcreated = Column(DateTime)
     UniqueConstraint('name', 'firstcreated')
-    
+
 class Model_Reaction(Base):
     __tablename__='model_reaction'
     id = Column(Integer, Sequence('wids'), primary_key=True)
@@ -84,7 +86,7 @@ class Model_Reaction(Base):
     lowerbound = Column(Numeric)
     gpr = Column(String)
     UniqueConstraint('reaction_id', 'model_id')
-    
+
 class Reaction_Matrix(Base):
     __tablename__='reaction_matrix'
     id = Column(Integer, Sequence('wids'), primary_key=True)
@@ -92,13 +94,17 @@ class Reaction_Matrix(Base):
     compartmentalized_component_id = Column(Integer, ForeignKey('compartmentalized_component.id'), nullable=False)
     stoichiometry = Column(Numeric)
     UniqueConstraint('reaction_id', 'compartmentalized_component')
-    
+
+
+"""
 class Reaction(Base):
     __tablename__='reaction'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     biggid = Column(String)
     #name = Column(String)
     name = Column(String)
+"""
+
 
 class Map(Base):
    __tablename__ = "map"

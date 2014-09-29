@@ -46,7 +46,7 @@ class ExpandedEnvironments:
 class Strain(Base):
     __tablename__ = 'strain'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, Sequence('wids'), primary_key=True)
     name = Column(String(100))
 
     __table_args__ = (UniqueConstraint('name'),{})
@@ -67,7 +67,7 @@ class Strain(Base):
 class Environment(Base):
     __tablename__ = 'environment'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, Sequence('wids'), primary_key=True)
     name = Column(String(100), unique=True)
     type = Column(String(20))
 
@@ -148,7 +148,7 @@ class InVivoEnvironment(Environment):
 class DataSet(Base):
     __tablename__ = 'data_set'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, Sequence('wids'), primary_key=True)
     name = Column(String(100))
     type = Column(String(40))
     replicate = Column(Integer)
@@ -546,7 +546,7 @@ class RegulatoryNetwork(Base):
 
 
 ome = Session()
-from om.components import Gene,TU,TUGenes
+from ome.components import Gene,TU,TUGenes
 
 
 grouped = ome.query(func.distinct(ChIPPeakData.data_set_id).label('data_set_id'),\

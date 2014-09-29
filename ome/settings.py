@@ -9,8 +9,8 @@ from sys import modules
 self = modules[__name__]
 
 # define various filepaths
-omlib_directory = __join(__split(__abspath(__file__))[0], "")
-om_directory = __join(__abspath(__join(omlib_directory, "..")), "")
+omelib_directory = __join(__split(__abspath(__file__))[0], "")
+ome_directory = __join(__abspath(__join(omelib_directory, "..")), "")
 
 def which(program):
     """returns path to an executable if it is found in the path"""
@@ -20,7 +20,7 @@ def which(program):
             return program
     else:
         paths_to_search = __os.environ["PATH"].split(__os.pathsep)
-        paths_to_search.extend((omlib_directory, om_directory))
+        paths_to_search.extend((omelib_directory, ome_directory))
         for path in paths_to_search:
             exe_file = __join(path, program)
             if __isfile(exe_file) and __os.access(exe_file, __os.X_OK):
@@ -41,7 +41,7 @@ config = SafeConfigParser()
 # set the default settings
 config.add_section("DATABASE")
 config.set("DATABASE", "postgres_host", "localhost:5432")
-config.set("DATABASE", "postgres_database", "om")
+config.set("DATABASE", "postgres_database", "ome")
 config.set("DATABASE", "password", "")
 
 config.add_section("MISC")
@@ -66,10 +66,10 @@ def load_settings_from_file(filepath="settings.ini", in_omlib=True):
 
     filepath: The path to the settings file to use
 
-    in_omlib: Whether or not the path given is a relative path from the omlib
+    in_omelib: Whether or not the path given is a relative path from the omlib
         directory"""
     if in_omlib:
-        filepath = __join(omlib_directory, filepath)
+        filepath = __join(omelib_directory, filepath)
     config.read(filepath)
 
     # attempt to intellegently determine more difficult settings
@@ -101,6 +101,11 @@ def load_settings_from_file(filepath="settings.ini", in_omlib=True):
         if primer3 is None:
             primer3 = "./primer3_core"
         config.set("EXECUTABLES", "primer3", primer3)
+    if not config.has_option("EXECUTABLES", "cufflinks"):
+        cufflinks = which("cufflinks")
+        if cufflinks is None:
+            cufflinks = "./cufflinks"
+        config.set("EXECUTABLES", "cufflinks", cufflinks)
 
     # write the options back to the file
     with open(filepath, "w") as outfile:
@@ -128,14 +133,14 @@ def load_settings_from_file(filepath="settings.ini", in_omlib=True):
     #set home directory
     self.home_directory = config.get("MISC", "home_directory")
     self.data_directory = config.get("MISC", "data_directory")
-    self.dropbox_directory = config.get("MISC", "dropbox_directory")
+
 
 load_settings_from_file()
 del SafeConfigParser, modules
 
 _base_site_file = \
-"""WSGIScriptAlias /om OMLIB_DIRserver.py
-<Directory OMLIB_DIR>
+"""WSGIScriptAlias /ome OMELIB_DIRserver.py
+<Directory OMELIB_DIR>
     WSGIScriptReloading On
     Order allow,deny
     Allow from 132.239
@@ -146,5 +151,5 @@ _base_site_file = \
 """
 
 def write_apache_site_file():
-    with open(om_directory + "om.site", "w") as outfile:
-        outfile.write(_base_site_file.replace("OMLIB_DIR", omlib_directory))
+    with open(ome_directory + "ome.site", "w") as outfile:
+        outfile.write(_base_site_file.replace("OMELIB_DIR", omlib_directory))

@@ -25,8 +25,8 @@ class Gene(GenomeRegion):
                                  self.strand)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, genome_id=None, locus_id=None, info=None, long_name=None):
-        super(Gene, self).__init__(leftpos, rightpos, strand, genome_id, name)
+    def __init__(self, name, leftpos, rightpos, strand, chromosome_id=None, locus_id=None, info=None, long_name=None):
+        super(Gene, self).__init__(leftpos, rightpos, strand, chromosome_id, name)
         self.locus_id = locus_id
         self.info = info
         self.long_name = long_name

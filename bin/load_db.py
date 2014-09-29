@@ -5,6 +5,7 @@ from ome.loading import data_loading
 from ome.loading import component_loading
 
 from sqlalchemy import func
+from sqlalchemy.schema import Sequence,CreateSequence
 import simplejson as json
 import numpy as np
 import os,sys,math,shutil,subprocess
@@ -188,21 +189,24 @@ if __name__ == "__main__":
     base.Base.metadata.drop_all()
     base.omics_database.genome_data.drop()
     base.Base.metadata.create_all()
+    #base.engine.execute(CreateSequence(Sequence('wids')))
+
 
     component_loading.load_genomes(base, components)
 
-
+    """
     session = base.Session()
 
-    data_genomes = session.query(base.Genome).filter(base.Genome.ncbi_id.in_(['NC_000913.2'])).all()
+    data_genomes = session.query(base.Genome).filter(base.Genome.bioproject_id.in_(['PRJNA57779'])).all()
 
 
-    raw_flag = True
-    normalize_flag = True
+    raw_flag = False
+    normalize_flag = False
 
     for genome in data_genomes:
 
-        component_loading.write_genome_annotation_gff(base, components, genome)
+        ##TODO this is going to need to work on multiple chromosome genomes, does not currently
+        #component_loading.write_genome_annotation_gff(base, components, genome)
 
         load_raw_files(settings.data_directory+'/chip_experiment/bam/crp', group_name='crp', normalize=normalize_flag, raw=raw_flag)
         load_raw_files(settings.data_directory+'/chip_experiment/bam/yome', group_name='yome', normalize=normalize_flag, raw=raw_flag)
@@ -262,3 +266,4 @@ if __name__ == "__main__":
     genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
 
     session.close()
+    """

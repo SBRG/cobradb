@@ -311,111 +311,141 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome, 
 
 @timing
 def load_genbank(genbank_file, base, components):
-    """
-        Original code by halatif and jtan, modified here to load into ome db
-    """
 
     from Bio import SeqIO
 
     session = base.Session()
     gb_file = SeqIO.read(settings.data_directory+'/annotation/GenBank/'+genbank_file,'gb')
-    bioproject_id = ''
+
+    #from IPython import embed; embed()
+
     for value in gb_file.dbxrefs[0].split():
         if 'BioProject' in value:
             bioproject_id = value.split(':')[1]
-             
-    if not session.query(base.Genome).filter(base.Genome.bioproject_id == bioproject_id).count() or bioproject_id =='':
-        ome_genome = {'ncbi_id'    : gb_file.id,
-                    'bioproject_id'    : bioproject_id,
-                    'organism'   : gb_file.annotations['organism']}
+
+    if not bioproject_id:
+        print 'Invalid genbank file %s: does not contain a BioProject ID' % (genbank_file)
+
+
+    genome = session.query(base.Genome).filter(base.Genome.bioproject_id == bioproject_id).first()
+
+    if not genome:
+        ome_genome = {'bioproject_id' : bioproject_id,
+                      'organism'      : gb_file.annotations['organism']}
         genome = base.Genome(**ome_genome)
         session.add(genome)
         session.flush()
-        ome_chromosome = {'genbank_id': gb_file.annotations['gi'],'genome_id':genome.id}
-        chromosome = base.Chromosome(**ome_chromosome)
-        session.add(chromosome)
-    else:
-        genome = session.query(base.Genome).filter(base.Genome.bioproject_id == bioproject_id).first()
-        ome_chromosome = {'genbank_id': gb_file.annotations['gi'],'genome_id':genome.id}
-        chromosome = base.Chromosome(**ome_chromosome)
-        session.add(chromosome)
 
-    
+
+    ome_chromosome = {'genome_id': genome.id,
+                      'genbank_id': gb_file.annotations['gi'],
+                      'ncbi_id': gb_file.id}
+
+    chromosome = base.Chromosome(**ome_chromosome)
+    session.add(chromosome)
+    session.flush()
+
+
+    db_xref_data_source_id = {data_source.name:data_source.id for data_source in session.query(base.DataSource).all()}
+
+
     for feature in gb_file.features:
         ome_gene = {'long_name':''}
         ome_protein = {'long_name':''}
 
 
         if feature.type == 'CDS':
+
+            locus_id = ''
+            gene_name = ''
+
             if 'locus_tag' in feature.qualifiers:
-                locus_tag = feature.qualifiers['locus_tag'][0]
-            else:
-                if 'gene' in feature.qualifiers:
-                    locus_tag = feature.qualifiers['gene'][0]
-                  
-            
+                locus_id = feature.qualifiers['locus_tag'][0]
+
             if 'gene' in feature.qualifiers:
-                ome_gene['name'] = feature.qualifiers['gene'][0]
-            else:
-                if 'locus_tag' in feature.qualifiers:
-                    ome_gene['name'] = feature.qualifiers['locus_tag'][0]
+                gene_name = feature.qualifiers['gene'][0]
 
-            ome_gene['locus_id'] = locus_tag
 
+            if not gene_name and locus_id:
+                gene_name = locus_id
+            elif gene_name and not locus_id:
+                locus_id = gene_name
+            elif not gene_name and not locus_id:
+                continue
+
+
+
+            ome_gene['locus_id'] = locus_id
+            ome_gene['name'] = gene_name
             ome_gene['leftpos'] = int(feature.location.start)
             ome_gene['rightpos'] = int(feature.location.end)
-            ome_gene['genome_id'] = genome.id
+            ome_gene['chromosome_id'] = chromosome.id
 
             if feature.strand == 1: ome_gene['strand'] = '+'
             elif feature.strand == -1: ome_gene['strand'] = '-'
 
-            
-
-            try: ome_gene['info'] = feature.qualifiers['product'][0]  #if pseudogene
-            except: ome_gene['info'] = feature.qualifiers['note'][0]  #use note field for info
+            if 'product' in feature.qualifiers:
+                ome_gene['info'] = feature.qualifiers['product'][0][0:300]
+            elif 'note' in feature.qualifiers:
+                ome_gene['info'] = feature.qualifiers['note'][0][0:300]
 
             if 'function' in feature.qualifiers:
                 ome_gene['info'] = ome_gene['info'] + ',' + feature.qualifiers['function'][0]
                 ome_protein['long_name'] = feature.qualifiers['function'][0]
 
             if len(ome_gene['name']) > 15: continue  #some weird genbank names are too long and misformed
-            if not session.query(components.Gene).filter(components.Gene.name == ome_gene['name']).filter(components.Gene.leftpos == int(feature.location.start)).filter(components.Gene.rightpos == int(feature.location.end)).filter(components.Gene.strand == ome_gene['strand']).filter(components.Gene.genome_id == ome_gene['genome_id']).count():
-                gene = components.Gene(**ome_gene)
-                session.add(gene)
-                session.flush()
-            else:
-                 gene = session.query(components.Gene).filter(components.Gene.name == ome_gene['name']).filter(components.Gene.leftpos == int(feature.location.start)).filter(components.Gene.rightpos == int(feature.location.end)).filter(components.Gene.strand == ome_gene['strand']).filter(components.Gene.genome_id == ome_gene['genome_id']).first()
+
+
+
+            gene = session.get_or_create(components.Gene, **ome_gene)
+
+            #gene = components.Gene(**ome_gene)
+            #session.add(gene)
+            #session.flush()
+
+
             if 'db_xref' in feature.qualifiers:
                 for ref in feature.qualifiers['db_xref']:
                     splitrefs = ref.split(':')
-                    ome_synonym = {}
-                    ome_synonym['synonym'] =splitrefs[1]
-                    ome_synonym['gene_id']=gene.id
-                    ome_synonym['type']=splitrefs[0]
-                    ome_synonym['id_data_source_id'] = None
-                    ome_synonym['other_id_data_source_id'] = None
+                    ome_synonym = {'type':'gene'}
+                    ome_synonym['ome_id'] = gene.id
+                    ome_synonym['synonym'] = splitrefs[1]
+
+                    try: data_source_id = db_xref_data_source_id[splitrefs[0]]
+                    except:
+                        data_source = base.DataSource(name=splitrefs[0])
+                        session.add(data_source)
+                        session.flush()
+                        data_source_id = data_source.id
+                        db_xref_data_source_id[splitrefs[0]] = data_source_id
+
+
+                    ome_synonym['synonym_data_source_id'] = data_source_id
+
                     synonym = base.Synonyms(**ome_synonym)
                     session.add(synonym)
+
+
             if 'gene_synonym' in feature.qualifiers:
-                
+
                 for ref in feature.qualifiers['gene_synonym']:
                     syn = ref.split(';')
                     for value in syn:
-                        ome_synonym = {}
-                        ome_synonym['synonym'] =value
-                        ome_synonym['gene_id']=gene.id
-                        ome_synonym['type']='gene synonym'
-                        ome_synonym['id_data_source_id'] = None
-                        ome_synonym['other_id_data_source_id'] = None               
+                        ome_synonym = {'type': 'gene'}
+                        ome_synonym['ome_id'] = gene.id
+                        ome_synonym['synonym'] = value
+
+                        ome_synonym['synonym_data_source_id'] = None
                         synonym = base.Synonyms(**ome_synonym)
                         session.add(synonym)
+
             if 'product' in feature.qualifiers and feature.type == 'CDS':
 
                 try: ome_protein['name'] = feature.qualifiers['protein_id'][0]  #if no protein_id
                 except: continue                                                #don't make a protein entry
                 ome_protein['gene_id'] = gene.id
 
-                session.add(components.Protein(**ome_protein))
+                session.get_or_create(components.Protein, **ome_protein)
 
     session.commit()
     session.close()
@@ -423,9 +453,10 @@ def load_genbank(genbank_file, base, components):
 
 @timing
 def load_genomes(base, components):
-    for genbank_file in os.listdir(settings.data_directory+'/annotation/GenBank'):
-        if genbank_file[-2:] != 'gb': continue
-        if genbank_file != 'NC_000913.2.gb': continue
+    for genbank_file in open(settings.data_directory+'/annotation/genbanklist.txt','r').readlines():
+        genbank_file = genbank_file.rstrip('\n')
+
+        if genbank_file not in ['NC_000913.2.gb']: continue
         load_genbank(genbank_file, base, components)
 
 

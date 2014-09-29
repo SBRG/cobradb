@@ -18,24 +18,23 @@ engine = create_engine("postgresql://%s:%s@%s/%s" %
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 
-#connection = pymongo.Connection()
-#omics_database = connection.omics_database
+connection = pymongo.Connection()
+omics_database = connection.omics_database
 
 
 class Genome(Base):
     __tablename__ = 'genome'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('wids'), primary_key=True)
     bioproject_id = Column(String(200))
-    ncbi_id = Column(String(100))
     organism = Column(String(200))
-    
+
     __table_args__ = (UniqueConstraint('bioproject_id'),{})
 
-    def __init__(self, bioproject_id, ncbi_id, organism):
+    def __init__(self, bioproject_id, organism):
         self.bioproject_id = bioproject_id
-        self.ncbi_id = ncbi_id
         self.organism = organism
+
 
 class Chromosome(Base):
     __tablename__ = 'chromosome'
@@ -43,22 +42,27 @@ class Chromosome(Base):
     id = Column(Integer, Sequence('wids'), primary_key=True)
     genome_id = Column(Integer, ForeignKey('genome.id'))
     genbank_id = Column(String(100))
+    ncbi_id = Column(String(100))
+
     __table_args__ = (UniqueConstraint('genome_id', 'genbank_id'),{})
-    def __init__(self, genome_id, genbank_id):
+
+    def __init__(self, genome_id, genbank_id, ncbi_id):
         self.genome_id = genome_id
         self.genbank_id = genbank_id
-        
+        self.ncbi_id = ncbi_id
+
+
 class GenomeRegion(Base):
     __tablename__ = 'genome_region'
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    genome_id = Column(Integer, ForeignKey('genome.id'))
+    chromosome_id = Column(Integer, ForeignKey('chromosome.id'))
     name = Column(String(15))
     leftpos = Column(Integer)
     rightpos = Column(Integer)
     strand = Column(String(1))
     type = Column(String(20))
 
-    __table_args__ = (UniqueConstraint('name','leftpos','rightpos','strand','genome_id'),{})
+    __table_args__ = (UniqueConstraint('name','leftpos','rightpos','strand','chromosome_id'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'genome_region',
                        'polymorphic_on': type
@@ -71,24 +75,24 @@ class GenomeRegion(Base):
     def __repr__dict__(self):
         return {"name":self.name,"id":self.id,"leftpos":self.leftpos,"rightpos":self.rightpos,"strand":self.strand}
 
-    def __init__(self, leftpos, rightpos, strand, genome_id, name=None):
+    def __init__(self, leftpos, rightpos, strand, chromosome_id, name=None):
         self.leftpos = leftpos
         self.rightpos = rightpos
         self.strand = strand
-        self.genome_id = genome_id
+        self.chromosome_id = chromosome_id
         self.name = name
 
 
 class Component(Base):
     __tablename__ = 'component'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    
+    id = Column(Integer, Sequence('wids'), primary_key=True)
+
     name = Column(String)
     formula = Column(String)
     type = Column(String(20))
 
-    #__table_args__ = (UniqueConstraint('name'),{})
+    __table_args__ = (UniqueConstraint('name'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'component',
                        'polymorphic_on': type
@@ -102,11 +106,10 @@ class Component(Base):
             (self.id, self.name)
 
 
-
 class Reaction(Base):
     __tablename__ = 'reaction'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, Sequence('wids'), primary_key=True)
     biggid = Column(String)
     name = Column(String)
     long_name = Column(String)
@@ -127,10 +130,11 @@ class Reaction(Base):
         return "Reaction (#%d):  %s" % \
             (self.id, self.name)
 
+
 class DataSource(Base):
     __tablename__ = 'data_source'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('wids'), primary_key=True)
     name = Column(String(100))
     lab = Column(String(100))
     institution = Column(String(100))
@@ -156,26 +160,23 @@ class DataSource(Base):
 class Synonyms(Base):
     __tablename__ = "synonyms"
 
-    id = Column(Integer, primary_key=True)
-    synonym = Column(String)
-    gene_id = Column(Integer, ForeignKey('gene.id'))
-    id_data_source_id = Column(Integer, ForeignKey('data_source.id'))
-    other_id_data_source_id = Column(Integer, ForeignKey('data_source.id'))
+    ome_id = Column(Integer, primary_key=True)
+    synonym = Column(String, primary_key=True)
     type = Column(String)
-    id_data_source = relationship("DataSource", primaryjoin = id_data_source_id == DataSource.id)
-    other_id_data_source = relationship("DataSource", primaryjoin = other_id_data_source_id == DataSource.id)
+    synonym_data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
+    synonym_data_source = relationship("DataSource")
 
-    __table_args__ = (UniqueConstraint('id','synonym','type'),{})
+
+    __table_args__ = (UniqueConstraint('ome_id','synonym','type'),{})
 
     def __repr__(self):
-        return "%s in (%s)" % (self.synonym, str(self.other_id_data_source))
+        return "%s in (%s)" % (self.synonym, self.synonym_data_source)
 
-    def __init__(self, synonym, id_data_source_id, other_id_data_source_id, gene_id, type):
-        self.type = type
+    def __init__(self, ome_id, synonym, type, synonym_data_source_id):
+        self.ome_id
         self.synonym = synonym
-        self.gene_id = gene_id
-        self.id_data_source_id = id_data_source_id
-        self.other_id_data_source_id = other_id_data_source_id
+        self.type = type
+        self.synonym_data_source_id = synonym_data_source_id
 
 
 class GenomeRegionMap(Base):
@@ -196,8 +197,6 @@ class GenomeRegionMap(Base):
             self.genome_region_id_1 = genome_region_id_1
             self.genome_region_id_2 = genome_region_id_2
             self.distance = distance
-
-
 
 
 class _Session(_SA_Session):
@@ -245,20 +244,19 @@ def get_or_create(session, class_type, **kwargs):
         if constraint.__class__.__name__ == 'UniqueConstraint':
             unique_cols = constraint.columns.keys()
 
-	inherited_result = True
-	if '__mapper_args__' in class_type.__dict__ and 'inherits' in class_type.__mapper_args__:
-		inherited_class_type = class_type.__mapper_args__['inherits']
-		for constraint in list(inherited_class_type.__table_args__):
-			if constraint.__class__.__name__ == 'UniqueConstraint':
-				inherited_unique_cols = constraint.columns.keys()
+    inherited_result = True
+    if '__mapper_args__' in class_type.__dict__ and 'inherits' in class_type.__mapper_args__:
+        inherited_class_type = class_type.__mapper_args__['inherits']
+        for constraint in list(inherited_class_type.__table_args__):
+            if constraint.__class__.__name__ == 'UniqueConstraint':
+				        inherited_unique_cols = constraint.columns.keys()
 
-		try: inherited_result = session.query(inherited_class_type).filter_by(**{k: kwargs[k] for k in inherited_unique_cols}).first()
-		except: None
+        inherited_result = session.query(inherited_class_type).filter_by(**{k: kwargs[k] for k in inherited_unique_cols}).first()
 
-    try: result = session.query(class_type).filter_by(**kwargs).first()
-    except: result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).first()
 
-    if not result or not inherited_result:
+    result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).first()
+
+    if not result and not inherited_result:
         result = class_type(**kwargs)
         session.add(result)
         session.commit()
