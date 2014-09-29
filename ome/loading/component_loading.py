@@ -318,7 +318,7 @@ def load_genbank(genbank_file, base, components):
     gb_file = SeqIO.read(settings.data_directory+'/annotation/GenBank/'+genbank_file,'gb')
 
     #from IPython import embed; embed()
-
+    bioproject_id = ''
     for value in gb_file.dbxrefs[0].split():
         if 'BioProject' in value:
             bioproject_id = value.split(':')[1]
@@ -399,9 +399,6 @@ def load_genbank(genbank_file, base, components):
 
             gene = session.get_or_create(components.Gene, **ome_gene)
 
-            #gene = components.Gene(**ome_gene)
-            #session.add(gene)
-            #session.flush()
 
 
             if 'db_xref' in feature.qualifiers:
@@ -456,7 +453,7 @@ def load_genomes(base, components):
     for genbank_file in open(settings.data_directory+'/annotation/genbanklist.txt','r').readlines():
         genbank_file = genbank_file.rstrip('\n')
 
-        if genbank_file not in ['NC_000913.2.gb']: continue
+        #if genbank_file not in ['NC_000913.2.gb']: continue
         load_genbank(genbank_file, base, components)
 
 
