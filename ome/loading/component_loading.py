@@ -336,14 +336,16 @@ def load_genbank(genbank_file, base, components):
         session.add(genome)
         session.flush()
 
-
-    ome_chromosome = {'genome_id': genome.id,
+    chromosome = session.query(base.Chromosome).filter(base.Chromosome.genbank_id == gb_file.annotations['gi']).filter(base.Chromosome.genome_id == genome.id).first()
+    
+    if not chromosome:
+        ome_chromosome = {'genome_id': genome.id,
                       'genbank_id': gb_file.annotations['gi'],
                       'ncbi_id': gb_file.id}
 
-    chromosome = base.Chromosome(**ome_chromosome)
-    session.add(chromosome)
-    session.flush()
+        chromosome = base.Chromosome(**ome_chromosome)
+        session.add(chromosome)
+        session.flush()
 
 
     db_xref_data_source_id = {data_source.name:data_source.id for data_source in session.query(base.DataSource).all()}
@@ -370,9 +372,6 @@ def load_genbank(genbank_file, base, components):
                 gene_name = locus_id
             elif gene_name and not locus_id:
                 locus_id = gene_name
-            elif not gene_name and not locus_id:
-                continue
-
 
 
             ome_gene['locus_id'] = locus_id
@@ -393,34 +392,49 @@ def load_genbank(genbank_file, base, components):
                 ome_gene['info'] = ome_gene['info'] + ',' + feature.qualifiers['function'][0]
                 ome_protein['long_name'] = feature.qualifiers['function'][0]
 
-            if len(ome_gene['name']) > 15: continue  #some weird genbank names are too long and misformed
-
-
-
+            """if len(ome_gene['name']) > 15: continue  #some weird genbank names are too long and misformed
+"""
+            """geneCheck = session.query(components.Gene).filter(components.Gene.name == gene_name).filter(components.Gene.locus_id == locus_id).filter(components.Gene.leftpos == int(feature.location.start)).filter(components.Gene.rightpos == int(feature.location.end)).first()
+            if geneCheck:
+                gene = geneCheck
+            else:
+                gene = components.Gene(**ome_gene)
+                session.add(gene)
+                session.flush()
+            """
             gene = session.get_or_create(components.Gene, **ome_gene)
 
 
-
+            """
+            if gene == None:
+                print "get or create returned none"
+                gene = components.Gene(**ome_gene)
+                session.add(gene)
+            """
             if 'db_xref' in feature.qualifiers:
                 for ref in feature.qualifiers['db_xref']:
-                    splitrefs = ref.split(':')
-                    ome_synonym = {'type':'gene'}
-                    ome_synonym['ome_id'] = gene.id
-                    ome_synonym['synonym'] = splitrefs[1]
+                    if gene.id != None:
+                        splitrefs = ref.split(':')
+                        ome_synonym = {'type':'gene'}
+                        ome_synonym['ome_id'] = gene.id
+                        ome_synonym['synonym'] = splitrefs[1]
 
-                    try: data_source_id = db_xref_data_source_id[splitrefs[0]]
-                    except:
-                        data_source = base.DataSource(name=splitrefs[0])
-                        session.add(data_source)
-                        session.flush()
-                        data_source_id = data_source.id
-                        db_xref_data_source_id[splitrefs[0]] = data_source_id
+                        try: data_source_id = db_xref_data_source_id[splitrefs[0]]
+                        except:
+                            data_source = base.DataSource(name=splitrefs[0])
+                            session.add(data_source)
+                            session.flush()
+                            data_source_id = data_source.id
+                            db_xref_data_source_id[splitrefs[0]] = data_source_id
 
 
-                    ome_synonym['synonym_data_source_id'] = data_source_id
-
-                    synonym = base.Synonyms(**ome_synonym)
-                    session.add(synonym)
+                        ome_synonym['synonym_data_source_id'] = data_source_id
+                        if not session.query(base.Synonyms).filter(base.Synonyms.ome_id == gene.id).filter(base.Synonyms.synonym == splitrefs[1]).filter(base.Synonyms.type == 'gene').first():
+                            synonym = base.Synonyms(**ome_synonym)
+                        
+                            session.add(synonym)
+                    else:
+                        print gene.id, " ->the gene id is none"
 
 
             if 'gene_synonym' in feature.qualifiers:

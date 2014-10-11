@@ -56,7 +56,7 @@ class GenomeRegion(Base):
     __tablename__ = 'genome_region'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     chromosome_id = Column(Integer, ForeignKey('chromosome.id'))
-    name = Column(String(15))
+    name = Column(String)
     leftpos = Column(Integer)
     rightpos = Column(Integer)
     strand = Column(String(1))
@@ -114,17 +114,18 @@ class Reaction(Base):
     name = Column(String)
     long_name = Column(String)
     type = Column(String(20))
-
+    notes = Column(String)
     __table_args__ = (UniqueConstraint('name'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'reaction',
                        'polymorphic_on': type
                       }
 
-    def __init__(self, name, long_name, biggid=""):
+    def __init__(self, name, long_name, notes, biggid=""):
         self.name = name
         self.biggid = biggid
         self.long_name = long_name
+        self.notes = notes
 
     def __repr__(self):
         return "Reaction (#%d):  %s" % \
@@ -159,9 +160,9 @@ class DataSource(Base):
 
 class Synonyms(Base):
     __tablename__ = "synonyms"
-
-    ome_id = Column(Integer, primary_key=True)
-    synonym = Column(String, primary_key=True)
+    id = Column(Integer, Sequence('wids'), primary_key=True)
+    ome_id = Column(Integer)
+    synonym = Column(String)
     type = Column(String)
     synonym_data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
     synonym_data_source = relationship("DataSource")
@@ -173,7 +174,7 @@ class Synonyms(Base):
         return "%s in (%s)" % (self.synonym, self.synonym_data_source)
 
     def __init__(self, ome_id, synonym, type, synonym_data_source_id):
-        self.ome_id
+        self.ome_id = ome_id
         self.synonym = synonym
         self.type = type
         self.synonym_data_source_id = synonym_data_source_id
