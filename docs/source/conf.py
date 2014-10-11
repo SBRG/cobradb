@@ -18,7 +18,7 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../../ome'))
 
 # -- General configuration ------------------------------------------------
 
@@ -31,6 +31,7 @@ import os
 extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autodoc'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -259,3 +260,10 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+
+import mock
+
+MOCK_MODULES = ['sqlalchemy.orm']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()

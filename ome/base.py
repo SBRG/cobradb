@@ -6,7 +6,7 @@ from os import system
 from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import Session as _SA_Session
 from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
-    String, Float, ForeignKey, and_, or_, not_, distinct, select
+    String, Float, ForeignKey
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from ome import settings
@@ -18,8 +18,8 @@ engine = create_engine("postgresql://%s:%s@%s/%s" %
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 
-connection = pymongo.Connection()
-omics_database = connection.omics_database
+#connection = pymongo.Connection()
+#omics_database = connection.omics_database
 
 
 class Genome(Base):
