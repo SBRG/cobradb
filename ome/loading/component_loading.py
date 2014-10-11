@@ -315,7 +315,11 @@ def load_genbank(genbank_file, base, components):
     from Bio import SeqIO
 
     session = base.Session()
-    gb_file = SeqIO.read(settings.data_directory+'/annotation/GenBank/'+genbank_file,'gb')
+    try:
+      gb_file = SeqIO.read(settings.data_directory+'/annotation/GenBank/'+genbank_file,'gb')
+    except:
+      print 'Error, bipython cannot parse %s' % (genbank_file)
+      return
 
     #from IPython import embed; embed()
     bioproject_id = ''
@@ -351,7 +355,7 @@ def load_genbank(genbank_file, base, components):
     db_xref_data_source_id = {data_source.name:data_source.id for data_source in session.query(base.DataSource).all()}
 
 
-    for feature in gb_file.features:
+    for feature in gb_file.features[0:5]:
         ome_gene = {'long_name':''}
         ome_protein = {'long_name':''}
 
