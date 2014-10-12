@@ -18,8 +18,8 @@ engine = create_engine("postgresql://%s:%s@%s/%s" %
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 
-#connection = pymongo.Connection()
-#omics_database = connection.omics_database
+connection = pymongo.Connection()
+omics_database = connection.omics_database
 
 
 class Genome(Base):
@@ -41,6 +41,7 @@ class Chromosome(Base):
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
     genome_id = Column(Integer, ForeignKey('genome.id'))
+    genome = relationship('Genome', backref='chromosome')
     genbank_id = Column(String(100))
     ncbi_id = Column(String(100))
 
@@ -72,8 +73,6 @@ class GenomeRegion(Base):
         return "GenomeRegion: %d-%d (%s)" % \
                 (self.leftpos, self.rightpos, self.strand)
 
-    def __repr__dict__(self):
-        return {"name":self.name,"id":self.id,"leftpos":self.leftpos,"rightpos":self.rightpos,"strand":self.strand}
 
     def __init__(self, leftpos, rightpos, strand, chromosome_id, name=None):
         self.leftpos = leftpos
@@ -257,7 +256,7 @@ def get_or_create(session, class_type, **kwargs):
 
     result = session.query(class_type).filter_by(**{k: kwargs[k] for k in unique_cols}).first()
 
-    if not result and not inherited_result:
+    if not result or not inherited_result:
         result = class_type(**kwargs)
         session.add(result)
         session.commit()

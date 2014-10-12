@@ -47,7 +47,7 @@ class Motif(GenomeRegion):
                                  self.strand, self.pval)
 
     def __init__(self, leftpos, rightpos, strand, pval, info=None):
-        super(Motif, self).__init__(leftpos, rightpos, strand)
+        super(Motif, self).__init__(leftpos, rightpos, strand, chromosome_id)
         self.pval = pval
         self.info = info
 
@@ -125,11 +125,11 @@ class DNA(Component):
                       }
 
 
-    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None, genome_id=None):
+    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None, chromosome_id=None):
         super(DNA, self).__init__(name)
         session = Session()
-        self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
-                                                      rightpos=rightpos, genome_id=genome_id,
+        self.genome_region_id = session.get_or_create(GenomeRegion, name=name, leftpos=leftpos,\
+                                                      rightpos=rightpos, chromosome_id=chromosome_id,
                                                       strand=strand).id
         session.close()
 
@@ -149,8 +149,8 @@ class DnaBindingSite(DNA):
     width = Column(Integer)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, genome_id, centerpos, width):
-        super(DnaBindingSite, self).__init__(name, leftpos, rightpos, strand, genome_id)
+    def __init__(self, name, leftpos, rightpos, strand, chromosome_id, centerpos, width):
+        super(DnaBindingSite, self).__init__(name, leftpos, rightpos, strand, chromosome_id)
         self.centerpos = centerpos
         self.width = width
 
@@ -165,12 +165,12 @@ class RNA(Component):
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
 
 
-    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None, genome_id=None):
+    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None, chromosome_id=None):
         super(RNA, self).__init__(name)
         session = Session()
-        self.genome_region_id = session.get_or_create(GenomeRegion, leftpos=leftpos,\
+        self.genome_region_id = session.get_or_create(GenomeRegion, name=name, leftpos=leftpos,\
                                                       rightpos=rightpos, strand=strand,
-                                                      genome_id=genome_id).id
+                                                      chromosome_id=chromosome_id).id
         session.close()
 
     def __repr__(self):

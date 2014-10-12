@@ -519,7 +519,7 @@ define([], function() {
                .style("fill", function(d, i) { return textFillColours(i); })
                .text(function(d) { return d.label; });
 
-        centerVennDiagram( diagram, width, height, padding );
+        //centerVennDiagram( diagram, width, height, padding );
 
         return {'svg' : svg,
                 'nodes' : nodes,
