@@ -4,7 +4,8 @@ from ome.base import *
 
 from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
-    String, Float, ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint, select
+    String, Float, ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint, \
+    select, and_, or_
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.sql.expression import join
@@ -54,12 +55,6 @@ class Strain(Base):
     def __repr__(self):
         return "Strain: %s" % (self.name)
 
-    def __repr__dict__(self):
-        return {"name":self.name,"wid":self.id,"values":{}}
-
-    def __repr__json__(self):
-        return json.dumps(self.__repr__dict__())
-
     def __init__(self, name):
         self.name = name
 
@@ -81,12 +76,6 @@ class Environment(Base):
         return "Environment: type:%s, name:%s" % \
             (self.type, self.name)
 
-    def __repr__dict__(self):
-        return {"name":self.name,"wid":self.id, "type":self.type, "values":{}}
-
-    def __repr__json__(self):
-        return json.dumps(self.__repr__dict__())
-
     def __init__(self, name):
         self.name = name
 
@@ -99,10 +88,6 @@ class InSilicoEnvironment(Environment):
 
     __mapper_args__ = { 'polymorphic_identity': 'in_silico' }
 
-    def __repr__dict(self):
-        environment = Environment.__repr__dict__(self)
-        environment['values'] = {}
-        return environment
 
     def __init__(self, name, exchanges):
         super(InSilicoEnvironment, self).__init__(name)
@@ -128,13 +113,6 @@ class InVivoEnvironment(Environment):
         return "Environment: C:%s, N:%s, e:%s %s" % \
             (self.carbon_source, self.nitrogen_source, self.electron_acceptor, self.supplements)
 
-    def __repr__dict__(self):
-        environment = Environment.__repr__dict__(self)
-        environment['values'] = {"carbon_source":self.carbon_source,\
-                                 "nitrogen_source":self.nitrogen_source,\
-                                 "electron_acceptor":self.electron_acceptor,
-                                 "temperature":self.temperature}
-        return environment
 
     def __init__(self, name, carbon_source, nitrogen_source, electron_acceptor, temperature, supplements):
         super(InVivoEnvironment, self).__init__(name)
@@ -174,17 +152,6 @@ class DataSet(Base):
         return "Data Set (#%d):  %s" % \
             (self.id, self.name)
 
-    def __repr__dict__(self):
-        experiment = {"name":self.name,"id":self.id, "type":self.type, "values":{}}
-
-        dataset['values']['strain'] = self.strain.__repr__dict__()
-        dataset['values']['data_source'] = self.data_source.__repr__dict__()
-        dataset['values']['environment'] = self.environment.__repr__dict__()
-
-        return dataset
-
-    def __repr__json__(self):
-        return json.dumps(self.__repr__dict__())
 
     def __init__(self, name, replicate=1, strain_id=None, environment_id=None, data_source_id=None, group_name=None):
 
@@ -228,14 +195,6 @@ class ArrayExperiment(DataSet):
         return "Array Experiment (#%d, %s):  %s  %d" % \
             (self.id, self.name, self.platform, self.replicate)
 
-    def __repr__dict__(self):
-        data_set = DataSet.__repr__dict__(self)
-
-        data_set['values']['platform'] = {"name":self.platform,"values":{}}
-        data_set['values']['replicate'] = {"name":self.replicate,"values":{}}
-
-        return data_set
-
 
 class RNASeqExperiment(DataSet):
     __tablename__ = 'rnaseq_experiment'
@@ -258,14 +217,6 @@ class RNASeqExperiment(DataSet):
         return "RNASeqExperiment (#%d, %s):  %s  %s" % \
             (self.id, self.name, self.replicate, self.group_name)
 
-    def __repr__dict__(self):
-        data_set = DataSet.__repr__dict__(self)
-
-        data_set['values']['sequencing_type'] = {"name":self.sequencing_type,"values":{}}
-        data_set['values']['machine_id'] = {"name":self.machine_id,"values":{}}
-        data_set['values']['replicate'] = {"name":self.replicate,"values":{}}
-
-        return data_set
 
     def __init__(self, name, replicate, strain_id, environment_id, data_source_id,\
                        sequencing_type, machine_id, group_name=None, normalization_method=None,\
@@ -301,15 +252,6 @@ class ChIPExperiment(DataSet):
         return "ChIPExperiment (#%d, %s): %s %s %s" % \
             (self.id, self.name, self.protocol_type, self.target, self.replicate)
 
-    def __repr__dict__(self):
-        data_set = Dataset.__repr__dict__(self)
-
-        data_set['values']['antibody'] = {"name":self.antibody,"values":{}}
-        data_set['values']['protocol_type'] = {"name":self.protocol_type,"values":{}}
-        data_set['values']['target'] = {"name":self.target,"values":{}}
-        data_set['values']['replicate'] = {"name":self.replicate,"values":{}}
-
-        return dataset
 
     def __init__(self, name, replicate, strain_id, environment_id, data_source_id,\
                        antibody, protocol_type, target, group_name=None, normalization_method=None,\
@@ -831,33 +773,6 @@ class DifferentialGeneExpressionData(Base):
 				    	  (self.locus_id, self.gene_name, args['strain'], args['carbon_source'],
 					  								  args['nitrogen_source'], args['electron_acceptor'],
 					  								  self.value, self.pval)
-
-
-def load_genome_data(file_path, data_set_id, bulk_file_load=False, loading_cutoff=0):
-    genome_data = omics_database.genome_data
-    if file_path[-3:] == 'gff':
-        entries = []
-        for cntr,line in enumerate(open(file_path,'r').readlines()):
-
-            if line[0] == '#': continue
-            data = line.rstrip('\n').split('\t')
-
-            #filter out low read count data
-            if float(data[5]) < loading_cutoff: continue
-
-            entries.append({
-                "leftpos": int(data[3]),
-                "rightpos": int(data[4]),
-                "value": float(data[5]),
-                "strand": data[6],
-                "data_set_id": data_set_id})
-
-            if cntr%10000 == 0:
-                genome_data.insert(entries)
-                entries = []
-
-    if not bulk_file_load:
-        genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])
 
 
 def query_genome_data(data_set_ids,leftpos=0,rightpos=1000,strand=['+','-'],value=0):

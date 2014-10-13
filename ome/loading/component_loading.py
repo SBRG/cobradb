@@ -145,7 +145,7 @@ def get_gene_with_metacyc(session, base, components, genome, gene_entry):
                                                           'COMMON-NAME'])
     if vals is None: return None
 
-    gene = session.query(components.Gene).filter(and_(components.Gene.genome_id == genome.id,
+    gene = session.query(components.Gene).filter(and_(components.Gene.chromosome_id == genome.id,
                                                       or_(components.Gene.locus_id == vals['ACCESSION-1'][0],
                                                           components.Gene.name == vals['COMMON-NAME'][0]))).first()
     if gene is None:
@@ -214,8 +214,9 @@ def get_or_create_metacyc_ligand(session, base, components, ligand_entry):
     markup = re.compile("<.+?>")
     name = markup.sub("", name)
 
-    return session.get_or_create(components.Metabolite, name=vals['UNIQUE-ID'][0],\
-                                 long_name=name, smiles=vals['SMILES'][0])
+
+    return session.get_or_create(components.Metabolite, name=vals['UNIQUE-ID'][0], kegg_id=None, cas_number=None, formula=None, \
+                                 long_name=name, flag=True, smiles=vals['SMILES'][0])
 
 
 def get_or_create_metacyc_protein_complex(session, base, components, genome, protein_complex_entry):
@@ -310,7 +311,7 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome, 
 
 
 @timing
-def load_genbank(genbank_file, base, components):
+def load_genome(genbank_file, base, components):
 
     from Bio import SeqIO
 
@@ -341,7 +342,7 @@ def load_genbank(genbank_file, base, components):
         session.flush()
 
     chromosome = session.query(base.Chromosome).filter(base.Chromosome.genbank_id == gb_file.annotations['gi']).filter(base.Chromosome.genome_id == genome.id).first()
-    
+
     if not chromosome:
         ome_chromosome = {'genome_id': genome.id,
                       'genbank_id': gb_file.annotations['gi'],
@@ -355,7 +356,7 @@ def load_genbank(genbank_file, base, components):
     db_xref_data_source_id = {data_source.name:data_source.id for data_source in session.query(base.DataSource).all()}
 
 
-    for feature in gb_file.features[0:5]:
+    for feature in gb_file.features:
         ome_gene = {'long_name':''}
         ome_protein = {'long_name':''}
 
@@ -396,16 +397,7 @@ def load_genbank(genbank_file, base, components):
                 ome_gene['info'] = ome_gene['info'] + ',' + feature.qualifiers['function'][0]
                 ome_protein['long_name'] = feature.qualifiers['function'][0]
 
-            """if len(ome_gene['name']) > 15: continue  #some weird genbank names are too long and misformed
-"""
-            """geneCheck = session.query(components.Gene).filter(components.Gene.name == gene_name).filter(components.Gene.locus_id == locus_id).filter(components.Gene.leftpos == int(feature.location.start)).filter(components.Gene.rightpos == int(feature.location.end)).first()
-            if geneCheck:
-                gene = geneCheck
-            else:
-                gene = components.Gene(**ome_gene)
-                session.add(gene)
-                session.flush()
-            """
+
             gene = session.get_or_create(components.Gene, **ome_gene)
 
 
@@ -435,7 +427,7 @@ def load_genbank(genbank_file, base, components):
                         ome_synonym['synonym_data_source_id'] = data_source_id
                         if not session.query(base.Synonyms).filter(base.Synonyms.ome_id == gene.id).filter(base.Synonyms.synonym == splitrefs[1]).filter(base.Synonyms.type == 'gene').first():
                             synonym = base.Synonyms(**ome_synonym)
-                        
+
                             session.add(synonym)
                     else:
                         print gene.id, " ->the gene id is none"
@@ -465,14 +457,6 @@ def load_genbank(genbank_file, base, components):
     session.commit()
     session.close()
 
-
-@timing
-def load_genomes(base, components):
-    for genbank_file in open(settings.data_directory+'/annotation/genbanklist.txt','r').readlines():
-        genbank_file = genbank_file.rstrip('\n')
-
-        #if genbank_file not in ['NC_000913.2.gb']: continue
-        load_genbank(genbank_file, base, components)
 
 
 @timing
@@ -527,7 +511,7 @@ def load_metacyc_transcription_units(base, components, genome):
 
 
 @timing
-def load_metacyc_bindsites(base, components, genome):
+def load_metacyc_bindsites(base, components, chromosome):
     session = base.Session()
     ##First load annotation file containing merger of metacyc and NCBI
     metacyc_ID = session.get_or_create(base.DataSource, name="metacyc").id
@@ -555,7 +539,7 @@ def load_metacyc_bindsites(base, components, genome):
                 rightpos = centerpos
 
             session.get_or_create(components.DnaBindingSite, name=vals['UNIQUE-ID'][0], leftpos=leftpos,\
-                                  rightpos=rightpos, strand='+', genome_id=genome.id, centerpos=centerpos, width=length)
+                                  rightpos=rightpos, strand='+', chromosome_id=chromosome.id, centerpos=centerpos, width=length)
 
 
     for unique_id,entry in metacyc_regulation.iteritems():
@@ -679,14 +663,14 @@ def load_regulatory_network(base, components, data, genome):
 
 
 @timing
-def write_genome_annotation_gff(base, components, genome):
+def write_chromosome_annotation_gff(base, components, chromosome):
     session = base.Session()
 
-    genbank_fasta_string = 'gi|'+genome.genbank_id+'|ref|'+genome.ncbi_id+'|'
+    genbank_fasta_string = 'gi|'+chromosome.genbank_id+'|ref|'+chromosome.ncbi_id+'|'
 
-    with open(settings.data_directory+'/annotation/'+genome.ncbi_id+'.gff', 'wb') as gff_file:
+    with open(settings.data_directory+'/annotation/'+chromosome.ncbi_id+'.gff', 'wb') as gff_file:
 
-        for gene in session.query(components.Gene).filter(components.Gene.genome_id == genome.id).all():
+        for gene in session.query(components.Gene).filter(components.Gene.chromosome_id == chromosome.id).all():
 
             info_string = 'gene_id "%s"; transcript_id "%s"; gene_name "%s";' % (gene.locus_id, gene.locus_id, gene.name)
 

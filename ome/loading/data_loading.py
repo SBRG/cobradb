@@ -1,7 +1,7 @@
 ####Many parts of this code are derived from sequtil written by aebrahim####
 #!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
-from om import base, data, components, settings, timing
+from ome import base, data, components, settings, timing
 from os.path import split
 from math import log
 from itertools import combinations
@@ -286,6 +286,181 @@ def calculate_normalization_factors(experiment_type, group_name):
     return mapped_read_norm_factor
 
 
+@timing
+def load_raw_files(directory_path, group_name='default', normalize=True, overwrite=False, raw=True):
+    """This will load raw .bam files, .gff files, and affymetrix .CEL files into the associated
+    genome_data tables.  A genome object must also be supplied for proper mappping. The raw signal
+    will go into a mongoDB genome_data table and the rest will go into corresponding SQL tables.
+    This function will by default assume name based loading, however, it can also be configured
+    to read a metadata file with corresponding experiment details.
+    """
+    session = base.Session()
+
+    parseable_file_extensions = ['bam','sorted.bam','fastq','fastq.gz','R1.fastq.gz','R2.fastq.gz','CEL','gff']
+    experiments = []
+
+    fastq_experiment_paths = {}
+
+    for file_name in os.listdir(directory_path):
+        if file_name[0:4] == 'chip': file_name = 'ChIP'+file_name[4:] #scrub misnamed files
+
+        file_prefix = file_name.split('.')[0]
+        file_suffix = '.'.join(file_name.split('.')[1:])
+
+
+        """if an inner directory is found, load that into a separate experiment group"""
+        if os.path.isdir(directory_path+'/'+file_name):
+
+            load_raw_files(directory_path+'/'+file_name, group_name=file_name, normalize=False)
+
+
+        if file_suffix not in parseable_file_extensions: continue
+
+        """if the experiment was split across multiple sequencing runs the fastq files will be split
+           and they will be preceded by an integer e.g. 1_exp_name, 2_exp_name, etc...
+        """
+
+        if file_name[0] in ['1','2','3']:
+          file_prefix,fastq_paths = get_split_fastq_files(file_name, directory_path)
+          fastq_experiment_paths[file_prefix] = fastq_paths
+
+        elif file_suffix in ['fastq','fastq.gz','R1.fastq.gz','R2.fastq.gz']:
+          #print file_prefix
+          try: fastq_experiment_paths[file_prefix].append(file_name)
+          except: fastq_experiment_paths[file_prefix] = [file_name]
+
+        experiment = create_name_based_experiment(session, file_prefix, group_name)
+
+        experiments.append(experiment)
+
+
+    for experiment in set(experiments):
+      if experiment.name in fastq_experiment_paths.keys():
+          run_bowtie2(experiment, fastq_experiment_paths[experiment.name], overwrite=overwrite, debug=True)
+
+
+    if normalize:
+        normalization_factors = calculate_normalization_factors(experiments[0].type, group_name)
+    else:
+        normalization_factors = {exp.name: 1. for exp in experiments}
+
+
+    for experiment in set(experiments):
+        if not raw: continue
+
+        if experiment.type == 'chip_experiment':
+            norm_factor = normalization_factors[experiment.name]
+            if experiment.protocol_type == 'ChIPExo':
+                load_raw_experiment_data(experiment, loading_cutoff=10, flip=False, five_prime=True, norm_factor=norm_factor)
+            elif experiment.protocol_type == 'ChIPchip':
+                load_raw_gff_to_db(experiment)
+
+        elif experiment.type == 'rnaseq_experiment':
+            norm_factor = normalization_factors[experiment.name]
+            load_raw_experiment_data(experiment, loading_cutoff=10., flip=True, five_prime=False, norm_factor=norm_factor)
+
+    session.close()
+
+
+def get_split_fastq_files(file_name, directory_path):
+    fastq_files = []
+
+    file_prefix = file_name.split('.')[0]
+    file_suffix = '.'.join(file_name.split('.')[1:])
+
+    #suffix = '_'.join(file_name.split('_')[1:])
+
+    for file_name2 in os.listdir(directory_path):
+        file_prefix2 = file_name2.split('.')[0]
+        if file_name2[0] in ['1','2','3'] and file_prefix[2:] == file_prefix2[2:]:
+            fastq_files.append(file_name2)
+    return file_prefix[2:],fastq_files
+
+
+def query_experiment_sets():
+    """This queries all the replicates of an experiment and groups them for further processing"""
+    experiment_sets = {}
+
+    ome = base.Session()
+
+    RNASeqExperiment = data.RNASeqExperiment
+    ArrayExperiment = data.ArrayExperiment
+    ChIPExperiment = data.ChIPExperiment
+
+    experiment_sets['RNAseq'] = ome.query(func.array_agg(RNASeqExperiment.name),RNASeqExperiment.group_name).\
+                                          group_by(RNASeqExperiment.group_name, RNASeqExperiment.strain_id,
+                                                   RNASeqExperiment.environment_id, RNASeqExperiment.machine_id,
+                                                   RNASeqExperiment.sequencing_type).all()
+
+    experiment_sets['array'] = ome.query(func.array_agg(ArrayExperiment.name)).\
+                                         group_by(ArrayExperiment.strain_id, ArrayExperiment.environment_id,\
+                                         ArrayExperiment.platform).all()
+
+    experiment_sets['ChIP'] = ome.query(func.array_agg(ChIPExperiment.name)).\
+                                        group_by(ChIPExperiment.strain_id, ChIPExperiment.environment_id,\
+                                        ChIPExperiment.antibody, ChIPExperiment.protocol_type,\
+                                        ChIPExperiment.target).all()
+    ome.close()
+    return experiment_sets
+
+
+
+def load_experiment_sets(experiment_sets):
+    """This will create the database entries for the grouped experiments"""
+
+    ome = base.Session()
+
+    for exp_group in experiment_sets['RNAseq']:
+        vals = exp_group[0][0].split('_')
+        if len(vals) > 6: exp_group_name = '_'.join(vals[0:5]+vals[-1:])
+        else: exp_group_name = '_'.join(vals[0:5])
+
+        exp = ome.query(data.RNASeqExperiment).filter_by(name=exp_group[0][0], group_name=exp_group[1]).one()
+
+        exp_analysis = ome.get_or_create(data.NormalizedExpression, replicate=1, name=exp_group_name, environment_id=exp.environment.id,\
+                                         strain_id=exp.strain.id, group_name=exp.group_name, expression_type='rnaseq_experiment')
+
+        for exp_name in exp_group[0]:
+            expt = ome.query(data.RNASeqExperiment).filter_by(name=exp_name, group_name=exp.group_name).one()
+            ome.get_or_create(data.AnalysisComposition, analysis_id = exp_analysis.id, data_set_id = expt.id)
+
+    for exp_group in experiment_sets['array']:
+        exp_group_name = '_'.join(exp_group[0][0].split('_')[:-2])
+        exp = ome.query(data.ArrayExperiment).filter_by(name=exp_group[0][0]).one()
+        exp_analysis = ome.get_or_create(data.NormalizedExpression, replicate=1, name=exp_group_name, environment_id=exp.environment.id,\
+                                         strain_id=exp.strain.id, group_name=exp.group_name, expression_type='array_experiment')
+        for exp_name in exp_group[0]:
+            exp = ome.query(data.ArrayExperiment).filter_by(name=exp_name).one()
+            ome.get_or_create(data.AnalysisComposition, analysis_id = exp_analysis.id, data_set_id = exp.id)
+
+    default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':'', 'nf':'', 'k_min': 4, 'k_max': 22, 'k_win':150}
+
+    for exp_group in experiment_sets['ChIP']:
+        parameters = {'mrc':20, 'smooth':3, 'outNP':'', 'nrf':'', 'nf':'','k_min': 4, 'k_max': 22, 'k_win':150}
+        if not set(parameters.items()) - set(default_parameters.items()):
+            parameter_name = 'default'
+        else:
+            parameter_name = '_'.join([y+'-'+str(z) for y,z in dict(set(parameters.items()) - set(default_parameters.items())).iteritems()])
+
+
+        vals = exp_group[0][0].split('_')
+        exp_group_name = '_'.join(vals[0:5]+vals[6:]+[parameter_name,'peaks'])
+
+
+        exp = ome.query(data.ChIPExperiment).filter_by(name=exp_group[0][0]).one()
+
+
+        exp_analysis = ome.get_or_create(data.ChIPPeakAnalysis, name=exp_group_name, environment_id=exp.environment.id, strain_id=exp.strain.id,\
+                                                                parameters=json.dumps(parameters), replicate=1, group_name=exp.group_name)
+        for exp_name in exp_group[0]:
+            expt = ome.query(data.ChIPExperiment).filter_by(name=exp_name, group_name=exp.group_name).one()
+            ome.get_or_create(data.AnalysisComposition, analysis_id = exp_analysis.id, data_set_id = expt.id)
+
+    ome.close()
+
+
+
+
 def create_name_based_experiment(session, exp_name, group_name, lab='palsson', institution='UCSD'):
     vals = exp_name.split('_')
 
@@ -303,7 +478,6 @@ def create_name_based_experiment(session, exp_name, group_name, lab='palsson', i
         except: supplements = ''
 
     strain = session.get_or_create(data.Strain, name=vals[1])
-
 
     data_source = session.get_or_create(base.DataSource, name=vals[0], lab=lab, institution=institution)
 
