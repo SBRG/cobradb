@@ -311,7 +311,7 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome, 
 
 
 @timing
-def load_genbank(genbank_file, base, components):
+def load_genome(genbank_file, base, components):
 
     from Bio import SeqIO
 
@@ -356,7 +356,7 @@ def load_genbank(genbank_file, base, components):
     db_xref_data_source_id = {data_source.name:data_source.id for data_source in session.query(base.DataSource).all()}
 
 
-    for feature in gb_file.features[0:5]:
+    for feature in gb_file.features:
         ome_gene = {'long_name':''}
         ome_protein = {'long_name':''}
 
@@ -457,14 +457,6 @@ def load_genbank(genbank_file, base, components):
     session.commit()
     session.close()
 
-
-@timing
-def load_genomes(base, components):
-    for genbank_file in open(settings.data_directory+'/annotation/genbanklist.txt','r').readlines():
-        genbank_file = genbank_file.rstrip('\n')
-
-        if genbank_file not in ['NC_000913.2.gb']: continue
-        load_genbank(genbank_file, base, components)
 
 
 @timing
@@ -671,14 +663,14 @@ def load_regulatory_network(base, components, data, genome):
 
 
 @timing
-def write_genome_annotation_gff(base, components, genome):
+def write_chromosome_annotation_gff(base, components, chromosome):
     session = base.Session()
 
-    genbank_fasta_string = 'gi|'+genome.genbank_id+'|ref|'+genome.ncbi_id+'|'
+    genbank_fasta_string = 'gi|'+chromosome.genbank_id+'|ref|'+chromosome.ncbi_id+'|'
 
-    with open(settings.data_directory+'/annotation/'+genome.ncbi_id+'.gff', 'wb') as gff_file:
+    with open(settings.data_directory+'/annotation/'+chromosome.ncbi_id+'.gff', 'wb') as gff_file:
 
-        for gene in session.query(components.Gene).filter(components.Gene.genome_id == genome.id).all():
+        for gene in session.query(components.Gene).filter(components.Gene.chromosome_id == chromosome.id).all():
 
             info_string = 'gene_id "%s"; transcript_id "%s"; gene_name "%s";' % (gene.locus_id, gene.locus_id, gene.name)
 

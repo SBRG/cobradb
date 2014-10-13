@@ -9,6 +9,8 @@ from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
     String, Float, ForeignKey
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
+from contextlib import contextmanager
+
 from ome import settings
 import pymongo
 from sqlalchemy.schema import Sequence
@@ -31,6 +33,10 @@ class Genome(Base):
 
     __table_args__ = (UniqueConstraint('bioproject_id'),{})
 
+
+    def __repr__(self):
+        return "Genome (#%d) %s %s" % (self.id, self.bioproject_id, self.organism)
+
     def __init__(self, bioproject_id, organism):
         self.bioproject_id = bioproject_id
         self.organism = organism
@@ -41,11 +47,16 @@ class Chromosome(Base):
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
     genome_id = Column(Integer, ForeignKey('genome.id'))
-    genome = relationship('Genome', backref='chromosome')
+    genome = relationship('Genome', backref='chromosomes')
     genbank_id = Column(String(100))
     ncbi_id = Column(String(100))
 
     __table_args__ = (UniqueConstraint('genome_id', 'genbank_id'),{})
+
+
+    def __repr__(self):
+        return "Chromosome %s -- %s" % (self.ncbi_id, self.genome)
+
 
     def __init__(self, genome_id, genbank_id, ncbi_id):
         self.genome_id = genome_id
@@ -281,6 +292,21 @@ def update(session, object, **kwargs):
     session.commit()
 
     return object
+
+
+@contextmanager
+def create_Session():
+    session = Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        print "close"
+        session.close()
+
 
 
 Session = sessionmaker(bind=engine, class_=_Session)

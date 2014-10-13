@@ -2,8 +2,11 @@ from ome import base,settings,components,data,timing
 
 from ome.loading import data_loading
 from ome.loading import component_loading
+from ome.loading import model_loading
 
 from sqlalchemy.schema import Sequence,CreateSequence
+from pymongo import ASCENDING
+
 
 
 if __name__ == "__main__":
@@ -18,7 +21,13 @@ if __name__ == "__main__":
     #base.engine.execute(CreateSequence(Sequence('wids')))
 
 
-    component_loading.load_genomes(base, components)
+    with open(settings.data_directory+'/annotation/genbanklist.txt') as file:
+        for line in file:
+            genbank_file = line.rstrip('\n')
+
+            if genbank_file not in ['NC_000913.2.gb']: continue
+
+            component_loading.load_genome(genbank_file, base, components)
 
 
     session = base.Session()
@@ -31,8 +40,8 @@ if __name__ == "__main__":
 
     for genome in data_genomes:
 
-        ##TODO this is going to need to work on multiple chromosome genomes, does not currently
-        #component_loading.write_genome_annotation_gff(base, components, genome)
+        for chromosome in genome.chromosomes:
+            component_loading.write_chromosome_annotation_gff(base, components, chromosome)
 
 
         data_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/crp', group_name='crp', normalize=normalize_flag, raw=raw_flag)
@@ -51,10 +60,13 @@ if __name__ == "__main__":
         experiment_sets = data_loading.query_experiment_sets()
         data_loading.load_experiment_sets(experiment_sets)
 
-        #temporary hack to deal with genomes that only have one chromosome
-        component_loading.load_metacyc_proteins(base, components, genome.chromosome[0])
-        component_loading.load_metacyc_bindsites(base, components, genome.chromosome[0])
-        component_loading.load_metacyc_transcription_units(base, components, genome.chromosome[0])
+
+
+        """
+        for chromosome in genome.chromosomes:
+            component_loading.load_metacyc_proteins(base, components, chromosome)
+            component_loading.load_metacyc_bindsites(base, components, chromosome)
+            component_loading.load_metacyc_transcription_units(base, components, chromosome)
 
         old_gff_file = settings.data_directory+'/annotation/NC_000913.2_old.gff'
 
@@ -65,7 +77,7 @@ if __name__ == "__main__":
         #data_loading.run_cuffdiff(base, data, genome, group_name='yome', debug=False, overwrite=True)
         #data_loading.run_gem(base, data, genome, debug=True)
 
-        """
+
         data_loading.load_gem(session.query(ChIPPeakAnalysis).all(), base, data, genome)
         data_loading.load_gff_chip_peaks(session.query(ChIPPeakAnalysis).all(), base, data, genome, group_name='gff-BK')
 
@@ -87,6 +99,17 @@ if __name__ == "__main__":
 
         data_loading.make_genome_region_map(base, data, genome)
         """
+
+
+
+    with open(settings.data_directory+'/annotation/model-genome.txt') as file:
+
+        for line in file:
+            model_id,genome_id,model_creation_timestamp = line.rstrip('\n').split(',')
+
+            model_loading.load_model(model_id, genome_id, model_creation_timestamp)
+
+
 
     genome_data = base.omics_database.genome_data
 
