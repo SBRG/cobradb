@@ -20,8 +20,12 @@ engine = create_engine("postgresql://%s:%s@%s/%s" %
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 
-connection = pymongo.Connection()
-omics_database = connection.omics_database
+
+try:
+    connection = pymongo.Connection()
+    omics_database = connection.omics_database
+except:
+    omics_database = None
 
 
 class Genome(Base):
