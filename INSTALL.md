@@ -12,3 +12,6 @@ python setup.py develop
 ```
 python bin/load_db.py
 ```
+
+####Dependencies
+
