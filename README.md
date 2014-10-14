@@ -1,4 +1,5 @@
-Note!! Installation and setup coming very soon, until then this will be VERY difficult to install
+[Installation](https://github.com/SBRG/ome/INSTALL.md)
+
 
 The OME Framework
 ==
