@@ -262,9 +262,10 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 
-os.system('pip install mock')
+"""
 import mock
 
 MOCK_MODULES = ['sqlalchemy.orm']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
+"""
