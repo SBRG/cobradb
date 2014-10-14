@@ -25,13 +25,11 @@ if __name__ == "__main__":
     #base.engine.execute(CreateSequence(Sequence('wids')))
 
 
-    with open(settings.data_directory+'/annotation/genbanklist.txt') as file:
-        for line in file:
-            genbank_file = line.rstrip('\n')
 
-            #if genbank_file not in ['NC_000913.2.gb']: continue
+    for genbank_file in os.listdir(settings.data_directory+'/annotation/genbank'):
+        #if genbank_file not in ['NC_000913.2.gb']: continue
 
-            component_loading.load_genome(genbank_file, base, components)
+        component_loading.load_genome(genbank_file, base, components)
 
 
     session = base.Session()
@@ -47,7 +45,7 @@ if __name__ == "__main__":
         for chromosome in genome.chromosomes:
             component_loading.write_chromosome_annotation_gff(base, components, chromosome)
 
-
+        """
         dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/crp', group_name='crp', normalize=normalize_flag, raw=raw_flag)
         dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/yome', group_name='yome', normalize=normalize_flag, raw=raw_flag)
 
@@ -65,8 +63,6 @@ if __name__ == "__main__":
         dataset_loading.load_experiment_sets(experiment_sets)
 
 
-
-        """
         for chromosome in genome.chromosomes:
             component_loading.load_metacyc_proteins(base, components, chromosome)
             component_loading.load_metacyc_bindsites(base, components, chromosome)
