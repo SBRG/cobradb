@@ -14,4 +14,4 @@ python bin/load_db.py
 ```
 
 ####Dependencies
-The OME Framework is dependent on [cobrapy](https://github.com/opencobra/cobrapy/blob/master/INSTALL.md) and may require additional installation.
+The OME Framework is dependent on [cobrapy](https://github.com/opencobra/cobrapy/blob/master/INSTALL.md) 
