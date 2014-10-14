@@ -12,6 +12,7 @@ sudo pip install -e .
 #### Rename the example settings file and edit with appropriate values
 ```
 mv ome/settings.ini.example ome/settings.ini
+vim settings.ini
 ```
 This currently involves a working postgres installation.
 
