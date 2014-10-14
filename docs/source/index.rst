@@ -13,7 +13,7 @@ Contents:
 
    modules.rst
 
-.. automodule:: data
+.. automodule:: datasets
  
 .. autoclass:: Strain
     :members:
