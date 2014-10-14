@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # This code is primarily a merger of theseus.models by @zakandrewking and LoadTheseus by @jslu9
 from ome import base, settings, components, timing
-from ome.model import *
+from ome.models import *
 from ome.loading import component_loading
 
 
@@ -328,27 +328,27 @@ class IndependentObjects:
                     session.add(geneObject)
 
     def loadModel(self, model, session, genome_id, first_created):
-        modelObject = Model(biggid = model.id, first_created = first_created, genome_id = genome_id, notes = '')
+        modelObject = Model(bigg_id = model.id, first_created = first_created, genome_id = genome_id, notes = '')
         session.add(modelObject)
 
 
         """
             if(model.id == 'iSF1195'):
-                modelObject = Model(biggid = model.id, firstcreated = '2014-9-16 14:26:22', genome_id = 7)
+                modelObject = Model(bigg_id = model.id, firstcreated = '2014-9-16 14:26:22', genome_id = 7)
             if(model.id == 'iSB619'):
-                modelObject = Model(biggid = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 3)
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 3)
             if(model.id == 'iJN746'):
-                modelObject = Model(biggid = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 6)
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 6)
             if(model.id == 'iIT341'):
-                modelObject = Model(biggid = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 4)
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 4)
             if(model.id == 'iNJ661'):
-                modelObject = Model(biggid = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 3)
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 3)
             if(model.id == 'iJO1366'):
-                modelObject = Model(biggid = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 15)
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 15)
             if(model.id == 'iAF692'):
-                modelObject = Model(biggid = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 5)
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 5)
             if(model.id == 'model'):
-                modelObject = Model(biggid = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 1)
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 1)
             if(model.id == 'iAPECO1_1312 '):
 
             session.add(modelObject)
@@ -414,13 +414,13 @@ class DependentObjects:
                 if gene.id != 's0001':
                     if session.query(Gene).filter(Gene.locus_id == gene.id).first() != None:
                         genequery = session.query(Gene).filter(Gene.locus_id == gene.id).first()
-                        modelquery = session.query(Model).filter(Model.biggid == model.id).first()
+                        modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                         #genequery = session.query(Gene).filter(Gene.locus_id == gene.id).filter(Gene.genome_id == modelquery.genome_id).first()
                         object = Model_Gene(model_id = modelquery.id, gene_id = genequery.id)
                         session.add(object)
                     elif session.query(Gene).filter(Gene.name == gene.id).first() != None:
                         genequery = session.query(Gene).filter(Gene.name == gene.id).first()
-                        modelquery = session.query(Model).filter(Model.biggid == model.id).first()
+                        modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                         object = Model_Gene(model_id = modelquery.id, gene_id = genequery.id)
                         session.add(object)
                     else:
@@ -428,14 +428,14 @@ class DependentObjects:
                         #session.add(geneObject)
                         synonymquery = session.query(Synonyms).filter(Synonyms.synonym == gene.id.split(".")[0]).filter(Synonyms.type == 'gene').first()
                         if synonymquery != None:
-                            modelquery = session.query(Model).filter(Model.biggid == model.id).first()
+                            modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
 
                             genecheck = session.query(Gene).filter(Gene.id == synonymquery.ome_id).first()
                             if genecheck:
                                 object = Model_Gene(model_id = modelquery.id, gene_id = synonymquery.ome_id)
                                 session.add(object)
 
-                                if modelquery.biggid == "RECON1":
+                                if modelquery.bigg_id == "RECON1":
                                     genequery = session.query(Gene).filter(Gene.id == synonymquery.ome_id).first()
                                     genequery.locus_id = gene.id
                             else:
@@ -460,7 +460,7 @@ class DependentObjects:
                 #componentquery = session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first()
                 compartmentquery = session.query(Compartment).filter(Compartment.name == metabolite.id[-1:len(metabolite.id)]).first()
                 compartmentalized_component_query = session.query(Compartmentalized_Component).filter(Compartmentalized_Component.component_id == componentquery.id).filter(Compartmentalized_Component.compartment_id == compartmentquery.id).first()
-                modelquery = session.query(Model).filter(Model.biggid == model.id).first()
+                modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                 if modelquery is None:
                     print "model query is none", model.id
                     from IPython import embed; embed()
@@ -475,7 +475,7 @@ class DependentObjects:
         for model in modellist:
             for reaction in model.reactions:
                 reactionquery = session.query(Reaction).filter(Reaction.name == reaction.id).first()
-                modelquery = session.query(Model).filter(Model.biggid == model.id).first()
+                modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                 object = Model_Reaction(reaction_id = reactionquery.id, model_id = modelquery.id, name = reaction.id, upperbound = reaction.upper_bound, lowerbound = reaction.lower_bound, gpr = reaction.gene_reaction_rule)
                 session.add(object)
 
@@ -486,7 +486,7 @@ class DependentObjects:
                 for gene in reaction._genes:
                     if gene.id != 's0001':
 
-                        model_query = session.query(Model).filter(Model.biggid == model.id).first()
+                        model_query = session.query(Model).filter(Model.bigg_id == model.id).first()
                         model_gene_query = session.query(Model_Gene).join(Gene).filter(Gene.locus_id == gene.id).filter(Model_Gene.model_id == model_query.id).first()
 
                         if model_gene_query != None:
@@ -532,7 +532,7 @@ class DependentObjects:
     def loadEscher(self, session):
         m = models.parse_model('iJO1366')
         for reaction in m.reactions:
-            escher = Escher_Map(biggid = reaction.id, category = "reaction", model_name = m.id)
+            escher = Escher_Map(bigg_id = reaction.id, category = "reaction", model_name = m.id)
             session.add(escher)
 
 
@@ -562,53 +562,4 @@ def load_model(model_id, genome_id, model_creation_timestamp):
         #DependentObjects().loadEscher(session)
 
 
-"""
-if __name__ == '__main__':
 
-    dict = {}
-    with open("model-genome.txt") as file:
-        for line in file:
-            modelinfo = line.split(',')
-            templist = []
-            templist.append(modelinfo[1])
-            templist.append(modelinfo[2].strip('\n'))
-            dict[modelinfo[0]] = templist
-    modelObjectList = []
-
-    for m in dict.keys():
-        if m == 'Recon':
-            modelObjectList.append(models.parse_model('model'))
-        elif(m=='Ecoli_core_model'):
-            modelObjectList.append(models.parse_model('E_coli_core'))
-        else:
-            modelObjectList.append(models.parse_model(m))
-
-    #for m in models.get_model_list():
-    #    modelObjectList.append(models.parse_model(m))
-    #modelObjectList.append(models.parse_model('Recon1'))
-    #modelObjectList.append(models.parse_model('iSF1195'))
-    #modelObjectList.append(models.parse_model('iAF1260')) #Escherichia coli str. K-12 substr. MG1655
-    #modelObjectList.append(models.parse_model('iJO1366'))
-    #modelObjectList.append(models.parse_model('iJN746'))
-    #modelObjectList.append(models.parse_model('iIT341'))
-    #modelObjectList.append(models.parse_model('iNJ661'))
-    #modelObjectList.append(models.parse_model('iAF692')) There are no gene names. It is all locus ids
-    #modelObjectList.append(models.parse_model('iSB619'))
-
-    with create_Session() as session:
-        with open("genbanklist.txt") as file:
-            for line in file:
-                load_genomes(line.strip('\n'))
-        #component_loading.load_genomes(base, components)
-        IndependentObjects().loadModels(modelObjectList, session, dict)
-        IndependentObjects().loadComponents(modelObjectList,session)
-        IndependentObjects().loadCompartments(modelObjectList, session)
-        DependentObjects().loadCompartmentalizedComponent(modelObjectList, session)
-        IndependentObjects().loadReactions(modelObjectList, session)
-        DependentObjects().loadModelGenes(modelObjectList, session)
-        DependentObjects().loadModelCompartmentalizedComponent(modelObjectList, session)
-        DependentObjects().loadModelReaction(modelObjectList, session)
-        DependentObjects().loadGPRMatrix(modelObjectList, session)
-        DependentObjects().loadReactionMatrix(modelObjectList, session)
-        #DependentObjects().loadEscher(session)
-"""

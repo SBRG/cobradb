@@ -123,8 +123,8 @@ class InVivoEnvironment(Environment):
         self.supplements = supplements
 
 
-class DataSet(Base):
-    __tablename__ = 'data_set'
+class Dataset(Base):
+    __tablename__ = 'dataset'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
     name = Column(String(100))
@@ -143,7 +143,7 @@ class DataSet(Base):
     group_name = Column(String(100))
 
 
-    __mapper_args__ = {'polymorphic_identity': 'data_set',
+    __mapper_args__ = {'polymorphic_identity': 'dataset',
                        'polymorphic_on': type}
 
     __table_args__ = (UniqueConstraint('name','replicate', 'group_name'),{})
@@ -175,10 +175,10 @@ class DataSet(Base):
         self.group_name = group_name
 
 
-class ArrayExperiment(DataSet):
+class ArrayExperiment(Dataset):
     __tablename__ = 'array_experiment'
 
-    id = Column(Integer, ForeignKey('data_set.id', ondelete='CASCADE'), primary_key=True)
+    id = Column(Integer, ForeignKey('dataset.id', ondelete='CASCADE'), primary_key=True)
     platform = Column(String(10))
 
     #terrrible hack right here
@@ -196,10 +196,10 @@ class ArrayExperiment(DataSet):
             (self.id, self.name, self.platform, self.replicate)
 
 
-class RNASeqExperiment(DataSet):
+class RNASeqExperiment(Dataset):
     __tablename__ = 'rnaseq_experiment'
 
-    id = Column(Integer, ForeignKey('data_set.id', ondelete='CASCADE'), primary_key=True)
+    id = Column(Integer, ForeignKey('dataset.id', ondelete='CASCADE'), primary_key=True)
 
     sequencing_type = Column(String(20))
     machine_id = Column(String(20))
@@ -230,10 +230,10 @@ class RNASeqExperiment(DataSet):
 
 
 
-class ChIPExperiment(DataSet):
+class ChIPExperiment(Dataset):
     __tablename__ = 'chip_experiment'
 
-    id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('dataset.id'), primary_key=True)
     antibody = Column(String(20))
     protocol_type = Column(String(20))
     target = Column(String(20))
@@ -270,21 +270,21 @@ class AnalysisComposition(Base):
     __tablename__ = 'analysis_composition'
 
     analysis_id = Column(Integer, ForeignKey('analysis.id'), primary_key=True)
-    data_set_id = Column(Integer, ForeignKey('data_set.id'), primary_key=True)
+    dataset_id = Column(Integer, ForeignKey('dataset.id'), primary_key=True)
 
-    __table_args__ = (UniqueConstraint('analysis_id','data_set_id'),{})
+    __table_args__ = (UniqueConstraint('analysis_id','dataset_id'),{})
 
-    def __init__(self, analysis_id, data_set_id):
+    def __init__(self, analysis_id, dataset_id):
         self.analysis_id = analysis_id
-        self.data_set_id = data_set_id
+        self.dataset_id = dataset_id
 
 
-class Analysis(DataSet):
+class Analysis(Dataset):
     __tablename__ = 'analysis'
 
-    id = Column(Integer, ForeignKey('data_set.id', ondelete='CASCADE'), primary_key=True)
+    id = Column(Integer, ForeignKey('dataset.id', ondelete='CASCADE'), primary_key=True)
     type = Column(String(40))
-    children = relationship("DataSet", secondary="analysis_composition",\
+    children = relationship("Dataset", secondary="analysis_composition",\
                             primaryjoin = id == AnalysisComposition.analysis_id,\
                             backref="parent")
 
@@ -369,18 +369,18 @@ class DifferentialExpression(Analysis):
 class GenomeData(Base):
     __tablename__ = 'genome_data'
 
-    data_set_id = Column(Integer, ForeignKey('data_set.id', ondelete="CASCADE"), primary_key=True)
-    data_set = relationship('DataSet')
+    dataset_id = Column(Integer, ForeignKey('dataset.id', ondelete="CASCADE"), primary_key=True)
+    dataset = relationship('Dataset')
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
     genome_region = relationship('GenomeRegion', backref='data')
     value = Column(Float)
     type = Column(String(20))
 
-    __table_args__ = (UniqueConstraint('data_set_id','genome_region_id'),{})
+    __table_args__ = (UniqueConstraint('dataset_id','genome_region_id'),{})
 
     @hybrid_property
     def all_data(self):
-        return [x['value'] for x in query_genome_data([self.data_set_id], self.genome_region.leftpos, self.genome_region.rightpos)]
+        return [x['value'] for x in query_genome_data([self.dataset_id], self.genome_region.leftpos, self.genome_region.rightpos)]
 
 
     __mapper_args__ = {'polymorphic_identity': 'genome_data',
@@ -388,11 +388,11 @@ class GenomeData(Base):
 
     def __repr__(self):
         return "%s: %5.2f -- %s" % \
-            (self.genome_region, self.value, self.data_set.name, )
+            (self.genome_region, self.value, self.dataset.name, )
 
 
-    def __init__(self, data_set_id, genome_region_id, value):
-        self.data_set_id = data_set_id
+    def __init__(self, dataset_id, genome_region_id, value):
+        self.dataset_id = dataset_id
         self.genome_region_id = genome_region_id
         self.value = value
 
@@ -400,16 +400,16 @@ class GenomeData(Base):
 class DiffExpData(GenomeData):
     __tablename__ = 'diff_exp_data'
 
-    data_set_id = Column(Integer, primary_key=True)
+    dataset_id = Column(Integer, primary_key=True)
     genome_region_id = Column(Integer, primary_key=True)
 
     diff_exp_analysis = relationship('DifferentialExpression')
 
     pval = Column(Float)
 
-    __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
-                                           ['genome_data.data_set_id', 'genome_data.genome_region_id'], ondelete='CASCADE'),\
-                      UniqueConstraint('data_set_id','genome_region_id'),{})
+    __table_args__ = (ForeignKeyConstraint(['dataset_id','genome_region_id'],\
+                                           ['genome_data.dataset_id', 'genome_data.genome_region_id'], ondelete='CASCADE'),\
+                      UniqueConstraint('dataset_id','genome_region_id'),{})
 
     __mapper_args__ = { 'polymorphic_identity': 'diff_exp_data' }
 
@@ -417,15 +417,15 @@ class DiffExpData(GenomeData):
         return "Diff Exp Data: %s %5.2f %5.2f %s" % \
             (self.genome_region, self.value, self.pval, self.diff_exp_analysis.name)
 
-    def __init__(self, data_set_id, genome_region_id, value, pval):
-        super(DiffExpData, self).__init__(data_set_id, genome_region_id, value)
+    def __init__(self, dataset_id, genome_region_id, value, pval):
+        super(DiffExpData, self).__init__(dataset_id, genome_region_id, value)
         self.pval = pval
 
 
 class ChIPPeakData(GenomeData):
     __tablename__ = 'chip_peak_data'
 
-    data_set_id = Column(Integer, primary_key=True)
+    dataset_id = Column(Integer, primary_key=True)
     genome_region_id = Column(Integer, primary_key=True)
 
     peak_analysis = relationship('Analysis')
@@ -440,9 +440,9 @@ class ChIPPeakData(GenomeData):
     def grouped_eventpos(cls):
         return func.ceil(ChIPPeakData.eventpos/400) * 400
 
-    __table_args__ = (ForeignKeyConstraint(['data_set_id','genome_region_id'],\
-                                           ['genome_data.data_set_id', 'genome_data.genome_region_id'], ondelete='CASCADE'),\
-                      UniqueConstraint('data_set_id','genome_region_id'),{})
+    __table_args__ = (ForeignKeyConstraint(['dataset_id','genome_region_id'],\
+                                           ['genome_data.dataset_id', 'genome_data.genome_region_id'], ondelete='CASCADE'),\
+                      UniqueConstraint('dataset_id','genome_region_id'),{})
 
     __mapper_args__ = { 'polymorphic_identity': 'chip_peak_data' }
 
@@ -450,8 +450,8 @@ class ChIPPeakData(GenomeData):
         return "ChIP Peak: %d-%d %5.2f %s" % \
             (self.genome_region.leftpos, self.genome_region.rightpos, self.value, self.peak_analysis.name)
 
-    def __init__(self, data_set_id, genome_region_id, value, eventpos, pval):
-        super(ChIPPeakData, self).__init__(data_set_id, genome_region_id, value)
+    def __init__(self, dataset_id, genome_region_id, value, eventpos, pval):
+        super(ChIPPeakData, self).__init__(dataset_id, genome_region_id, value)
         self.pval = pval
         self.eventpos = eventpos
 
@@ -491,12 +491,12 @@ ome = Session()
 from ome.components import Gene,TU,TUGenes
 
 
-grouped = ome.query(func.distinct(ChIPPeakData.data_set_id).label('data_set_id'),\
+grouped = ome.query(func.distinct(ChIPPeakData.dataset_id).label('dataset_id'),\
                     func.max(ChIPPeakData.value).label('value'),\
                     ChIPPeakData.grouped_eventpos.label('eventpos'),\
                     GenomeRegion.strand.label('strand')).\
                     join(GenomeRegion).\
-                    group_by(ChIPPeakData.data_set_id, ChIPPeakData.grouped_eventpos, GenomeRegion.strand).subquery()
+                    group_by(ChIPPeakData.dataset_id, ChIPPeakData.grouped_eventpos, GenomeRegion.strand).subquery()
 
 
 
@@ -511,16 +511,16 @@ gene_expression_data = ome.query(
           InVivoEnvironment.carbon_source.label('carbon_source'),
           InVivoEnvironment.nitrogen_source.label('nitrogen_source'),
           InVivoEnvironment.electron_acceptor.label('electron_acceptor'),
-          DataSet.type.label('dataset_type'),
-          DataSet.group_name.label('group_name'),
-          func.max(DataSet.id).label('max_dataset_id'),
+          Dataset.type.label('dataset_type'),
+          Dataset.group_name.label('group_name'),
+          func.max(Dataset.id).label('max_dataset_id'),
           func.avg(GenomeData.value).label('value'),
           func.stddev_pop(GenomeData.value).label('stddev')).\
-    join(GenomeData, DataSet, Strain, InVivoEnvironment).\
-    group_by(Gene.id, DataSet.group_name, Strain.id, DataSet.type, InVivoEnvironment.id,
+    join(GenomeData, Dataset, Strain, InVivoEnvironment).\
+    group_by(Gene.id, Dataset.group_name, Strain.id, Dataset.type, InVivoEnvironment.id,
              Gene.locus_id, Gene.name, Strain.name, InVivoEnvironment.carbon_source,
                                                     InVivoEnvironment.nitrogen_source,
-                                                    InVivoEnvironment.electron_acceptor).order_by(DataSet.type, InVivoEnvironment.id).subquery()
+                                                    InVivoEnvironment.electron_acceptor).order_by(Dataset.type, InVivoEnvironment.id).subquery()
 
 
 
@@ -552,7 +552,7 @@ chip_peak = ome.query(ChIPPeakAnalysis.id.label('id'),
                       Strain.id.label('strain_id'),
                       Strain.name.label('strain')).\
                       join(AnalysisComposition, ChIPPeakAnalysis.id == AnalysisComposition.analysis_id).\
-                      join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.data_set_id).\
+                      join(ChIPExperiment, ChIPExperiment.id == AnalysisComposition.dataset_id).\
                       join(Strain, ChIPExperiment.strain_id == Strain.id).\
                       group_by(ChIPPeakAnalysis.id, ChIPPeakAnalysis.environment_id, ChIPPeakAnalysis.group_name,
                                ChIPExperiment.target, ChIPExperiment.antibody, Strain.id).subquery()
@@ -573,8 +573,8 @@ diff_exp = ome.query(DifferentialExpression.id.label('id'),
                      NormalizedExpression.expression_type.label('expression_type')).\
                     join(AnalysisComposition2, DifferentialExpression.id == AnalysisComposition2.analysis_id).\
                     join(AnalysisComposition3, DifferentialExpression.id == AnalysisComposition3.analysis_id).\
-                    join(NormalizedExpression, AnalysisComposition2.data_set_id == NormalizedExpression.id).\
-                    join(NormalizedExpression2, AnalysisComposition3.data_set_id == NormalizedExpression2.id).\
+                    join(NormalizedExpression, AnalysisComposition2.dataset_id == NormalizedExpression.id).\
+                    join(NormalizedExpression2, AnalysisComposition3.dataset_id == NormalizedExpression2.id).\
                     join(Strain, Strain.id == NormalizedExpression.strain_id).\
                     join(Strain2, Strain2.id == NormalizedExpression2.strain_id).\
                     join(InVivoEnvironment, InVivoEnvironment.id == NormalizedExpression.environment_id).\
@@ -624,13 +624,13 @@ chip_peak_gene = ome.query(ChIPPeakData.value.label('peak_value'),
                            Gene.id.label('gene_id'),
                            Gene.locus_id.label('locus_id'),
                            GenomeRegion2.name.label('gene_name'),
-                           ChIPPeakData.data_set_id.label('chip_peak_id')).\
+                           ChIPPeakData.dataset_id.label('chip_peak_id')).\
                     join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
                     join(TU, GenomeRegionMap.genome_region_id_2 == TU.genome_region_id).\
                     join(TUGenes, TUGenes.tu_id == TU.id).\
                     join(Gene, Gene.id == TUGenes.gene_id).\
                     join(GenomeRegion, GenomeRegion.id == ChIPPeakData.genome_region_id).\
-                    join(chip_peak, chip_peak.c.id == ChIPPeakData.data_set_id).\
+                    join(chip_peak, chip_peak.c.id == ChIPPeakData.dataset_id).\
                     join(InVivoEnvironment, InVivoEnvironment.id == chip_peak.c.environment_id).\
                     join(GenomeRegion2, GenomeRegion2.id == TUGenes.gene_id).subquery()
 
@@ -658,19 +658,19 @@ chip_peak_gene_expression = ome.query(ChIPPeakData.value.label('peak_value'),
                  DiffExpData.genome_region_id.label('gene_genome_region_id'),
                  DiffExpData.value.label('value'),
                  DiffExpData.pval.label('pval'),
-                 ChIPPeakData.data_set_id.label('chip_peak_id'),
+                 ChIPPeakData.dataset_id.label('chip_peak_id'),
                  ChIPPeakAnalysis.group_name.label('chip_peak_group'),
-                 DiffExpData.data_set_id.label('diff_exp_id')).\
+                 DiffExpData.dataset_id.label('diff_exp_id')).\
                     join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
                     join(TU, GenomeRegionMap.genome_region_id_2 == TU.genome_region_id).\
                     join(TUGenes, TUGenes.tu_id == TU.id).\
                     join(DiffExpData, DiffExpData.genome_region_id == TUGenes.gene_id).\
-                    join(diff_exp_chip_peak, and_(DiffExpData.data_set_id == diff_exp_chip_peak.c.diff_exp_id,
-                                                  ChIPPeakData.data_set_id == diff_exp_chip_peak.c.chip_peak_id)).\
+                    join(diff_exp_chip_peak, and_(DiffExpData.dataset_id == diff_exp_chip_peak.c.diff_exp_id,
+                                                  ChIPPeakData.dataset_id == diff_exp_chip_peak.c.chip_peak_id)).\
                     join(Gene, Gene.id == TUGenes.gene_id).\
                     join(GenomeRegion, GenomeRegion.id == ChIPPeakData.genome_region_id).\
                     join(GenomeRegion2, GenomeRegion2.id == TUGenes.gene_id).\
-                    join(ChIPPeakAnalysis, ChIPPeakAnalysis.id == ChIPPeakData.data_set_id).subquery()
+                    join(ChIPPeakAnalysis, ChIPPeakAnalysis.id == ChIPPeakData.dataset_id).subquery()
 
 
 
@@ -698,7 +698,7 @@ InVivoEnvironment2 = aliased(InVivoEnvironment)
 
 differential_gene_expression_data = ome.query(DiffExpData.value.label('value'),
                                            DiffExpData.pval.label('pval'),
-                                           DiffExpData.data_set_id.label('diff_exp_id'),
+                                           DiffExpData.dataset_id.label('diff_exp_id'),
                                            NormalizedExpression.id.label('expression_id'),
                                            NormalizedExpression.expression_type.label('dataset_type'),
                                            Gene.id.label('gene_id'),
@@ -720,8 +720,8 @@ differential_gene_expression_data = ome.query(DiffExpData.value.label('value'),
                                         join(DifferentialExpression).\
                                         join(AnalysisComposition, DifferentialExpression.id == AnalysisComposition.analysis_id).\
                        					join(AnalysisComposition2, DifferentialExpression.id == AnalysisComposition2.analysis_id).\
-                       					join(NormalizedExpression, AnalysisComposition.data_set_id == NormalizedExpression.id).\
-                       					join(NormalizedExpression2, AnalysisComposition2.data_set_id == NormalizedExpression2.id).\
+                       					join(NormalizedExpression, AnalysisComposition.dataset_id == NormalizedExpression.id).\
+                       					join(NormalizedExpression2, AnalysisComposition2.dataset_id == NormalizedExpression2.id).\
                        					join(Strain, NormalizedExpression.strain_id == Strain.id).\
                        					join(Strain2, NormalizedExpression2.strain_id == Strain2.id).\
                        					join(InVivoEnvironment, NormalizedExpression.environment_id == InVivoEnvironment.id).\
@@ -775,13 +775,13 @@ class DifferentialGeneExpressionData(Base):
 					  								  self.value, self.pval)
 
 
-def query_genome_data(data_set_ids,leftpos=0,rightpos=1000,strand=['+','-'],value=0):
+def query_genome_data(dataset_ids,leftpos=0,rightpos=1000,strand=['+','-'],value=0):
     genome_data = omics_database.genome_data
     return genome_data.find({"$and":
                             [{"leftpos" : {"$gte": leftpos}},
                              {"leftpos": {"$lte": rightpos}},
                              {"strand": {"$in" : strand }},
-                             {"data_set_id": {"$in" : data_set_ids}}
+                             {"dataset_id": {"$in" : dataset_ids}}
                          ]})
 
 

@@ -12,7 +12,7 @@ def timing(function):
         arg_str = str(args)
         if arg_str[-2] == ",": # trailing comma
             arg_str = arg_str[:-2] + ")"
-        print "starting %s ...\r" % (function.func_name),
+        print "starting %s ... %s\n" % (function.func_name, args[0]),
         _stdout.flush()
         l = len(function.func_name)
         start = _time()

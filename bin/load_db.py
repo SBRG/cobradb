@@ -1,6 +1,8 @@
-from ome import base,settings,components,data,timing
+#!python
 
-from ome.loading import data_loading
+from ome import base,settings,components,datasets,models,timing
+
+from ome.loading import dataset_loading
 from ome.loading import component_loading
 from ome.loading import model_loading
 
@@ -44,21 +46,21 @@ if __name__ == "__main__":
             component_loading.write_chromosome_annotation_gff(base, components, chromosome)
 
 
-        data_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/crp', group_name='crp', normalize=normalize_flag, raw=raw_flag)
-        data_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/yome', group_name='yome', normalize=normalize_flag, raw=raw_flag)
+        dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/crp', group_name='crp', normalize=normalize_flag, raw=raw_flag)
+        dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/yome', group_name='yome', normalize=normalize_flag, raw=raw_flag)
 
-        data_loading.load_raw_files(settings.data_directory+'/chip_experiment/gff', group_name='trn', normalize=False, raw=raw_flag)
+        dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/gff', group_name='trn', normalize=False, raw=raw_flag)
 
-        data_loading.load_raw_files(settings.data_directory+'/rnaseq_experiment/fastq/crp', group_name='crp', normalize=False, raw=False)
-        data_loading.load_raw_files(settings.data_directory+'/rnaseq_experiment/fastq/yome', group_name='yome', normalize=False, raw=False)
-        #data_loading.load_raw_files(settings.data_directory+'/rnaseq_experiment/bam', normalize=True)
-        #data_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam', normalize=False)
-        data_loading.load_raw_files(settings.data_directory+'/microarray/asv2', group_name='asv2', raw=False)
-        data_loading.load_raw_files(settings.data_directory+'/microarray/ec2', group_name='ec2', raw=False)
+        dataset_loading.load_raw_files(settings.data_directory+'/rnaseq_experiment/fastq/crp', group_name='crp', normalize=False, raw=False)
+        dataset_loading.load_raw_files(settings.data_directory+'/rnaseq_experiment/fastq/yome', group_name='yome', normalize=False, raw=False)
+        #dataset_loading.load_raw_files(settings.data_directory+'/rnaseq_experiment/bam', normalize=True)
+        #dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam', normalize=False)
+        dataset_loading.load_raw_files(settings.data_directory+'/microarray/asv2', group_name='asv2', raw=False)
+        dataset_loading.load_raw_files(settings.data_directory+'/microarray/ec2', group_name='ec2', raw=False)
 
 
-        experiment_sets = data_loading.query_experiment_sets()
-        data_loading.load_experiment_sets(experiment_sets)
+        experiment_sets = dataset_loading.query_experiment_sets()
+        dataset_loading.load_experiment_sets(experiment_sets)
 
 
 
@@ -70,34 +72,34 @@ if __name__ == "__main__":
 
         old_gff_file = settings.data_directory+'/annotation/NC_000913.2_old.gff'
 
-        #data_loading.run_cuffquant(base, data, genome, group_name='crp', debug=False)
-        #data_loading.run_cuffnorm(base, data, genome, group_name='crp', gff_file=old_gff_file, debug=False, overwrite=True)
-        #data_loading.run_cuffnorm(base, data, genome, group_name='yome', debug=False, overwrite=True)
-        #data_loading.run_cuffdiff(base, data, genome, group_name='crp', gff_file=old_gff_file, debug=False, overwrite=True)
-        #data_loading.run_cuffdiff(base, data, genome, group_name='yome', debug=False, overwrite=True)
-        #data_loading.run_gem(base, data, genome, debug=True)
+        #dataset_loading.run_cuffquant(base, datasets, genome, group_name='crp', debug=False)
+        #dataset_loading.run_cuffnorm(base, datasets, genome, group_name='crp', gff_file=old_gff_file, debug=False, overwrite=True)
+        #dataset_loading.run_cuffnorm(base, datasets, genome, group_name='yome', debug=False, overwrite=True)
+        #dataset_loading.run_cuffdiff(base, datasets, genome, group_name='crp', gff_file=old_gff_file, debug=False, overwrite=True)
+        #dataset_loading.run_cuffdiff(base, datasets, genome, group_name='yome', debug=False, overwrite=True)
+        #dataset_loading.run_gem(base, datasets, genome, debug=True)
 
 
-        data_loading.load_gem(session.query(ChIPPeakAnalysis).all(), base, data, genome)
-        data_loading.load_gff_chip_peaks(session.query(ChIPPeakAnalysis).all(), base, data, genome, group_name='gff-BK')
+        dataset_loading.load_gem(session.query(ChIPPeakAnalysis).all(), base, datasets, genome)
+        dataset_loading.load_gff_chip_peaks(session.query(ChIPPeakAnalysis).all(), base, datasets, genome, group_name='gff-BK')
 
-        data_loading.load_extra_analyses(base, data, genome, settings.data_directory+'/ChIP_peaks/gps-curated-HL28Aug14', group_name='gps-curated-HL28Aug14')
-        data_loading.load_gff_chip_peaks(session.query(ChIPPeakAnalysis).all(), base, data, genome, group_name='gps-curated-HL28Aug14')
+        dataset_loading.load_extra_analyses(base, datasets, genome, settings.data_directory+'/ChIP_peaks/gps-curated-HL28Aug14', group_name='gps-curated-HL28Aug14')
+        dataset_loading.load_gff_chip_peaks(session.query(ChIPPeakAnalysis).all(), base, datasets, genome, group_name='gps-curated-HL28Aug14')
 
         component_loading.load_kegg_pathways(base, components)
 
-        data_loading.load_cuffnorm(base, data, group_name='crp')
-        data_loading.load_cuffnorm(base, data, group_name='yome')
-        data_loading.load_cuffdiff(group_name='crp')
-        data_loading.load_cuffdiff(group_name='yome')
+        dataset_loading.load_cuffnorm(base, datasets, group_name='crp')
+        dataset_loading.load_cuffnorm(base, datasets, group_name='yome')
+        dataset_loading.load_cuffdiff(group_name='crp')
+        dataset_loading.load_cuffdiff(group_name='yome')
 
-        data_loading.load_arraydata(settings.data_directory+'/microarray/formatted_asv2.txt', group_name='asv2')
-        data_loading.load_arraydata(settings.data_directory+'/microarray/formatted_ec2.txt', group_name='ec2')
+        dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_asv2.txt', group_name='asv2')
+        dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_ec2.txt', group_name='ec2')
 
-        data_loading.run_array_ttests(base, data, genome, group_name='asv2')
-        data_loading.run_array_ttests(base, data, genome, group_name='ec2')
+        dataset_loading.run_array_ttests(base, datasets, genome, group_name='asv2')
+        dataset_loading.run_array_ttests(base, datasets, genome, group_name='ec2')
 
-        data_loading.make_genome_region_map(base, data, genome)
+        dataset_loading.make_genome_region_map(base, datasets, genome)
         """
 
 

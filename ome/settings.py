@@ -54,21 +54,21 @@ except:
     except:
         default_home = ""
 
-default_data_dir = __join(default_home, "om_data", "")
+default_data_dir = __join(default_home, "ome_data", "")
 config.set("MISC", "home_directory", default_home)
 config.set("MISC", "data_directory", default_data_dir)
 del default_home, default_data_dir
 config.add_section("EXECUTABLES")
 
 # overwrite defaults settings with settings from the file
-def load_settings_from_file(filepath="settings.ini", in_omlib=True):
+def load_settings_from_file(filepath="settings.ini", in_omelib=True):
     """reload settings from a different settings file
 
     filepath: The path to the settings file to use
 
     in_omelib: Whether or not the path given is a relative path from the omlib
         directory"""
-    if in_omlib:
+    if in_omelib:
         filepath = __join(omelib_directory, filepath)
     config.read(filepath)
 
@@ -152,4 +152,4 @@ _base_site_file = \
 
 def write_apache_site_file():
     with open(ome_directory + "ome.site", "w") as outfile:
-        outfile.write(_base_site_file.replace("OMELIB_DIR", omlib_directory))
+        outfile.write(_base_site_file.replace("OMELIB_DIR", omelib_directory))
