@@ -1,5 +1,3 @@
-===
-
 #Installation of the OME Framework
 
 ## Development version
