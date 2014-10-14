@@ -1,4 +1,4 @@
-#!python
+#! /usr/bin/python
 
 from ome import base,settings,components,datasets,models,timing
 
@@ -13,13 +13,15 @@ from pymongo import ASCENDING
 
 if __name__ == "__main__":
 
-    #if not query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
-    #                    'are you sure you want to do this?'): sys.exit()
+    if not query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
+                        'are you sure you want to do this?'): sys.exit()
 
 
     base.Base.metadata.drop_all()
-    base.omics_database.genome_data.drop()
     base.Base.metadata.create_all()
+
+    try: base.omics_database.genome_data.drop()
+    except: None
     #base.engine.execute(CreateSequence(Sequence('wids')))
 
 
@@ -27,7 +29,7 @@ if __name__ == "__main__":
         for line in file:
             genbank_file = line.rstrip('\n')
 
-            if genbank_file not in ['NC_000913.2.gb']: continue
+            #if genbank_file not in ['NC_000913.2.gb']: continue
 
             component_loading.load_genome(genbank_file, base, components)
 
