@@ -2,6 +2,7 @@
 *.out
 # C extensions
 *.so
+*.ipynb_*
 
 # Packages
 *.egg
