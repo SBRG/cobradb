@@ -262,6 +262,7 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 
+pip install mock
 import mock
 
 MOCK_MODULES = ['sqlalchemy.orm']
