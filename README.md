@@ -3,7 +3,7 @@ The OME Framework
 
 The OME Framework is a systems biology and bioinformatics framework that helps to enable a broad array of iterative and evolving systems biology workflows.
 
-[Installation](INSTALL.md)
+##[Installation](INSTALL.md)
 
 ###Its core features are 
 
