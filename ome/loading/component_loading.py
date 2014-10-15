@@ -356,7 +356,7 @@ def load_genome(genbank_file, base, components):
     db_xref_data_source_id = {data_source.name:data_source.id for data_source in session.query(base.DataSource).all()}
 
 
-    for feature in gb_file.features[0:100]:
+    for feature in gb_file.features:
         ome_gene = {'long_name':''}
         ome_protein = {'long_name':''}
 

@@ -9,11 +9,12 @@ from ome.loading import model_loading
 from sqlalchemy.schema import Sequence,CreateSequence
 from pymongo import ASCENDING
 
+import os
 
 
 if __name__ == "__main__":
 
-    if not query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
+    if not dataset_loading.query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
                         'are you sure you want to do this?'): sys.exit()
 
 
