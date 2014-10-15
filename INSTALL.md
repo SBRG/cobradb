@@ -6,7 +6,7 @@
 ```
 git clone https://github.com/SBRG/ome.git
 cd ome
-sudo python setup.py develop
+python setup.py develop
 ```
 
 ####After adding data to ome/data
