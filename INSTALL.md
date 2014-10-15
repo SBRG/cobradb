@@ -21,8 +21,8 @@ All of the required dependencies *should* install automatically through setup.py
 
 #####On ubuntu
 ```
-sudo apt-get install python-dev zlib1g-dev samtools
-sudo pip install cython pysam
+sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-dev gfortran
+sudo pip install cython pysam numpy scipy pandas
 ```
 
 ####Optional Dependencies
