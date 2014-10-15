@@ -311,7 +311,7 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome, 
 
 
 @timing
-def load_genome(genbank_file, base, components):
+def load_genome(genbank_file, base, components, debug=False):
 
     from Bio import SeqIO
 
@@ -356,7 +356,8 @@ def load_genome(genbank_file, base, components):
     db_xref_data_source_id = {data_source.name:data_source.id for data_source in session.query(base.DataSource).all()}
 
 
-    for feature in gb_file.features:
+    for i,feature in enumerate(gb_file.features):
+        if debug and i > 100: continue
         ome_gene = {'long_name':''}
         ome_protein = {'long_name':''}
 
@@ -683,12 +684,12 @@ def write_chromosome_annotation_gff(base, components, chromosome):
     session.close()
 
 
-
-metacyc_genes = parse_metacyc_dat('genes.dat')
-metacyc_promoters = parse_metacyc_dat('promoters.dat')
-metacyc_proteins = parse_metacyc_dat('proteins.dat')
-metacyc_ligands = parse_metacyc_dat('compounds.dat')
-metacyc_protein_cplxs = parse_metacyc_dat('protligandcplxes.dat')
-metacyc_tus = parse_metacyc_dat('transunits.dat')
-
+try:
+    metacyc_genes = parse_metacyc_dat('genes.dat')
+    metacyc_promoters = parse_metacyc_dat('promoters.dat')
+    metacyc_proteins = parse_metacyc_dat('proteins.dat')
+    metacyc_ligands = parse_metacyc_dat('compounds.dat')
+    metacyc_protein_cplxs = parse_metacyc_dat('protligandcplxes.dat')
+    metacyc_tus = parse_metacyc_dat('transunits.dat')
+except: None
 

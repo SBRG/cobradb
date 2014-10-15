@@ -30,7 +30,7 @@ if __name__ == "__main__":
     for genbank_file in os.listdir(settings.data_directory+'/annotation/genbank'):
         #if genbank_file not in ['NC_000913.2.gb']: continue
 
-        component_loading.load_genome(genbank_file, base, components)
+        component_loading.load_genome(genbank_file, base, components, debug=True)
 
 
     session = base.Session()
