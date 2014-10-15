@@ -58,6 +58,11 @@ except:
 default_data_dir = __join(default_home, "ome_data", "")
 config.set("MISC", "home_directory", default_home)
 config.set("MISC", "data_directory", default_data_dir)
+
+if not __os.path.isdir(default_data_dir):
+    __os.system('mkdir %s' % (default_data_dir))
+    __os.system('mv %s %s' % (omelib_directory, default_data_dir))
+
 del default_home, default_data_dir
 config.add_section("EXECUTABLES")
 
@@ -137,7 +142,11 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
 
 
 load_settings_from_file()
+
+
 del SafeConfigParser, modules
+
+
 
 _base_site_file = \
 """WSGIScriptAlias /ome OMELIB_DIRserver.py
