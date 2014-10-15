@@ -13,7 +13,7 @@ python setup.py develop
 ```
 python bin/load_db.py
 ```
-This will create a directory *ome_data* in your home folder by default.  You can move this folder and change the location by altering the value in ome/ome/settings.ini
+This will create a directory **ome_data** in your home folder by default.  You can move this folder and change the location by altering the value in **ome/ome/settings.ini**
 
 
 ####Dependencies
