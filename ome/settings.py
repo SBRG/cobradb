@@ -42,7 +42,8 @@ config = SafeConfigParser()
 config.add_section("DATABASE")
 config.set("DATABASE", "postgres_host", "localhost:5432")
 config.set("DATABASE", "postgres_database", "ome")
-config.set("DATABASE", "password", "")
+config.set("DATABASE", "postgres_user", "")
+config.set("DATABASE", "postgres_password", "")
 
 config.add_section("MISC")
 config.set("MISC", "entrez_email", "SET_ENTREZ_EMAIL")
@@ -66,7 +67,7 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
 
     filepath: The path to the settings file to use
 
-    in_omelib: Whether or not the path given is a relative path from the omlib
+    in_omelib: Whether or not the path given is a relative path from the omelib
         directory"""
     if in_omelib:
         filepath = __join(omelib_directory, filepath)
