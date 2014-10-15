@@ -128,7 +128,13 @@ def parse_model(name, id_style='cobrapy'):
             model = cobra.io.load_matlab_model(join(settings.data_directory, 'models', name+'.mat'))
         except:
             model = cobra.io.read_sbml_model(join(settings.data_directory, 'models', name+'.xml'))
-        with open(join(settings.data_directory, 'models', 'model_pickles', name+'.pickle'), 'w') as f:
+
+        pickle_dir = join(settings.data_directory, 'models', 'model_pickles')
+
+        if not os.path.isdir(pickle_dir):
+            os.mkdir(pickle_dir)
+
+        with open(join(pickle_dir, name+'.pickle'), 'w') as f:
             pickle.dump(model, f)
 
     # convert the ids

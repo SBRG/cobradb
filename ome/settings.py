@@ -61,7 +61,7 @@ config.set("MISC", "data_directory", default_data_dir)
 
 if not __os.path.isdir(default_data_dir):
     __os.system('mkdir %s' % (default_data_dir))
-    __os.system('mv %s %s' % (omelib_directory, default_data_dir))
+    __os.system('cp -r %s* %s' % (omelib_directory+'data/', default_data_dir))
 
 del default_home, default_data_dir
 config.add_section("EXECUTABLES")
