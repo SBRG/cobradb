@@ -41,7 +41,7 @@ class Model(Base):
 
 
 
-class Model_Gene(Base):
+class ModelGene(Base):
     __tablename__='model_gene'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
@@ -50,7 +50,7 @@ class Model_Gene(Base):
 
 
 
-class Model_Reaction(Base):
+class ModelReaction(Base):
     __tablename__='model_reaction'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
@@ -64,7 +64,7 @@ class Model_Reaction(Base):
 
 
 
-class GPR_Matrix(Base):
+class GPRMatrix(Base):
     __tablename__='gpr_matrix'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
@@ -73,7 +73,7 @@ class GPR_Matrix(Base):
 
 
 
-class Compartmentalized_Component(Base):
+class CompartmentalizedComponent(Base):
     __tablename__='compartmentalized_component'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
@@ -83,7 +83,7 @@ class Compartmentalized_Component(Base):
 
 
 
-class Model_Compartmentalized_Component(Base):
+class ModelCompartmentalizedComponent(Base):
     __tablename__='model_compartmentalized_component'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     model_id = Column(Integer, ForeignKey('model.id'), nullable=False)
@@ -99,7 +99,7 @@ class Compartment(Base):
 
 
 
-class Reaction_Matrix(Base):
+class ReactionMatrix(Base):
     __tablename__='reaction_matrix'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     reaction_id = Column(Integer, ForeignKey('reaction.id'), nullable=False)
@@ -109,7 +109,7 @@ class Reaction_Matrix(Base):
 
 
 
-class Escher_Map(Base):
+class EscherMap(Base):
     __tablename__='escher_map'
     id = Column(Integer, primary_key=True)
     biggid = Column(String)
