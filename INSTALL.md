@@ -5,6 +5,9 @@
 ####Dependencies
 The current version of OME is dependent on postgresql, mongodb, and a number of python packages. In the future it will run natively on SQLlite making postgresql and mongodb optional and the overall setup much simpler.
 
+######First install and configure the databases.
+
+
 #####On OSX with homebrew http://brew.sh/
 ```
 brew install postgresql mongodb
@@ -13,7 +16,6 @@ brew install postgresql mongodb
 #####On Ubuntu
 ```
 sudo apt-get install postgresql postgresql-contrib postgresql-server-dev-all mongodb
-
 ```
 Setting up the database
 ```
