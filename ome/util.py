@@ -1,5 +1,5 @@
 from ome import base, settings
-from ome.data import *
+from ome.datasets import *
 from ome.components import *
 
 from IPython.display import HTML
@@ -16,7 +16,7 @@ import cobra
 import cPickle as pickle
 
 
-model = pickle.load(open(settings.data_directory+'/models/iJO1366.pickle', "rb"))
+model = pickle.load(open(settings.data_directory+'models/model_pickles/iJO1366.pickle', "rb"))
 #model = cobra.io.load_matlab_model(settings.data_directory+'/models/iJO1366')
 
 
@@ -116,14 +116,14 @@ def get_indirect_regulation_frame(rxn, factors=['ArcA','Fnr'], condition=None):
 
 
 
-def add_gene_group(name, genes, genome):
+def add_gene_group(name, genes, chromosome):
     session = Session()
 
     gene_group = session.get_or_create(GeneGroup, name = name)
 
     for gene in genes:
         if isinstance(gene, basestring):
-            gene = session.query(Gene).filter(and_(Gene.genome_id == genome.id,
+            gene = session.query(Gene).filter(and_(Gene.chromosome_id == chromosome.id,
                                                    or_(Gene.name == gene,
                                                        Gene.locus_id == gene))).first()
 
