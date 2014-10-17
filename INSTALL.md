@@ -31,10 +31,17 @@ All of the rest of the dependencies *should* install automatically through setup
 * [pysam](https://github.com/pysam-developers/pysam) which depends on [samtools](http://samtools.sourceforge.net/)
 * [numpy](http://www.numpy.org/), [scipy](http://www.scipy.org/), and [pandas](http://pandas.pydata.org/) which depending on your OS and configuration can be non-trivial
 
-#####On ubuntu
+
+#####On OSX with homebrew http://brew.sh/
+```
+brew install samtools glpk
+sudo pip install cython pysam numpy scipy pandas cobra
+```
+
+#####On Ubuntu
 ```
 sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-dev gfortran
-sudo pip install cython pysam numpy scipy pandas
+sudo pip install cython pysam numpy scipy pandas cobra
 ```
 
 ### Finally, clone the repository and setup in develop mode
