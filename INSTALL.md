@@ -17,13 +17,14 @@ brew install postgresql mongodb
 ```
 sudo apt-get install postgresql postgresql-contrib postgresql-server-dev-all mongodb
 ```
-Setting up the database
+#####Setting up the database
 ```
 sudo -i -u postgres
 createuser -d -l -s <your username>
 createdb ome
 exit
 ```
+######Next install additional python packages.
 
 All of the rest of the dependencies *should* install automatically through setup.py below.  However, in practice you may want to install these individually ahead of time.
 * [cobrapy](https://github.com/opencobra/cobrapy/blob/master/README.md) for which you may want to refer to the [installation docs](https://github.com/opencobra/cobrapy/blob/master/INSTALL.md).
@@ -36,7 +37,7 @@ sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-de
 sudo pip install cython pysam numpy scipy pandas
 ```
 
-#### Clone the repository and setup in develop mode
+### Finally, clone the repository and setup in develop mode
 ```
 git clone https://github.com/SBRG/ome.git
 cd ome
