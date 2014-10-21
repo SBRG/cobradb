@@ -422,12 +422,12 @@ class DependentObjects:
                         genequery = session.query(Gene).filter(Gene.locus_id == gene.id).first()
                         modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                         #genequery = session.query(Gene).filter(Gene.locus_id == gene.id).filter(Gene.genome_id == modelquery.genome_id).first()
-                        object = Model_Gene(model_id = modelquery.id, gene_id = genequery.id)
+                        object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
                         session.add(object)
                     elif session.query(Gene).filter(Gene.name == gene.id).first() != None:
                         genequery = session.query(Gene).filter(Gene.name == gene.id).first()
                         modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
-                        object = Model_Gene(model_id = modelquery.id, gene_id = genequery.id)
+                        object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
                         session.add(object)
                     else:
                         #geneObject = Gene(locus_id = gene.id, leftpos=None, rightpos=None, strand=None, name=gene.id)
@@ -438,7 +438,7 @@ class DependentObjects:
 
                             genecheck = session.query(Gene).filter(Gene.id == synonymquery.ome_id).first()
                             if genecheck:
-                                object = Model_Gene(model_id = modelquery.id, gene_id = synonymquery.ome_id)
+                                object = ModelGene(model_id = modelquery.id, gene_id = synonymquery.ome_id)
                                 session.add(object)
 
                                 if modelquery.bigg_id == "RECON1":
@@ -456,7 +456,7 @@ class DependentObjects:
                 identifier = session.query(Compartment).filter(Compartment.name == metabolite.id[-1:len(metabolite.id)]).first()
                 m = session.query(Metabolite).filter(Metabolite.name == metabolite.id.split("_")[0]).first()
                 #m = session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first()
-                object = Compartmentalized_Component(component_id = m.id, compartment_id = identifier.id)
+                object = CompartmentalizedComponent(component_id = m.id, compartment_id = identifier.id)
                 session.add(object)
 
     def loadModelCompartmentalizedComponent(self, modellist, session):
@@ -465,7 +465,7 @@ class DependentObjects:
                 componentquery = session.query(Metabolite).filter(Metabolite.name == metabolite.id.split("_")[0]).first()
                 #componentquery = session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first()
                 compartmentquery = session.query(Compartment).filter(Compartment.name == metabolite.id[-1:len(metabolite.id)]).first()
-                compartmentalized_component_query = session.query(Compartmentalized_Component).filter(Compartmentalized_Component.component_id == componentquery.id).filter(Compartmentalized_Component.compartment_id == compartmentquery.id).first()
+                compartmentalized_component_query = session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == componentquery.id).filter(CompartmentalizedComponent.compartment_id == compartmentquery.id).first()
                 modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                 if modelquery is None:
                     print "model query is none", model.id
@@ -473,7 +473,7 @@ class DependentObjects:
 
                 if compartmentalized_component_query is None:
                     print "compartmentalized_component_query is none", metabolite.id
-                object = Model_Compartmentalized_Component(model_id = modelquery.id, compartmentalized_component_id = compartmentalized_component_query.id, compartment_id = compartmentquery.id)
+                object = ModelCompartmentalizedComponent(model_id = modelquery.id, compartmentalized_component_id = compartmentalized_component_query.id, compartment_id = compartmentquery.id)
                 session.add(object)
 
 
@@ -482,7 +482,7 @@ class DependentObjects:
             for reaction in model.reactions:
                 reactionquery = session.query(Reaction).filter(Reaction.name == reaction.id).first()
                 modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
-                object = Model_Reaction(reaction_id = reactionquery.id, model_id = modelquery.id, name = reaction.id, upperbound = reaction.upper_bound, lowerbound = reaction.lower_bound, gpr = reaction.gene_reaction_rule)
+                object = ModelReaction(reaction_id = reactionquery.id, model_id = modelquery.id, name = reaction.id, upperbound = reaction.upper_bound, lowerbound = reaction.lower_bound, gpr = reaction.gene_reaction_rule)
                 session.add(object)
 
 
@@ -493,25 +493,25 @@ class DependentObjects:
                     if gene.id != 's0001':
 
                         model_query = session.query(Model).filter(Model.bigg_id == model.id).first()
-                        model_gene_query = session.query(Model_Gene).join(Gene).filter(Gene.locus_id == gene.id).filter(Model_Gene.model_id == model_query.id).first()
+                        model_gene_query = session.query(ModelGene).join(Gene).filter(Gene.locus_id == gene.id).filter(ModelGene.model_id == model_query.id).first()
 
                         if model_gene_query != None:
-                            model_reaction_query = session.query(Model_Reaction).filter(Model_Reaction.name == reaction.id).filter(Model_Reaction.model_id == model_query.id).first()
-                            object = GPR_Matrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
+                            model_reaction_query = session.query(ModelReaction).filter(ModelReaction.name == reaction.id).filter(ModelReaction.model_id == model_query.id).first()
+                            object = GPRMatrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
                             session.add(object)
                         else:
-                            model_gene_query = session.query(Model_Gene).join(Gene).filter(Gene.name == gene.id).filter(Model_Gene.model_id == model_query.id).first()
+                            model_gene_query = session.query(ModelGene).join(Gene).filter(Gene.name == gene.id).filter(ModelGene.model_id == model_query.id).first()
                             if model_gene_query != None:
-                                model_reaction_query = session.query(Model_Reaction).filter(Model_Reaction.name == reaction.id).filter(Model_Reaction.model_id == model_query.id).first()
-                                object = GPR_Matrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
+                                model_reaction_query = session.query(ModelReaction).filter(ModelReaction.name == reaction.id).filter(ModelReaction.model_id == model_query.id).first()
+                                object = GPRMatrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
                                 session.add(object)
                             else:
                                 synonymquery = session.query(Synonyms).filter(Synonyms.synonym == gene.id.split(".")[0]).first()
                                 if synonymquery != None:
                                     if synonymquery.ome_id != None:
-                                        model_gene_query = session.query(Model_Gene).join(Gene).filter(Gene.id == synonymquery.ome_id).filter(Model_Gene.model_id == model_query.id).first()
-                                        model_reaction_query = session.query(Model_Reaction).filter(Model_Reaction.name == reaction.id).filter(Model_Reaction.model_id == model_query.id).first()
-                                        object = GPR_Matrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
+                                        model_gene_query = session.query(ModelGene).join(Gene).filter(Gene.id == synonymquery.ome_id).filter(ModelGene.model_id == model_query.id).first()
+                                        model_reaction_query = session.query(ModelReaction).filter(ModelReaction.name == reaction.id).filter(ModelReaction.model_id == model_query.id).first()
+                                        object = GPRMatrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
                                         session.add(object)
                                     else:
                                         print "ome id is null " + synonymquery.ome_id
@@ -527,12 +527,12 @@ class DependentObjects:
                     componentquery = session.query(Metabolite).filter(Metabolite.name == metabolite.id.split("_")[0]).first()
                     #componentquery = session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first()
                     compartmentquery = session.query(Compartment).filter(Compartment.name == metabolite.id[-1:len(metabolite.id)]).first()
-                    compartmentalized_component_query = session.query(Compartmentalized_Component).filter(Compartmentalized_Component.component_id == componentquery.id).filter(Compartmentalized_Component.compartment_id == compartmentquery.id).first()
-                    if not session.query(Reaction_Matrix).filter(Reaction_Matrix.reaction_id == reactionquery.id).filter(Reaction_Matrix.compartmentalized_component_id == compartmentalized_component_query.id).count():
+                    compartmentalized_component_query = session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == componentquery.id).filter(CompartmentalizedComponent.compartment_id == compartmentquery.id).first()
+                    if not session.query(ReactionMatrix).filter(ReactionMatrix.reaction_id == reactionquery.id).filter(ReactionMatrix.compartmentalized_component_id == compartmentalized_component_query.id).count():
                         for stoichKey in reaction._metabolites.keys():
                             if str(stoichKey) == metabolite.id:
                                 stoichiometryobject = reaction._metabolites[stoichKey]
-                        object = Reaction_Matrix(reaction_id = reactionquery.id, compartmentalized_component_id = compartmentalized_component_query.id, stoichiometry = stoichiometryobject)
+                        object = ReactionMatrix(reaction_id = reactionquery.id, compartmentalized_component_id = compartmentalized_component_query.id, stoichiometry = stoichiometryobject)
                         session.add(object)
 
     def loadEscher(self, session):
