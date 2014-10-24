@@ -24,7 +24,9 @@ metadata = MetaData(bind=engine)
 try:
     connection = pymongo.Connection()
     omics_database = connection.omics_database
-except:
+except Exception as e:
+    from warnings import warn
+    warn("Failed to connect to mongo with error: " + e.message)
     omics_database = None
 
 

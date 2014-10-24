@@ -35,3 +35,7 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Other
+gurobi.log
+nohup.out
