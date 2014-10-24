@@ -1,4 +1,5 @@
 import sys, os, math, re
+from warnings import warn
 
 from sqlalchemy import text, or_, and_, func
 
@@ -317,10 +318,13 @@ def load_genome(genbank_file, base, components, debug=False):
 
     session = base.Session()
     try:
-      gb_file = SeqIO.read(settings.data_directory+'/annotation/GenBank/'+genbank_file,'gb')
-    except:
-      print 'Error, bipython cannot parse %s' % (genbank_file)
-      return
+        gb_file = SeqIO.read(settings.data_directory+'/annotation/genbank/'+genbank_file,'gb')
+    except IOError:
+        warn("File '%s' not found" % genbank_file)
+    except Exception as e:
+        warn('biopython failed to parse %s with error "%s"' %
+             (genbank_file, e.message))
+        return
 
     #from IPython import embed; embed()
     bioproject_id = ''
@@ -433,9 +437,7 @@ def load_genome(genbank_file, base, components, debug=False):
                     else:
                         print gene.id, " ->the gene id is none"
 
-
             if 'gene_synonym' in feature.qualifiers:
-
                 for ref in feature.qualifiers['gene_synonym']:
                     syn = ref.split(';')
                     for value in syn:
@@ -448,9 +450,15 @@ def load_genome(genbank_file, base, components, debug=False):
                         session.add(synonym)
 
             if 'product' in feature.qualifiers and feature.type == 'CDS':
-
-                try: ome_protein['name'] = feature.qualifiers['protein_id'][0]  #if no protein_id
-                except: continue                                                #don't make a protein entry
+                try:
+                    ome_protein["long_name"] = feature.qualifiers["gene"]
+                except KeyError:
+                    None
+                # If there is no protein_id, don't make a protein entry
+                try:
+                    ome_protein['name'] = feature.qualifiers['protein_id'][0]
+                except (KeyError, IndexError) as e:
+                    continue  # don't make a protein entry
                 ome_protein['gene_id'] = gene.id
 
                 session.get_or_create(components.Protein, **ome_protein)
