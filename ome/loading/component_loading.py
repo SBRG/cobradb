@@ -355,6 +355,8 @@ def load_genome(genbank_file, base, components, debug=False):
         chromosome = base.Chromosome(**ome_chromosome)
         session.add(chromosome)
         session.flush()
+    else:
+        return
 
 
     db_xref_data_source_id = {data_source.name:data_source.id for data_source in session.query(base.DataSource).all()}

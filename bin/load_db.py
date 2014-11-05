@@ -8,7 +8,7 @@ from ome.loading import model_loading
 
 from sqlalchemy.schema import Sequence,CreateSequence
 from pymongo import ASCENDING
-
+import sys
 import os
 
 
@@ -17,14 +17,12 @@ if __name__ == "__main__":
     if not dataset_loading.query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
                         'are you sure you want to do this?'): sys.exit()
 
-
     base.Base.metadata.drop_all()
     base.Base.metadata.create_all()
 
     try: base.omics_database.genome_data.drop()
     except: None
     #base.engine.execute(CreateSequence(Sequence('wids')))
-
 
 
     for genbank_file in os.listdir(settings.data_directory+'annotation/genbank'):

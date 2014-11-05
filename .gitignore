@@ -1,4 +1,11 @@
 *.py[cod]
+*.xml
+*.gb
+*.gbs
+*.gbk
+*.bt2
+*.fna
+*.txt
 *.out
 # C extensions
 *.so

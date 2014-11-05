@@ -249,22 +249,31 @@ class Metabolite(Component):
 
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
     kegg_id = Column(String)
+    seed = Column(String)
+    chebi = Column(String)
+    metacyc = Column(String)
+    upa = Column(String)
+    brenda = Column(String)
     cas_number = Column(String)
     name = Column(String)
     formula = Column(String(200))
     smiles = Column(String(200))
     long_name = Column(String)
     flag = Column(Boolean)
-    def __init__(self, name, kegg_id, cas_number, formula, long_name, flag, smiles=None):
+    def __init__(self, name, kegg_id, cas_number, formula, long_name, seed, metacyc, upa, brenda, chebi, flag, smiles=None):
         super(Metabolite, self).__init__(name)
         self.formula = formula
         self.smiles = smiles
         self.kegg_id = kegg_id
         self.cas_number = cas_number
         self.long_name = long_name
+        self.seed = seed
+        self.metacyc = metacyc
+        self.upa = upa
+        self.brenda = brenda
+        self.chebi = chebi
         self.name = name
-        self.flag = flag
-
+        self.flag = flag    
     def __repr__(self):
         return "Small Molecule (#%d, %s)" % \
             (self.id, self.long_name)
