@@ -642,10 +642,10 @@ def load_kegg_pathways(base, components):
 
 
 @timing
-def load_regulatory_network(base, components, data, genome):
+def load_regulatory_network(base, components, datasets, chromosome):
 
-    data.RegulatoryNetwork.__table__.drop()
-    data.RegulatoryNetwork.__table__.create()
+    datasets.RegulatoryNetwork.__table__.drop()
+    datasets.RegulatoryNetwork.__table__.create()
 
 
     session = base.Session()
@@ -655,16 +655,16 @@ def load_regulatory_network(base, components, data, genome):
 
 
         reg_gene = session.query(components.Gene).filter(and_(func.lower(components.Gene.name) == vals[0].lower(),
-                                                              components.Gene.genome_id == genome.id)).first()
+                                                              components.Gene.chromosome_id == chromosome.id)).first()
 
         regd_gene = session.query(components.Gene).filter(and_(func.lower(components.Gene.name) == vals[1].lower(),
-                                                               components.Gene.genome_id == genome.id)).first()
+                                                               components.Gene.chromosome_id == chromosome.id)).first()
 
         if reg_gene is None or regd_gene is None: continue
 
-        session.get_or_create(data.RegulatoryNetwork, reg_gene_id=reg_gene.id, regd_gene_id=regd_gene.id,
-                                                      direction=vals[2],
-                                                      evidence=vals[3])
+        session.get_or_create(datasets.RegulatoryNetwork, reg_gene_id=reg_gene.id, regd_gene_id=regd_gene.id,
+                                                          direction=vals[2],
+                                                          evidence=vals[3])
 
 
     session.flush()
