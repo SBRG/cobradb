@@ -18,11 +18,18 @@ brew install postgresql mongodb
 sudo apt-get install postgresql postgresql-contrib postgresql-server-dev-all mongodb
 ```
 #####Setting up the database
+
+######On Ubuntu and older versions of OSX
 ```
-sudo -i -u postgres
+sudo -i -u postgres                    
 createuser -d -l -s <your username>
 createdb ome
 exit
+```
+
+#####On Newer versions of OSX
+```
+createdb ome
 ```
 ######Next install additional python packages.
 
