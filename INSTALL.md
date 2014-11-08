@@ -27,7 +27,6 @@ exit
 ```
 Note: newer versions of OSX only require ```createdb ome```
 
-```
 ######Next install additional python packages.
 
 All of the rest of the dependencies *should* install automatically through setup.py below.  However, in practice you may want to install these individually ahead of time.
