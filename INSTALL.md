@@ -45,7 +45,6 @@ brew install samtools glpk
 sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-dev gfortran
 ```
 
-#####With pip
 ```
 sudo pip install cython pysam numpy scipy pandas cobra ipython psycopg2 pymongo
 ```
