@@ -44,7 +44,7 @@ sudo pip install cython pysam numpy scipy pandas cobra ipython
 #####On Ubuntu
 ```
 sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-dev gfortran
-sudo pip install cython pysam numpy scipy pandas cobra ipython
+sudo pip install cython pysam numpy scipy pandas cobra ipython psycopg2
 ```
 
 ### Finally, clone the repository and setup in develop mode
