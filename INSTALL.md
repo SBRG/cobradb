@@ -18,12 +18,15 @@ brew install postgresql mongodb
 sudo apt-get install postgresql postgresql-contrib postgresql-server-dev-all mongodb
 ```
 #####Setting up the database
+
 ```
-sudo -i -u postgres
+sudo -i -u postgres                    
 createuser -d -l -s <your username>
 createdb ome
 exit
 ```
+Note: newer versions of OSX only require ```createdb ome```
+
 ######Next install additional python packages.
 
 All of the rest of the dependencies *should* install automatically through setup.py below.  However, in practice you may want to install these individually ahead of time.
@@ -35,13 +38,15 @@ All of the rest of the dependencies *should* install automatically through setup
 #####On OSX with homebrew http://brew.sh/
 ```
 brew install samtools glpk
-sudo pip install cython pysam numpy scipy pandas cobra ipython 
 ```
 
 #####On Ubuntu
 ```
 sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-dev gfortran
-sudo pip install cython pysam numpy scipy pandas cobra ipython
+```
+#####With pip
+```
+sudo pip install cython pysam numpy scipy pandas cobra ipython psycopg2 pymongo
 ```
 
 ### Finally, clone the repository and setup in develop mode
