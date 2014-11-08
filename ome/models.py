@@ -37,18 +37,16 @@ class Model(Base):
 class ModelGene(Base):
     __tablename__='model_gene'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
-    model_id = Column(Integer, ForeignKey('model.id'), nullable=False)
-    gene_id = Column(Integer, ForeignKey('gene.id'), nullable=False)
+    model_id = Column(Integer, ForeignKey('model.id'), primary_key=True, nullable=False)
+    gene_id = Column(Integer, ForeignKey('gene.id'), primary_key=True, nullable=False)
 
 
 
 class ModelReaction(Base):
     __tablename__='model_reaction'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
-    reaction_id = Column(Integer, ForeignKey('reaction.id'), nullable=False)
-    model_id = Column(Integer, ForeignKey('model.id'), nullable=False)
+    reaction_id = Column(Integer, ForeignKey('reaction.id'), primary_key=True, nullable=False)
+    model_id = Column(Integer, ForeignKey('model.id'), primary_key=True, nullable=False)
     name = Column(String)
     upperbound = Column(Numeric)
     lowerbound = Column(Numeric)
@@ -61,28 +59,31 @@ class ModelReaction(Base):
 class GPRMatrix(Base):
     __tablename__='gpr_matrix'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
-    model_gene_id = Column(Integer, ForeignKey('model_gene.id'), nullable=False)
-    model_reaction_id = Column(Integer, ForeignKey('model_reaction.id'), nullable=False)
+    model_gene_id = Column(Integer, ForeignKey('model_gene.id'), primary_key=True, nullable=False)
+    model_reaction_id = Column(Integer, ForeignKey('model_reaction.id'), primary_key=True, nullable=False)
 
 
 
 class CompartmentalizedComponent(Base):
     __tablename__='compartmentalized_component'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
-    component_id = Column(Integer, ForeignKey('component.id'), nullable=False)
-    compartment_id = Column(Integer, ForeignKey('compartment.id'), nullable=False)
+    component_id = Column(Integer, ForeignKey('component.id'), primary_key=True, nullable=False)
+    compartment_id = Column(Integer, ForeignKey('compartment.id'), primary_key=True, nullable=False)
     #UniqueConstraint('compartment_id', 'component_id')
     __table_args__ = (UniqueConstraint('compartment_id', 'component_id'),{})
 
 
 class ModelCompartmentalizedComponent(Base):
     __tablename__='model_compartmentalized_component'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
-    model_id = Column(Integer, ForeignKey('model.id'), nullable=False)
-    compartmentalized_component_id = Column(Integer, ForeignKey('compartmentalized_component.id'), nullable=False)
-    compartment_id = Column(Integer, ForeignKey('compartment.id'), nullable=False)
+
+    model_id = Column(Integer, ForeignKey('model.id'), primary_key=True, nullable=False)
+    compartmentalized_component_id = Column(Integer,
+                                            ForeignKey('compartmentalized_component.id'),
+                                            primary_key=True,
+                                            nullable=False)
+
+    # We shouldn't need this because compartment is stored with CompartmentalizedComponent
+    #compartment_id = Column(Integer, ForeignKey('compartment.id'), nullable=False)
 
 
 
@@ -95,9 +96,13 @@ class Compartment(Base):
 
 class ReactionMatrix(Base):
     __tablename__='reaction_matrix'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
-    reaction_id = Column(Integer, ForeignKey('reaction.id'), nullable=False)
-    compartmentalized_component_id = Column(Integer, ForeignKey('compartmentalized_component.id'), nullable=False)
+
+    reaction_id = Column(Integer, ForeignKey('reaction.id'), primary_key=True, nullable=False)
+    compartmentalized_component_id = Column(Integer,
+                                            ForeignKey('compartmentalized_component.id'),
+                                            primary_key=True,
+                                            nullable=False)
+
     stoichiometry = Column(Numeric)
     #UniqueConstraint('reaction_id', 'compartmentalized_component')
     __table_args__ = (UniqueConstraint('reaction_id', 'compartmentalized_component_id'),{})
