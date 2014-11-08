@@ -18,11 +18,11 @@ The OME Framework is a systems biology and bioinformatics framework that helps t
 
 The framework is written entirely in python with great help from [SQLalchemy](http://www.sqlalchemy.org/). You can browse the schemas below to get a sense of the underlying database design or jump straight to the examples page. Enjoy!
 
-<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/steve-federowicz/om/master/docs/data_schema.xml#" target="_blank">data schema</a>
+<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/SBRG/ome/master/docs/data_schema.xml#" target="_blank">data schema</a>
 
-<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/steve-federowicz/om/master/docs/model_schema.xml#" target="_blank">model schema</a>
+<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/SBRG/ome/master/docs/model_schema.xml#" target="_blank">model schema</a>
 
-<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/steve-federowicz/om/master/docs/component_schema.xml#" target="_blank">component schema</a>
+<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/SBRG/ome/master/docs/component_schema.xml#" target="_blank">component schema</a>
 
 
 ###Why the OME Framework?
