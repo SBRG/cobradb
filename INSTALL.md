@@ -19,17 +19,14 @@ sudo apt-get install postgresql postgresql-contrib postgresql-server-dev-all mon
 ```
 #####Setting up the database
 
-######On Ubuntu and older versions of OSX
 ```
 sudo -i -u postgres                    
 createuser -d -l -s <your username>
 createdb ome
 exit
 ```
+Note: newer versions of OSX only require ```createdb ome```
 
-#####On Newer versions of OSX
-```
-createdb ome
 ```
 ######Next install additional python packages.
 
