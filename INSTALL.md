@@ -38,13 +38,16 @@ All of the rest of the dependencies *should* install automatically through setup
 #####On OSX with homebrew http://brew.sh/
 ```
 brew install samtools glpk
-sudo pip install cython pysam numpy scipy pandas cobra ipython 
 ```
 
 #####On Ubuntu
 ```
 sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-dev gfortran
-sudo pip install cython pysam numpy scipy pandas cobra ipython psycopg2
+```
+
+#####With pip
+```
+sudo pip install cython pysam numpy scipy pandas cobra ipython psycopg2 pymongo
 ```
 
 ### Finally, clone the repository and setup in develop mode
