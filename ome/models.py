@@ -6,17 +6,23 @@ from sqlalchemy.schema import Sequence
 from ome.base import *
 from ome.components import *
 
-#session.execute("CREATE EXTENSION pg_trgm;")
 
-"""
-CREATE EXTENSION pg_trgm;
-CREATE INDEX gene_locus_trigram_idx ON gene USING gin (to_tsvector('english',locus_id));
-CREATE INDEX reaction_name_trigram_idx ON reaction USING gin (to_tsvector('english',name));
-CREATE INDEX genome_name_trigram_idx ON genome_region USING gin (to_tsvector('english',name));
-CREATE INDEX model_biggid_trigram_idx ON model USING gin (to_tsvector('english',bigg_id));
-CREATE INDEX genome_organism_trigram_idx ON genome USING gin (to_tsvector('english',organism));
-CREATE INDEX metabolite_name_trigram_idx ON metabolite USING gin (to_tsvector('english',name));
-"""
+#engine = create_engine("postgresql://dbuser@localhost:5432/bigg2")
+
+#Base = declarative_base(bind=engine)
+#metadata = MetaData(bind=engine)
+
+#Session = sessionmaker(bind=engine)
+#session = Session()
+#session.execute('CREATE EXTENSION pg_trgm;')
+#session.execute('CREATE INDEX reaction_name_trigram_idx ON reaction USING gin (to_tsvector("english",name));')
+#session.execute('CREATE INDEX model_name_trigram_idx ON reaction USING gin (to_tsvector("english",name));')
+#session.execute('CREATE INDEX component_name_trigram_idx ON reaction USING gin (to_tsvector("english",name));')
+#session.execute('CREATE INDEX gene_name_trigram_idx ON reaction USING gin (to_tsvector("english",name));')
+
+
+
+
 class Model(Base):
     __tablename__='model'
 
@@ -25,6 +31,7 @@ class Model(Base):
     first_created = Column(DateTime)
     genome_id = Column(Integer, ForeignKey('genome.id'))
     genome = relationship('Genome', backref='model')
+    UniqueConstraint('name', 'firstcreated')
     notes = Column(String)
 
     __table_args__ = (UniqueConstraint('bigg_id'),{})
@@ -53,8 +60,7 @@ class ModelReaction(Base):
     upperbound = Column(Numeric)
     lowerbound = Column(Numeric)
     gpr = Column(String)
-    __table_args__ = (UniqueConstraint('reaction_id', 'model_id'),{})
-    #UniqueConstraint('reaction_id', 'model_id')
+    UniqueConstraint('reaction_id', 'model_id')
 
 
 
@@ -73,8 +79,8 @@ class CompartmentalizedComponent(Base):
     id = Column(Integer, Sequence('wids'), primary_key=True)
     component_id = Column(Integer, ForeignKey('component.id'), nullable=False)
     compartment_id = Column(Integer, ForeignKey('compartment.id'), nullable=False)
-    #UniqueConstraint('compartment_id', 'component_id')
-    __table_args__ = (UniqueConstraint('compartment_id', 'component_id'),{})
+    UniqueConstraint('compartment_id', 'component_id')
+
 
 
 class ModelCompartmentalizedComponent(Base):
@@ -99,8 +105,8 @@ class ReactionMatrix(Base):
     reaction_id = Column(Integer, ForeignKey('reaction.id'), nullable=False)
     compartmentalized_component_id = Column(Integer, ForeignKey('compartmentalized_component.id'), nullable=False)
     stoichiometry = Column(Numeric)
-    #UniqueConstraint('reaction_id', 'compartmentalized_component')
-    __table_args__ = (UniqueConstraint('reaction_id', 'compartmentalized_component_id'),{})
+    UniqueConstraint('reaction_id', 'compartmentalized_component')
+
 
 
 class EscherMap(Base):
@@ -120,3 +126,5 @@ class Comments(Base):
     name = Column(String)
     formula = Column(String)
     text = Column(String)
+
+

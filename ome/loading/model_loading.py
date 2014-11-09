@@ -334,12 +334,31 @@ class IndependentObjects:
                     session.add(geneObject)
 
     def loadModel(self, model, session, genome_id, first_created):
-        if session.query(Model).filter_by(bigg_id=model.id).count():
-            print "model already uploaded"
-            return
         modelObject = Model(bigg_id = model.id, first_created = first_created, genome_id = genome_id, notes = '')
         session.add(modelObject)
 
+
+        """
+            if(model.id == 'iSF1195'):
+                modelObject = Model(bigg_id = model.id, firstcreated = '2014-9-16 14:26:22', genome_id = 7)
+            if(model.id == 'iSB619'):
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 3)
+            if(model.id == 'iJN746'):
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 6)
+            if(model.id == 'iIT341'):
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 4)
+            if(model.id == 'iNJ661'):
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 3)
+            if(model.id == 'iJO1366'):
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 15)
+            if(model.id == 'iAF692'):
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 5)
+            if(model.id == 'model'):
+                modelObject = Model(bigg_id = model.id, firstcreated = '2013-10-21 14:26:22', genome_id = 1)
+            if(model.id == 'iAPECO1_1312 '):
+
+            session.add(modelObject)
+        """
 
     def loadComponents(self, modellist, session):
         for model in modellist:
@@ -351,29 +370,14 @@ class IndependentObjects:
                     except: kegg_id = None
                     try: cas_number = component.notes.get("CASNUMBER")[0]
                     except: cas_number = None
-                    try: formula = component.notes.get("FORMULA")[0]
+                    try: formula = component.notes.get("FORMULA1")[0]
                     except: formula = None
-                    try: brenda = component.notes.get("BRENDA")[0]
-                    except: brenda = None
-                    try: seed = component.notes.get("SEED")[0]
-                    except: seed = None
-                    try: chebi = component.notes.get("CHEBI")[0]
-                    except: chebi = None
-                    try: metacyc = component.notes.get("METACYC")[0]
-                    except: metacyc = None
-                    try: upa = component.notes.get("UPA")[0]
-                    except: upa = None
-                    
+
                     metaboliteObject = Metabolite(name = component.id.split("_")[0],
                                                   long_name = component.name,
                                                   kegg_id = kegg_id,
                                                   cas_number = cas_number,
-                                                  seed = seed, 
-                                                  chebi = chebi, 
-                                                  metacyc = metacyc,
-                                                  upa = upa, 
-                                                  brenda = brenda,
-                                                  formula = str(component.formula),
+                                                  formula = formula,
                                                   flag = bool(kegg_id))
 
                     session.add(metaboliteObject)
@@ -388,8 +392,8 @@ class IndependentObjects:
                             metaboliteObject.cas_number = component.notes.get("CASNUMBER")[0]
                         #metabolite.update({Metabolite.cas_number: str(component.notes.get("CASNUMBER"))})
                     if metaboliteObject.formula == None or metaboliteObject.formula == '':
-                        if 'FORMULA' in component.notes.keys():
-                            metaboliteObject.formula = component.notes.get("FORMULA")[0]
+                        if 'FORMULA1' in component.notes.keys():
+                            metaboliteObject.formula = component.notes.get("FORMULA1")[0]
                         #metabolite.update({Metabolite.formula: str(component.notes.get("FORMULA1"))})
 
     def loadReactions(self , modellist, session):
@@ -425,11 +429,6 @@ class DependentObjects:
                         modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                         object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
                         session.add(object)
-                    elif session.query(Gene).filter(Gene.name == gene.id.split('.')[0]).first() != None:
-                        genequery = session.query(Gene).filter(Gene.name == gene.id.split('.')[0]).first()
-                        modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
-                        object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
-                        session.add(object)
                     else:
                         #geneObject = Gene(locus_id = gene.id, leftpos=None, rightpos=None, strand=None, name=gene.id)
                         #session.add(geneObject)
@@ -456,9 +455,9 @@ class DependentObjects:
             for metabolite in model.metabolites:
                 identifier = session.query(Compartment).filter(Compartment.name == metabolite.id[-1:len(metabolite.id)]).first()
                 m = session.query(Metabolite).filter(Metabolite.name == metabolite.id.split("_")[0]).first()
-                compartmentalizedComponent = session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == m.id).filter(CompartmentalizedComponent.compartment_id == identifier.id)
-                #if not compartmnetalizedComponent.count():
-                session.add(compartmentalizedComponent)
+                #m = session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first()
+                object = CompartmentalizedComponent(component_id = m.id, compartment_id = identifier.id)
+                session.add(object)
 
     def loadModelCompartmentalizedComponent(self, modellist, session):
         for model in modellist:
@@ -553,10 +552,7 @@ def load_model(model_id, genome_id, model_creation_timestamp):
         except:
             print 'Genbank file %s for model %s was not uploaded' % (genome_id, model_id)
             return
-        if session.query(Model).filter_by(bigg_id=model_id).count():
-            print "model already uploaded"
-            return
-        
+
         model = parse_model(model_id)
 
         IndependentObjects().loadModel(model, session, genome.id, model_creation_timestamp)
