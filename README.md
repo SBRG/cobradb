@@ -24,6 +24,8 @@ The framework is written entirely in python with great help from [SQLalchemy](ht
 
 <a href="https://www.draw.io/?url=https://raw.githubusercontent.com/SBRG/ome/master/docs/component_schema.xml#" target="_blank">component schema</a>
 
+<a href="https://www.draw.io/?url=https://raw.githubusercontent.com/SBRG/ome/master/docs/combined_schema.xml#" target="_blank">combined schema</a>
+
 
 ###Why the OME Framework?
 
