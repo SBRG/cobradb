@@ -448,9 +448,22 @@ def load_genome(genbank_file, base, components, debug=False):
                         ome_synonym['synonym'] = value
 
                         ome_synonym['synonym_data_source_id'] = None
-                        synonym = base.Synonyms(**ome_synonym)
-                        session.add(synonym)
-
+                        if not session.query(base.Synonyms).filter(base.Synonyms.ome_id == gene.id).filter(base.Synonyms.synonym == value).filter(base.Synonyms.type == 'gene').first():
+                            synonym = base.Synonyms(**ome_synonym)
+                            session.add(synonym)
+            if 'note' in feature.qualifiers:
+                for ref in feature.qualifiers['note']:
+                    syn = ref.split(';')
+                    for value in syn:
+                        value  = value.split(':')
+                        if value[0]== 'ORF_ID':
+                            ome_synonym = {'type': 'gene'}
+                            ome_synonym['ome_id'] = gene.id
+                            ome_synonym['synonym'] = value[1]
+                            ome_synonym['synonym_data_source_id'] = None
+                            if not session.query(base.Synonyms).filter(base.Synonyms.ome_id == gene.id).filter(base.Synonyms.synonym == value[1]).filter(base.Synonyms.type == 'gene').first():
+                                synonym = base.Synonyms(**ome_synonym)
+                                session.add(synonym)
             if 'product' in feature.qualifiers and feature.type == 'CDS':
                 try:
                     ome_protein["long_name"] = feature.qualifiers["gene"]

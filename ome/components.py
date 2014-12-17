@@ -12,7 +12,7 @@ import simplejson as json
 class Gene(GenomeRegion):
     __tablename__ = 'gene'
 
-    id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('genome_region.id', onupdate="CASCADE", ondelete="CASCADE"), primary_key=True)
     locus_id = Column(String(20))
     info = Column(String(300))
     long_name = Column(String(100))
@@ -247,7 +247,7 @@ class Metabolite(Component):
 
     __mapper_args__ = { 'polymorphic_identity': 'metabolite' }
 
-    id = Column(Integer, ForeignKey('component.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"), primary_key=True)
     kegg_id = Column(String)
     seed = Column(String)
     chebi = Column(String)

@@ -116,6 +116,7 @@ def parse_model(name, id_style='cobrapy'):
 
     # check for model
     name = check_for_model(name)
+    print name
     if not name:
         raise Exception('Could not find model')
 
@@ -125,9 +126,9 @@ def parse_model(name, id_style='cobrapy'):
             model = pickle.load(f)
     except:
         try:
-            model = cobra.io.load_matlab_model(join(settings.data_directory, 'models', name+'.mat'))
-        except:
             model = cobra.io.read_sbml_model(join(settings.data_directory, 'models', name+'.xml'))
+        except:
+            model = cobra.io.load_matlab_model(join(settings.data_directory, 'models', name+'.mat'))
 
         pickle_dir = join(settings.data_directory, 'models', 'model_pickles')
 
@@ -337,8 +338,9 @@ class IndependentObjects:
         if session.query(Model).filter_by(bigg_id=model.id).count():
             print "model already uploaded"
             return
-        modelObject = Model(bigg_id = model.id, first_created = first_created, genome_id = genome_id, notes = '')
-        session.add(modelObject)
+        else:
+            modelObject = Model(bigg_id = model.id, first_created = first_created, genome_id = genome_id, notes = '')
+            session.add(modelObject)
 
 
     def loadComponents(self, modellist, session):
@@ -347,21 +349,50 @@ class IndependentObjects:
                 metabolite = session.query(Metabolite).filter(Metabolite.name == component.id.split("_")[0])
                 #metabolite = session.query(Metabolite).filter(Metabolite.kegg_id == component.notes.get("KEGGID")[0])
                 if not metabolite.count():
-                    try: kegg_id = component.notes.get("KEGGID")[0]
+                    try:
+                        if isinstance( component.notes.get("KEGGID"), list):
+                            kegg_id = str(component.notes.get("KEGGID")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","") 
+                        else:
+                            kegg_id = component.notes.get("KEGGID").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                     except: kegg_id = None
-                    try: cas_number = component.notes.get("CASNUMBER")[0]
+                    try:
+                        if isinstance( component.notes.get("CASNUMBER"), list):
+                            cas_number = str(component.notes.get("CASNUMBER")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                        else: 
+                            cas_number = component.notes.get("CASNUMBER").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                     except: cas_number = None
-                    try: formula = component.notes.get("FORMULA")[0]
+                    try: 
+                        formula = component.notes.get("FORMULA")
                     except: formula = None
-                    try: brenda = component.notes.get("BRENDA")[0]
+                    try:
+                        if isinstance( component.notes.get("BRENDA"), list):
+                            brenda = str(component.notes.get("BRENDA")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                        else: 
+                            brenda = component.notes.get("BRENDA").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                     except: brenda = None
-                    try: seed = component.notes.get("SEED")[0]
+                    try:
+                        if isinstance( component.notes.get("SEED"), list):
+                            seed = str(component.notes.get("SEED")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                        else: 
+                            seed = component.notes.get("SEED").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                     except: seed = None
-                    try: chebi = component.notes.get("CHEBI")[0]
+                    try:
+                        if isinstance( component.notes.get("CHEBI"), list):
+                            chebi = str(component.notes.get("CHEBI")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                        else:
+                            chebi = component.notes.get("CHEBI").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                     except: chebi = None
-                    try: metacyc = component.notes.get("METACYC")[0]
+                    try:
+                        if isinstance( component.notes.get("METACYC"), list):
+                            metacyc = str(component.notes.get("METECYC")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","") 
+                        else:
+                            metacyc = component.notes.get("METACYC").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                     except: metacyc = None
-                    try: upa = component.notes.get("UPA")[0]
+                    try:
+                        if isinstance( component.notes.get("UPA"), list):
+                            upa = str(component.notes.get("UPA")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","") 
+                        else:
+                            upa = component.notes.get("UPA").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                     except: upa = None
                     
                     metaboliteObject = Metabolite(name = component.id.split("_")[0],
@@ -377,21 +408,22 @@ class IndependentObjects:
                                                   flag = bool(kegg_id))
 
                     session.add(metaboliteObject)
+                """
                 else:
                     metaboliteObject = metabolite.first()
                     if metaboliteObject.kegg_id == None or metaboliteObject.kegg_id == '':
                         if 'KEGGID' in component.notes.keys():
-                            metaboliteObject.kegg_id = component.notes.get("KEGGID")[0]
+                            metaboliteObject.kegg_id = component.notes.get("KEGGID").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                         #metabolite.update({Metabolite.kegg_id: str(component.notes.get("KEGGID"))})
                     if metaboliteObject.cas_number == None or metaboliteObject.cas_number == '':
                         if 'CASNUMBER' in component.notes.keys():
-                            metaboliteObject.cas_number = component.notes.get("CASNUMBER")[0]
+                            metaboliteObject.cas_number = component.notes.get("CASNUMBER").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                         #metabolite.update({Metabolite.cas_number: str(component.notes.get("CASNUMBER"))})
                     if metaboliteObject.formula == None or metaboliteObject.formula == '':
                         if 'FORMULA' in component.notes.keys():
-                            metaboliteObject.formula = component.notes.get("FORMULA")[0]
+                            metaboliteObject.formula = component.notes.get("FORMULA").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
                         #metabolite.update({Metabolite.formula: str(component.notes.get("FORMULA1"))})
-
+                """
     def loadReactions(self , modellist, session):
         for model in modellist:
             for reaction in model.reactions:
@@ -403,9 +435,16 @@ class IndependentObjects:
         for model in modellist:
             for component in model.metabolites:
                 if component.id is not None:
-                    if not session.query(Compartment).filter(Compartment.name == component.id[-1:len(component.id)]).count():
-                        compartmentObject = Compartment(name = component.id[-1:len(component.id)])
-                        session.add(compartmentObject)
+                    #if not session.query(Compartment).filter(Compartment.name == component.id[-1:len(component.id)]).count():
+                        #compartmentObject = Compartment(name = component.id[-1:len(component.id)])
+                    if len(component.id.split('_'))>1:
+                        if not session.query(Compartment).filter(Compartment.name == component.id.split('_')[1]).count():
+                            compartmentObject = Compartment(name = component.id.split('_')[1])
+                            session.add(compartmentObject)
+                    else:
+                        if not session.query(Compartment).filter(Compartment.name == 'none').count():
+                            compartmentObject = Compartment(name = 'none')
+                            session.add(compartmentObject)
 
 
 
@@ -414,51 +453,82 @@ class DependentObjects:
         for model in modellist:
             for gene in model.genes:
                 if gene.id != 's0001':
-                    if session.query(Gene).filter(Gene.locus_id == gene.id).first() != None:
-                        genequery = session.query(Gene).filter(Gene.locus_id == gene.id).first()
-                        modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
-                        #genequery = session.query(Gene).filter(Gene.locus_id == gene.id).filter(Gene.genome_id == modelquery.genome_id).first()
-                        object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
-                        session.add(object)
-                    elif session.query(Gene).filter(Gene.name == gene.id).first() != None:
-                        genequery = session.query(Gene).filter(Gene.name == gene.id).first()
-                        modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
-                        object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
-                        session.add(object)
-                    elif session.query(Gene).filter(Gene.name == gene.id.split('.')[0]).first() != None:
-                        genequery = session.query(Gene).filter(Gene.name == gene.id.split('.')[0]).first()
-                        modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
-                        object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
-                        session.add(object)
-                    else:
-                        #geneObject = Gene(locus_id = gene.id, leftpos=None, rightpos=None, strand=None, name=gene.id)
-                        #session.add(geneObject)
-                        synonymquery = session.query(Synonyms).filter(Synonyms.synonym == gene.id.split(".")[0]).filter(Synonyms.type == 'gene').first()
-                        if synonymquery != None:
-                            modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
-
-                            genecheck = session.query(Gene).filter(Gene.id == synonymquery.ome_id).first()
-                            if genecheck:
-                                object = ModelGene(model_id = modelquery.id, gene_id = synonymquery.ome_id)
+                    modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
+                    chromosomequery = session.query(Chromosome).filter(Chromosome.genome_id == modelquery.genome_id).all()
+                    for chrom in chromosomequery:
+                        if session.query(Gene).filter(Gene.locus_id == gene.id).filter(Gene.chromosome_id == chrom.id).first() != None:
+                            genequery = session.query(Gene).filter(Gene.locus_id == gene.id).filter(Gene.chromosome_id == chrom.id).first()
+                                #genequery = session.query(Gene).filter(Gene.locus_id == gene.id).filter(Gene.genome_id == modelquery.genome_id).first()
+                            if not session.query(ModelGene).join(Gene).filter(ModelGene.model_id == modelquery.id).filter(ModelGene.gene_id == genequery.id).count():
+                                object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
                                 session.add(object)
-
-                                if modelquery.bigg_id == "RECON1":
-                                    genequery = session.query(Gene).filter(Gene.id == synonymquery.ome_id).first()
-                                    genequery.locus_id = gene.id
-                            else:
-                                print synonymquery.ome_id
+                                session.commit()
+                        elif session.query(Gene).filter(Gene.name == gene.id).filter(Gene.chromosome_id == chrom.id).first() != None:
+                                #modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
+                                #chromosomequery = session.query(Chromosome).filter(Chromosome.genome_id == modelquery.genome_id).first()
+                            genequery = session.query(Gene).filter(Gene.name == gene.id).filter(Gene.chromosome_id == chrom.id).first()
+                        
+                            if not session.query(ModelGene).join(Gene).filter(ModelGene.model_id == modelquery.id).filter(ModelGene.gene_id == genequery.id).count():
+                                object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
+                                session.add(object)
+                                session.commit()
+                        elif session.query(Gene).filter(Gene.name == gene.id.split('.')[0]).filter(Gene.chromosome_id == chrom.id).first() != None:
+                                #modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
+                                #chromosomequery = session.query(Chromosome).filter(Chromosome.genome_id == modelquery.genome_id).first()
+                            genequery = session.query(Gene).filter(Gene.name == gene.id.split('.')[0]).filter(Gene.chromosome_id == chrom.id).first()
+                        
+                            if not session.query(ModelGene).join(Gene).filter(ModelGene.model_id == modelquery.id).filter(ModelGene.gene_id == genequery.id).count():
+                                object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
+                                session.add(object)
+                                session.commit()
                         else:
-                            print gene.id, model.id
+                                #geneObject = Gene(locus_id = gene.id, leftpos=None, rightpos=None, strand=None, name=gene.id)
+                                #session.add(geneObject)
+                            synonymquery = session.query(Synonyms).filter(Synonyms.synonym == gene.id.split(".")[0]).filter(Synonyms.type == 'gene').all()
+                            if synonymquery != None:
+                                    #modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
+                                for syn in synonymquery:
+                                    genecheck = session.query(Gene).filter(Gene.id == syn.ome_id).first()
+                                    if genecheck:
+                                
+                                        if not session.query(ModelGene).join(Gene).filter(ModelGene.model_id == modelquery.id).filter(ModelGene.gene_id == genecheck.id).count():
+                                            object = ModelGene(model_id = modelquery.id, gene_id = syn.ome_id)
+                                            session.add(object)
+                                            session.commit()
 
+                                        if modelquery.bigg_id == "RECON1" or modelquery.bigg_id == "iMM1415":
+                                            genequery = session.query(Gene).filter(Gene.id == syn.ome_id).first()
+                                            genequery.locus_id = gene.id
+                                    else:
+                                        print syn.ome_id
+                            elif session.query(Synonyms).filter(Synonyms.synonym == gene.id).filter(Synonyms.type == 'gene').count():
+                                synonymquery = session.query(Synonyms).filter(Synonyms.synonym == gene.id).filter(Synonyms.type == 'gene').all()
+                                for syn in synonymquery:
+                                    genecheck = session.query(Gene).filter(Gene.id == syn.ome_id).first()
+                                    if genecheck:
+                                
+                                        if not session.query(ModelGene).join(Gene).filter(ModelGene.model_id == modelquery.id).filter(ModelGene.gene_id == genecheck.id).count():
+                                            object = ModelGene(model_id = modelquery.id, gene_id = syn.ome_id)
+                                            session.add(object)
+                                            session.commit()
+
+                                        if modelquery.bigg_id == "RECON1":
+                                            genequery = session.query(Gene).filter(Gene.id == syn.ome_id).first()
+                                            genequery.locus_id = gene.id
+                                    else:
+                                        print syn.ome_id
+                            else:
+                                print gene.id, model.id
 
     def loadCompartmentalizedComponent(self, modellist, session):
         for model in modellist:
             for metabolite in model.metabolites:
                 identifier = session.query(Compartment).filter(Compartment.name == metabolite.id[-1:len(metabolite.id)]).first()
                 m = session.query(Metabolite).filter(Metabolite.name == metabolite.id.split("_")[0]).first()
-                compartmentalizedComponent = session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == m.id).filter(CompartmentalizedComponent.compartment_id == identifier.id)
-                #if not compartmnetalizedComponent.count():
-                session.add(compartmentalizedComponent)
+                componentCheck = session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == m.id).filter(CompartmentalizedComponent.compartment_id == identifier.id)
+                if not componentCheck.count():
+                    object = CompartmentalizedComponent(component_id = m.id, compartment_id = identifier.id)
+                    session.add(object)
 
     def loadModelCompartmentalizedComponent(self, modellist, session):
         for model in modellist:
@@ -470,21 +540,26 @@ class DependentObjects:
                 modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                 if modelquery is None:
                     print "model query is none", model.id
-                    from IPython import embed; embed()
+                    #from IPython import embed; embed()
 
                 if compartmentalized_component_query is None:
                     print "compartmentalized_component_query is none", metabolite.id
-                object = ModelCompartmentalizedComponent(model_id = modelquery.id, compartmentalized_component_id = compartmentalized_component_query.id, compartment_id = compartmentquery.id)
-                session.add(object)
+                if not session.query(ModelCompartmentalizedComponent).filter(ModelCompartmentalizedComponent.compartmentalized_component_id == compartmentalized_component_query.id).filter(ModelCompartmentalizedComponent.model_id == modelquery.id).count():
+                    object = ModelCompartmentalizedComponent(model_id = modelquery.id, compartmentalized_component_id = compartmentalized_component_query.id, compartment_id = compartmentquery.id)
+                    session.add(object)
 
 
     def loadModelReaction(self, modellist, session):
         for model in modellist:
             for reaction in model.reactions:
+                
                 reactionquery = session.query(Reaction).filter(Reaction.name == reaction.id).first()
                 modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
-                object = ModelReaction(reaction_id = reactionquery.id, model_id = modelquery.id, name = reaction.id, upperbound = reaction.upper_bound, lowerbound = reaction.lower_bound, gpr = reaction.gene_reaction_rule)
-                session.add(object)
+                if session.query(ModelReaction).filter(ModelReaction.reaction_id == reactionquery.id).filter(ModelReaction.model_id == modelquery.id).count():
+                    print "model reaction already exists"
+                else:
+                    object = ModelReaction(reaction_id = reactionquery.id, model_id = modelquery.id, name = reaction.id, upperbound = reaction.upper_bound, lowerbound = reaction.lower_bound, gpr = reaction.gene_reaction_rule)
+                    session.add(object)
 
 
     def loadGPRMatrix(self, modellist, session):
@@ -498,22 +573,32 @@ class DependentObjects:
 
                         if model_gene_query != None:
                             model_reaction_query = session.query(ModelReaction).filter(ModelReaction.name == reaction.id).filter(ModelReaction.model_id == model_query.id).first()
-                            object = GPRMatrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
-                            session.add(object)
+                            if not session.query(GPRMatrix).filter(GPRMatrix.model_gene_id == model_gene_query.id).filter(GPRMatrix.model_reaction_id == model_reaction_query.id).count():
+                                object = GPRMatrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
+                                session.add(object)
                         else:
                             model_gene_query = session.query(ModelGene).join(Gene).filter(Gene.name == gene.id).filter(ModelGene.model_id == model_query.id).first()
                             if model_gene_query != None:
+                                
                                 model_reaction_query = session.query(ModelReaction).filter(ModelReaction.name == reaction.id).filter(ModelReaction.model_id == model_query.id).first()
-                                object = GPRMatrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
-                                session.add(object)
+                                if not session.query(GPRMatrix).filter(GPRMatrix.model_gene_id == model_gene_query.id).filter(GPRMatrix.model_reaction_id == model_reaction_query.id).count():
+
+                                    object = GPRMatrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
+                                    session.add(object)
                             else:
                                 synonymquery = session.query(Synonyms).filter(Synonyms.synonym == gene.id.split(".")[0]).first()
                                 if synonymquery != None:
                                     if synonymquery.ome_id != None:
-                                        model_gene_query = session.query(ModelGene).join(Gene).filter(Gene.id == synonymquery.ome_id).filter(ModelGene.model_id == model_query.id).first()
+                                        model_gene_query = session.query(ModelGene).filter(ModelGene.gene_id == synonymquery.ome_id).filter(ModelGene.model_id == model_query.id).first()
                                         model_reaction_query = session.query(ModelReaction).filter(ModelReaction.name == reaction.id).filter(ModelReaction.model_id == model_query.id).first()
-                                        object = GPRMatrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
-                                        session.add(object)
+                                        
+                                        if model_reaction_query and model_gene_query:
+                                            if not session.query(GPRMatrix).filter(GPRMatrix.model_gene_id == model_gene_query.id).filter(GPRMatrix.model_reaction_id == model_reaction_query.id).count():
+
+                                                object = GPRMatrix(model_gene_id = model_gene_query.id, model_reaction_id = model_reaction_query.id)
+                                                session.add(object)
+                                        else:
+                                            print "model reaction or model gene was not found " + str(reaction.id) + " " + str(synonymquery.ome_id)
                                     else:
                                         print "ome id is null " + synonymquery.ome_id
                                 else:
@@ -542,9 +627,6 @@ class DependentObjects:
             escher = Escher_Map(bigg_id = reaction.id, category = "reaction", model_name = m.id)
             session.add(escher)
 
-
-
-
 @timing
 def load_model(model_id, genome_id, model_creation_timestamp):
     with create_Session() as session:
@@ -555,10 +637,8 @@ def load_model(model_id, genome_id, model_creation_timestamp):
             return
         if session.query(Model).filter_by(bigg_id=model_id).count():
             print "model already uploaded"
-            return
-        
+            return       
         model = parse_model(model_id)
-
         IndependentObjects().loadModel(model, session, genome.id, model_creation_timestamp)
         IndependentObjects().loadComponents([model], session)
         IndependentObjects().loadCompartments([model], session)

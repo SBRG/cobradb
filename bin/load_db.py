@@ -10,21 +10,32 @@ from sqlalchemy.schema import Sequence,CreateSequence
 from pymongo import ASCENDING
 import sys
 import os
+import argparse
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--dropall", help="will empty database and reload data", action="store_true")
+parser.add_argument("--dropmodels", help="will empty model data", action="store_true")
+args = parser.parse_args()
 
 if __name__ == "__main__":
-
-    if not dataset_loading.query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
+    """
+    #if not dataset_loading.query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
                         'are you sure you want to do this?'): sys.exit()
+    """
+    if args.dropall:
+        base.Base.metadata.drop_all()
+        base.Base.metadata.create_all()
 
-    base.Base.metadata.drop_all()
-    base.Base.metadata.create_all()
-
-    try: base.omics_database.genome_data.drop()
-    except: None
-    #base.engine.execute(CreateSequence(Sequence('wids')))
-
-
+        try: base.omics_database.genome_data.drop()
+        except: None
+        print "dropping all"
+        #base.engine.execute(CreateSequence(Sequence('wids')))
+    
+    if args.dropmodels:
+        print "dropping rows from models"
+        base.engine.execute('TRUNCATE model,reaction,component, compartment CASCADE;')
+     
     for genbank_file in os.listdir(settings.data_directory+'annotation/genbank'):
         #if genbank_file not in ['NC_000913.2.gb']: continue
 
@@ -101,7 +112,7 @@ if __name__ == "__main__":
 
 
 
-    with open(settings.data_directory+'/annotation/model-genome.txt') as file:
+    with open(settings.data_directory+'/annotation/model-genome2.txt') as file:
 
         for line in file:
             model_id,genome_id,model_creation_timestamp = line.rstrip('\n').split(',')
