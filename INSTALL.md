@@ -46,7 +46,7 @@ sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-de
 ```
 #####With pip
 ```
-sudo pip install cython pysam numpy scipy pandas cobra ipython psycopg2 pymongo
+sudo pip install cython pysam numpy scipy simplejson pandas cobra --pre ipython psycopg2 pymongo
 ```
 
 ### Finally, clone the repository and setup in develop mode
