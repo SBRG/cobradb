@@ -29,7 +29,7 @@ Note: newer versions of OSX only require ```createdb ome```
 
 ######Next install additional python packages.
 
-All of the rest of the dependencies *should* install automatically through setup.py below.  However, in practice you may want to install these individually ahead of time.
+All of the rest of the dependencies *should* install automatically through setup.py below.  However, in practice you probably want to install these individually ahead of time.
 * [cobrapy](https://github.com/opencobra/cobrapy/blob/master/README.md) for which you may want to refer to the [installation docs](https://github.com/opencobra/cobrapy/blob/master/INSTALL.md).
 * [pysam](https://github.com/pysam-developers/pysam) which depends on [samtools](http://samtools.sourceforge.net/)
 * [numpy](http://www.numpy.org/), [scipy](http://www.scipy.org/), and [pandas](http://pandas.pydata.org/) which depending on your OS and configuration can be non-trivial
