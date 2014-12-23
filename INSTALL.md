@@ -21,7 +21,7 @@ sudo apt-get install postgresql postgresql-contrib postgresql-server-dev-all mon
 
 ```
 sudo -i -u postgres                    
-createuser -d -l -s <your username>
+createuser -d -l -P -s <your username>
 createdb ome
 exit
 ```
