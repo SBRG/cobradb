@@ -131,17 +131,19 @@ class Reaction(Base):
     long_name = Column(String)
     type = Column(String(20))
     notes = Column(String)
+    reaction_hash = Column(String)
     __table_args__ = (UniqueConstraint('name'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'reaction',
                        'polymorphic_on': type
                       }
 
-    def __init__(self, name, long_name, notes, biggid=""):
+    def __init__(self, name, long_name, notes, reaction_hash, biggid=""):
         self.name = name
         self.biggid = biggid
         self.long_name = long_name
         self.notes = notes
+        self.reaction_hash = reaction_hash
 
     def __repr__(self):
         return "Reaction (#%d):  %s" % \

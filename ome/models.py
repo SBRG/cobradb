@@ -26,6 +26,7 @@ class Model(Base):
     genome_id = Column(Integer, ForeignKey('genome.id', onupdate="CASCADE", ondelete="CASCADE"))
     genome = relationship('Genome', backref='model')
     notes = Column(String)
+    computable = Column(Boolean)
     #date_created = Column(DateTime)
     
     __table_args__ = (UniqueConstraint('bigg_id', 'genome_id'),{})
@@ -113,11 +114,21 @@ class Comments(Base):
     email = Column(String)
     text = Column(String)
 
+"""
 class ModelVersion(Base):
-    __tablename__='modelversion'
+    __tablename__='model_version'
     id = Column(Integer, primary_key=True)
     first_created = Column(DateTime)
     email = Column(String)
     organization = Column(String)
     modification_date = Column(DateTime)
     model_id = Column(Integer, ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
+"""
+class ModelCount(Base):
+    __tablename__='model_count'
+    id = Column(Integer, primary_key=True)
+    model_id = Column(Integer, ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
+    reaction_count = Column(Integer)
+    gene_count = Column(Integer)
+    metabolite_count = Column(Integer)
+    

@@ -41,7 +41,7 @@ config = SafeConfigParser()
 # set the default settings
 config.add_section("DATABASE")
 config.set("DATABASE", "postgres_host", "localhost:5432")
-config.set("DATABASE", "postgres_database", "ome_stage")
+config.set("DATABASE", "postgres_database", "ome_stage_2")
 config.set("DATABASE", "postgres_user", "dbuser")
 config.set("DATABASE", "postgres_password", "")
 

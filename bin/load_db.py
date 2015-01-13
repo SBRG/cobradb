@@ -34,8 +34,13 @@ if __name__ == "__main__":
     
     if args.dropmodels:
         print "dropping rows from models"
-        base.engine.execute('TRUNCATE model,reaction,component, compartment CASCADE;')
-     
+        connection = base.engine.connect()
+        trans = connection.begin()
+        try:
+            connection.execute('TRUNCATE model,reaction,component,compartment CASCADE;')
+            trans.commit()
+        except:
+            trans.rollback()
     for genbank_file in os.listdir(settings.data_directory+'annotation/genbank'):
         #if genbank_file not in ['NC_000913.2.gb']: continue
 
@@ -112,7 +117,7 @@ if __name__ == "__main__":
 
 
 
-    with open(settings.data_directory+'/annotation/model-genome2.txt') as file:
+    with open(settings.data_directory+'/annotation/model-genome.txt') as file:
 
         for line in file:
             model_id,genome_id,model_creation_timestamp = line.rstrip('\n').split(',')
