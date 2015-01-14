@@ -127,7 +127,7 @@ def parse_model(name, id_style='cobrapy'):
 
     # check for model
     name = check_for_model(name)
-    print name
+    print 'Loading model %s' % name
     if not name:
         raise Exception('Could not find model')
 
@@ -256,64 +256,6 @@ def carbons_for_exchange_reaction(reaction):
     # except AttributeError:
     #     return 0
 
-def add_pathway(model, new_metabolites, new_reactions, subsystems, bounds,
-                check_mass_balance=False, ignore_repeats=False):
-    """Add a pathway to the model. Reversibility defaults to reversible (1).
-
-    new_metabolites: e.g. { 'ggpp_c': {'formula': 'C20H33O7P2', 'name': 'name'},
-                            'phyto_c': {'formula': 'C40H64'}},
-                            'lyco_c': {'formula': 'C40H56'},
-                            'lyco_e': {'formula': 'C40H56'} }
-    new_reactions: e.g. { 'FPS': { 'ipdp_c': -2,
-                                   'ppi_c': 1,
-                                   'grdp_c': 1 },
-                          'CRTE': { 'ipdp_c': -1,
-                                    'frdp_c': -1,
-                                    'ggpp_c': 1,
-                                    'ppi_c': 1 } }
-    subsystems: e.g. { 'FPS': 'Lycopene production',
-                       'CRTE': 'Lycopene production' }
-    bound: e.g. { 'FPS': (0, 0),
-                  'CRTE': (0, 1000) }
-
-    """
-
-    for k, v in new_metabolites.iteritems():
-        formula = Formula(v['formula']) if 'formula' in v else None
-        name = v['name'] if 'name' in v else None
-        m = cobra.Metabolite(id=k, formula=formula, name=name)
-        try:
-            model.add_metabolites([m])
-        except Exception as err:
-            if (not ignore_repeats or
-                "already in the model" not in str(err)):
-                raise(err)
-
-    for name, mets in new_reactions.iteritems():
-        r = cobra.Reaction(name=name)
-        m_obj = {}
-        for k, v in mets.iteritems():
-            m_obj[model.metabolites.get_by_id(k)] = v
-        r.add_metabolites(m_obj)
-        if bounds and (name in bounds):
-            r.lower_bound, r.upper_bound = bounds[name]
-        else:
-            r.upper_bound = 1000
-            r.lower_bound = -1000
-        if subsystems and (name in subsystems):
-            r.subsystem = subsystems[name]
-        try:
-            model.add_reaction(r)
-        except Exception as err:
-            if (not ignore_repeats or
-                "already in the model" not in str(err)):
-                raise(err)
-        if check_mass_balance and 'EX_' not in name:
-            balance = model.reactions.get_by_id(name).check_mass_balance()
-            if balance != []:
-                raise Exception('Bad balance: %s' % str(balance))
-    return model
-
 def fix_legacy_id(id, use_hyphens=False):
     id = id.replace('_DASH_', '__')
     id = id.replace('_FSLASH_', '/')
@@ -365,8 +307,8 @@ class IndependentObjects:
             print "model already uploaded"
             return
         else:
-            
-            modelObject = Model(bigg_id = model.id, first_created = first_created, genome_id = genome_id, notes = '')
+            modelObject = Model(bigg_id=model.id, first_created=first_created,
+                                genome_id=genome_id, notes='')
             session.add(modelObject)
             if session.query(base.Publication).filter(base.Publication.pmid == pubmedId).count() == 0: 
                 p = base.Publication(pmid = pubmedId)
@@ -474,7 +416,8 @@ class IndependentObjects:
                 #m.update(reaction_string)
                 #reaction_hash = m.hexdigest()
                 if not session.query(Reaction).filter(Reaction.name == reaction.id).count():
-                    reactionObject = Reaction(name = reaction.id, long_name = reaction.name, notes = '', reaction_hash = hash(reaction_string))
+                    reactionObject = Reaction(name=reaction.id, long_name=reaction.name, 
+                                              notes='', reaction_hash=hash(reaction_string))
                     session.add(reactionObject)
 
     def loadCompartments(self, modellist, session):

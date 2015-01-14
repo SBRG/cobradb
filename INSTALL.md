@@ -49,7 +49,7 @@ sudo pip install cython pysam numpy scipy pandas cobra ipython
 git clone https://github.com/SBRG/ome.git
 cd ome
 python setup.py develop
-python bin/load_db.py
+python bin/load_db.py --dropall
 ```
 
 This will create a directory **ome_data** in your home folder by default.  You can move this folder and change the location by altering the value in **ome/ome/settings.ini**

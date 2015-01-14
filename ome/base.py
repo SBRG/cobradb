@@ -1,8 +1,9 @@
 """Module to implement ORM to the ome database"""
 
+from ome import settings
+
 from types import MethodType
 from os import system
-
 from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import Session as _SA_Session
 from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
@@ -10,25 +11,30 @@ from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
-
-from ome import settings
-import pymongo
 from sqlalchemy.schema import Sequence
+from warnings import warn
+
+try:
+    import pymongo
+    MONGO_INSTALLED = True
+except ImportError:
+    warn('pymongo not installed')
+    MONGO_INSTALLED = False
 
 engine = create_engine("postgresql://%s:%s@%s/%s" %
     (settings.postgres_user, settings.postgres_password, settings.postgres_host, settings.postgres_database))
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 
-
-try:
-    connection = pymongo.Connection()
-    omics_database = connection.omics_database
-except Exception as e:
-    from warnings import warn
-    warn("Failed to connect to mongo with error: " + e.message)
+if MONGO_INSTALLED:
+    try:
+        connection = pymongo.Connection()
+        omics_database = connection.omics_database
+    except Exception as e:
+        warn("Failed to connect to mongo with error: " + e.message)
+        omics_database = None
+else:
     omics_database = None
-
 
 class Genome(Base):
     __tablename__ = 'genome'
