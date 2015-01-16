@@ -16,6 +16,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--dropall", help="will empty database and reload data", action="store_true")
 parser.add_argument("--dropmodels", help="will empty model data", action="store_true")
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -23,6 +24,8 @@ if __name__ == "__main__":
     #if not dataset_loading.query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
                         'are you sure you want to do this?'): sys.exit()
     """
+    
+    
     if args.dropall:
         base.Base.metadata.drop_all()
         base.Base.metadata.create_all()
@@ -41,6 +44,7 @@ if __name__ == "__main__":
             trans.commit()
         except:
             trans.rollback()
+                        
     for genbank_file in os.listdir(settings.data_directory+'annotation/genbank'):
         #if genbank_file not in ['NC_000913.2.gb']: continue
 
@@ -59,8 +63,16 @@ if __name__ == "__main__":
 
         for chromosome in genome.chromosomes:
             component_loading.write_chromosome_annotation_gff(base, components, chromosome)
-
-        """
+    
+    with open(settings.data_directory+'/annotation/model-genome.txt') as file:
+        for line in file:
+            model_id,genome_id,model_creation_timestamp,pmid = line.rstrip('\n').split(',')
+            model_loading.load_model(model_id, genome_id, model_creation_timestamp, pmid)
+    
+    genome_data = base.omics_database.genome_data
+    genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
+    session.close()
+"""
         dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/crp', group_name='crp', normalize=normalize_flag, raw=raw_flag)
         dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/yome', group_name='yome', normalize=normalize_flag, raw=raw_flag)
 
@@ -112,23 +124,10 @@ if __name__ == "__main__":
         dataset_loading.run_array_ttests(base, datasets, genome, group_name='asv2')
         dataset_loading.run_array_ttests(base, datasets, genome, group_name='ec2')
 
-        dataset_loading.make_genome_region_map(base, datasets, genome)
-        """
+        dataset_loading.make_genome_region_map(base, datasets, genome)"""
 
 
 
-    with open(settings.data_directory+'/annotation/model-genome.txt') as file:
-
-        for line in file:
-            model_id,genome_id,model_creation_timestamp = line.rstrip('\n').split(',')
-
-            model_loading.load_model(model_id, genome_id, model_creation_timestamp)
-
-
-
-    genome_data = base.omics_database.genome_data
-
-    genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
-
-    session.close()
+    
+    
 

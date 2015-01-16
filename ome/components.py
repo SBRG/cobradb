@@ -16,7 +16,7 @@ class Gene(GenomeRegion):
     locus_id = Column(String(20))
     info = Column(String(300))
     long_name = Column(String(100))
-
+    mappedToGenbank = Column(Boolean)
     __mapper_args__ = { 'polymorphic_identity': 'gene' }
 
     def __repr__(self):

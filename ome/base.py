@@ -197,7 +197,27 @@ class Synonyms(Base):
         self.type = type
         self.synonym_data_source_id = synonym_data_source_id
 
+class Publication(Base):
+    __tablename__="publication"
+    id = Column(Integer, Sequence('wids'), primary_key=True)
+    pmid = Column(Integer)
+    
+    __table_arges__=(UniqueConstraint('pmid'),{})
+    
+    def __init_(self, pmid):
+        self.pmid = pmid
 
+class PublicationModel(Base):
+    __tablename__="publication_model"
+    model_id = Column(Integer, ForeignKey('model.id', ondelete='CASCADE'), primary_key=True)
+    publication_id = Column(Integer, ForeignKey('publication.id', ondelete='CASCADE'), primary_key=True)
+    __table_args__ = (UniqueConstraint('model_id', 'publication_id'),{})
+    
+    def __init__(self, model_id, publication_id):
+        self.model_id = model_id
+        self.publication_id = publication_id
+        
+        
 class GenomeRegionMap(Base):
         __tablename__ = 'genome_region_map'
 

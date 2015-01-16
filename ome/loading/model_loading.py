@@ -14,7 +14,7 @@ import re
 import cPickle as pickle
 import hashlib
 from sqlalchemy import create_engine, Table, MetaData, update, func
-f = open('MissingGeneList.txt', 'w')
+missinglist = open('MissingGeneList.txt', 'w')
 
 data_path = settings.data_directory
 
@@ -334,6 +334,15 @@ def fix_legacy_id(id, use_hyphens=False):
     else:
         id = id.replace("-", "__")
     return id
+    
+def split_compartment(component_id):
+    import re
+    match = re.search(r'_[a-z][a-z0-9]?$', component_id)
+    if match is None:
+        raise Exception(component_id)
+    met = component_id[0:match.start()]
+    compartment = component_id[match.start():]
+    return met, compartment
 
 class IndependentObjects:
 
@@ -344,77 +353,84 @@ class IndependentObjects:
                     geneObject = Gene(locus_id = gene.id)
                     session.add(geneObject)
 
-    def loadModel(self, model, session, genome_id, first_created):
+    def loadModel(self, model, session, genome_id, first_created, pubmedId):
         if session.query(Model).filter_by(bigg_id=model.id).count():
             print "model already uploaded"
             return
         else:
+            
             modelObject = Model(bigg_id = model.id, first_created = first_created, genome_id = genome_id, notes = '')
             session.add(modelObject)
-
-    def split_compartment(met):
-        import re
-        match = re.search(r'_[a-z][a-z0-9]?$', component.id)
-        if match is None:
-            raise Exception()
-        met = component.id[0:match.start()]
-        compartment = component.id[match.start():]
-        return met, compartment
+            if session.query(base.Publication).filter(base.Publication.pmid == pubmedId).count() == 0: 
+                p = base.Publication(pmid = pubmedId)
+                session.add(p)
+                publication = session.query(base.Publication).filter(base.Publication.pmid == pubmedId).first()
+                pm = base.PublicationModel(publication_id= publication.id, model_id = modelObject.id)
+                session.add(pm)
+            else:
+                publication = session.query(base.Publication).filter(base.Publication.pmid == pubmedId).first()
+                pm = base.PublicationModel(publication_id= publication.id, model_id = modelObject.id)
+                session.add(pm)
+                
     def parse_id(id_string):
-        return id_string.replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","") 
+        return str(id_string).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
     def loadComponents(self, modellist, session):
         for model in modellist:
             for component in model.metabolites:
-                metabolite = session.query(Metabolite).filter(Metabolite.name == split_compartment(component.id)[0])
+                try:
+                    metabolite = session.query(Metabolite).filter(Metabolite.name == split_compartment(component.id)[0])
+                except Exception:
+                    print component.id, model.id
+                    
                 #metabolite = session.query(Metabolite).filter(Metabolite.kegg_id == component.notes.get("KEGGID")[0])
                 if not metabolite.count():
                     try:
                         if isinstance( component.notes.get("KEGGID"), list):
-                            kegg_id = str(component.notes.get("KEGGID")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","") 
+                            kegg_id = parse_id(component.notes.get("KEGGID"))
                         else:
-                            kegg_id = component.notes.get("KEGGID").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            kegg_id = parse_id(component.notes.get("KEGGID"))
                     except: kegg_id = None
                     try:
                         if isinstance( component.notes.get("CASNUMBER"), list):
-                            cas_number = str(component.notes.get("CASNUMBER")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            cas_number = parse_id(component.notes.get("CASNUMBER"))
                         else: 
-                            cas_number = component.notes.get("CASNUMBER").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            cas_number = parse_id(component.notes.get("CASNUMBER"))
                     except: cas_number = None
                     try: 
                         formula = component.notes.get("FORMULA")
                     except: formula = None
                     try:
                         if isinstance( component.notes.get("brenda"), list):
-                            brenda = str(component.notes.get("brenda")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            brenda = parse_id(component.notes.get("brenda"))
                         else: 
-                            brenda = component.notes.get("brenda").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            brenda = parse_id(component.notes.get("brenda"))
                     except: brenda = None
                     try:
                         if isinstance( component.notes.get("seed"), list):
-                            seed = str(component.notes.get("seed")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            seed = parse_id(component.notes.get("seed"))
                         else: 
-                            seed = component.notes.get("seed").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            seed = parse_id(component.notes.get("seed"))
                     except: seed = None
                     try:
                         if isinstance( component.notes.get("chebi"), list):
-                            chebi = str(component.notes.get("chebi")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            chebi = parse_id(component.notes.get("chebi"))
                         else:
-                            chebi = component.notes.get("chebi").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            chebi = parse_id(component.notes.get("chebi"))
                     except: chebi = None
                     try:
                         if isinstance( component.notes.get("metacyc"), list):
-                            metacyc = str(component.notes.get("metacyc")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","") 
+                            metacyc = parse_id(component.notes.get("metacyc")) 
                         else:
-                            metacyc = component.notes.get("metacyc").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            metacyc = parse_id(component.notes.get("metacyc"))
                     except: metacyc = None
                     try:
                         if isinstance( component.notes.get("upa"), list):
-                            upa = str(component.notes.get("upa")).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","") 
+                            upa = parse_id(component.notes.get("upa"))
                         else:
-                            upa = component.notes.get("upa").replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+                            upa = parse_id(component.notes.get("upa"))
                     except: upa = None
                     
-                    metaboliteObject = Metabolite(name = component.id.split("_")[0],
+                    metaboliteObject = Metabolite(name = split_compartment(component.id)[0],
                                                   long_name = component.name,
                                                   kegg_id = kegg_id,
                                                   cas_number = cas_number,
@@ -449,8 +465,8 @@ class IndependentObjects:
                     #if not session.query(Compartment).filter(Compartment.name == component.id[-1:len(component.id)]).count():
                         #compartmentObject = Compartment(name = component.id[-1:len(component.id)])
                     if len(component.id.split('_'))>1:
-                        if not session.query(Compartment).filter(Compartment.name == component.id.split('_')[-1]).count():
-                            compartmentObject = Compartment(name = component.id.split('_')[-1])
+                        if not session.query(Compartment).filter(Compartment.name == split_compartment(component.id)[1].replace('_', '')).count():
+                            compartmentObject = Compartment(name = split_compartment(component.id)[1])
                             session.add(compartmentObject)
                     else:
                         if not session.query(Compartment).filter(Compartment.name == 'none').count():
@@ -521,16 +537,30 @@ class DependentObjects:
                                     else:
                                         print syn.ome_id
                             else:
-                                statement = gene.id + 'is missing in the genbank file. model: ' + model.id +'\n'
-                                f.write(statement)
-                    
-                                
+                                ome_gene = {}
+                                ome_gene['locus_id'] = gene.id
+                                ome_gene['name'] = gene.name
+                                ome_gene['leftpos'] = gene.locus_start
+                                ome_gene['rightpos'] = gene.locus_end
+                                ome_gene['chromosome_id'] = chrom.id
+                                ome_gene['long_name'] = gene.name
+                                ome_gene['strand'] = gene.strand
+                                ome_gene['info'] = str(gene.annotation)
+                                ome_gene['mappedToGenbank'] = False
+                                gene = session.get_or_create(components.Gene, **ome_gene)
+                                object = ModelGene(model_id = modelquery.id, gene_id = gene.id)
+                                session.add(object)
+                                session.commit()
+                                #statement = gene.id + 'is missing in the genbank file. model: ' + model.id +'\n'
+                                #missinglist.write(statement)
+                        
+        #missinglist.close()                        
 
     def loadCompartmentalizedComponent(self, modellist, session):
         for model in modellist:
             for metabolite in model.metabolites:
-                identifier = session.query(Compartment).filter(Compartment.name == metabolite.id.split("_")[-1]).first()
-                m = session.query(Metabolite).filter(Metabolite.name == metabolite.id.split("_")[0]).first()
+                identifier = session.query(Compartment).filter(Compartment.name == split_compartment(metabolite.id)[1]).first()
+                m = session.query(Metabolite).filter(Metabolite.name == split_compartment(metabolite.id)[0]).first()
                 componentCheck = session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == m.id).filter(CompartmentalizedComponent.compartment_id == identifier.id)
                 if not componentCheck.count():
                     object = CompartmentalizedComponent(component_id = m.id, compartment_id = identifier.id)
@@ -539,9 +569,9 @@ class DependentObjects:
     def loadModelCompartmentalizedComponent(self, modellist, session):
         for model in modellist:
             for metabolite in model.metabolites:
-                componentquery = session.query(Metabolite).filter(Metabolite.name == metabolite.id.split("_")[0]).first()
+                componentquery = session.query(Metabolite).filter(Metabolite.name == split_compartment(metabolite.id)[0]).first()
                 #componentquery = session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first()
-                compartmentquery = session.query(Compartment).filter(Compartment.name == metabolite.id.split("_")[-1]).first()
+                compartmentquery = session.query(Compartment).filter(Compartment.name == split_compartment(metabolite.id)[1]).first()
                 compartmentalized_component_query = session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == componentquery.id).filter(CompartmentalizedComponent.compartment_id == compartmentquery.id).first()
                 modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                 if modelquery is None:
@@ -615,9 +645,9 @@ class DependentObjects:
                 reactionquery = session.query(Reaction).filter(Reaction.name == reaction.id).first()
                 for metabolite in reaction._metabolites:
 
-                    componentquery = session.query(Metabolite).filter(Metabolite.name == metabolite.id.split("_")[0]).first()
+                    componentquery = session.query(Metabolite).filter(Metabolite.name == split_compartment(metabolite.id)[0]).first()
                     #componentquery = session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first()
-                    compartmentquery = session.query(Compartment).filter(Compartment.name == metabolite.id.split("_")[-1]).first()
+                    compartmentquery = session.query(Compartment).filter(Compartment.name == split_compartment(metabolite.id)[1]).first()
                     compartmentalized_component_query = session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == componentquery.id).filter(CompartmentalizedComponent.compartment_id == compartmentquery.id).first()
                     if not session.query(ReactionMatrix).filter(ReactionMatrix.reaction_id == reactionquery.id).filter(ReactionMatrix.compartmentalized_component_id == compartmentalized_component_query.id).count():
                         for stoichKey in reaction._metabolites.keys():
@@ -631,35 +661,35 @@ class DependentObjects:
         for reaction in m.reactions:
             escher = Escher_Map(bigg_id = reaction.id, category = "reaction", model_name = m.id)
             session.add(escher)
-
-    def loadModelCount(self, session):
-        for model_id in session.query(Model.id).all():
+    
+    def loadModelCount(self, model, session):
+        for model_id in session.query(Model.id).filter(Model.bigg_id == model.id):
             metabolite_count = (session
-                                .query(func.count(ModelCompartmentalizedComponent.id))
+                                .query(ModelCompartmentalizedComponent.id)
                                 .filter(ModelCompartmentalizedComponent.model_id == model_id)
-                                .scalar())
-            reaction_count = (session.query(func.count(ModelReaction.id))
+                                .count())
+            reaction_count = (session.query(ModelReaction.id)
                             .filter(ModelReaction.model_id == model_id)
-                            .scalar())
-            gene_count = (session.query(func.count(ModelGene.id))
+                            .count())
+            gene_count = (session.query(ModelGene.id)
                             .filter(ModelGene.model_id == model_id)       
-                            .scalar())
+                            .count())
             mc = ModelCount(model_id = model_id, gene_count = gene_count, metabolite_count = metabolite_count, reaction_count = reaction_count)
             session.add(mc)
     
     def loadOldIdtoSynonyms(self, session):
         for mkey in metaboliteIdDict.keys():
             ome_synonym = {'type':'metabolite'}
-            m = session.query(Metabolite).filter(Metabolite.name == mkey.split('_')[0]).one()
+            m = session.query(Metabolite).filter(Metabolite.name == split_compartment(mkey)[0]).first()
             if m is not None:
                 ome_synonym['ome_id'] = m.id
                 ome_synonym['synonym'] = metaboliteIdDict[mkey]
             
-                if session.query(base.DataSource).filter(base.DataSource.name=="sbml").count():                   
-                    data_source_query = session.query(base.DataSource).filter(base.DataSource.name=="sbml").first()
+                if session.query(base.DataSource).filter(base.DataSource.name=="old id").count():                   
+                    data_source_query = session.query(base.DataSource).filter(base.DataSource.name=="old id").first()
                     data_source_id = data_source_query.id
                 else:
-                    data_source = base.DataSource(name="sbml")
+                    data_source = base.DataSource(name="old id")
                     session.add(data_source)
                     session.flush()
                     data_source_id = data_source.id
@@ -671,16 +701,16 @@ class DependentObjects:
         ome_synonym = {}
         for rkey in reactionIdDict.keys():
             ome_synonym = {'type':'reaction'}
-            r = session.query(Reaction).filter(Reaction.name == rkey).one()
+            r = session.query(Reaction).filter(Reaction.name == rkey).first()
             if r is not None:
                 ome_synonym['ome_id'] = r.id
                 ome_synonym['synonym'] = reactionIdDict[rkey]
             
-                if session.query(base.DataSource).filter(base.DataSource.name=="sbml").count():
-                    data_source_query = session.query(base.DataSource).filter(base.DataSource.name=="sbml").first()
+                if session.query(base.DataSource).filter(base.DataSource.name=="old id").count():
+                    data_source_query = session.query(base.DataSource).filter(base.DataSource.name=="old id").first()
                     data_source_id = data_source_query.id
                 else:
-                    data_source = base.DataSource(name="sbml")
+                    data_source = base.DataSource(name="old id")
                     session.add(data_source)
                     session.flush()
                     data_source_id = data_source.id
@@ -688,10 +718,9 @@ class DependentObjects:
                 if not session.query(base.Synonyms).filter(base.Synonyms.ome_id == r.id).filter(base.Synonyms.synonym == reactionIdDict[rkey]).filter(base.Synonyms.type == 'reaction').first():
                     synonym = base.Synonyms(**ome_synonym)
                     session.add(synonym)
-    
-            
+               
 @timing
-def load_model(model_id, genome_id, model_creation_timestamp):
+def load_model(model_id, genome_id, model_creation_timestamp, pmid):
     with create_Session() as session:
 
         try: genome = session.query(base.Genome).filter_by(bioproject_id=genome_id).one()
@@ -701,8 +730,8 @@ def load_model(model_id, genome_id, model_creation_timestamp):
         if session.query(Model).filter_by(bigg_id=model_id).count():
             print "model already uploaded"
             return       
-        """model = parse_model(model_id)
-        IndependentObjects().loadModel(model, session, genome.id, model_creation_timestamp)
+        model = parse_model(model_id)
+        IndependentObjects().loadModel(model, session, genome.id, model_creation_timestamp, pmid)
         IndependentObjects().loadComponents([model], session)
         IndependentObjects().loadCompartments([model], session)
         DependentObjects().loadCompartmentalizedComponent([model], session)
@@ -712,7 +741,7 @@ def load_model(model_id, genome_id, model_creation_timestamp):
         DependentObjects().loadModelReaction([model], session)
         DependentObjects().loadGPRMatrix([model], session)
         DependentObjects().loadReactionMatrix([model], session)
-        DependentObjects().loadModelCount(session)"""
+        DependentObjects().loadModelCount(model, session)
         DependentObjects().loadOldIdtoSynonyms(session)
         #DependentObjects().loadEscher(session)
 
