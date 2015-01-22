@@ -16,7 +16,7 @@ class Gene(GenomeRegion):
     locus_id = Column(String(20))
     info = Column(String(300))
     long_name = Column(String(100))
-    mappedToGenbank = Column(Boolean)
+    mapped_to_genbank = Column(Boolean)
     __mapper_args__ = { 'polymorphic_identity': 'gene' }
 
     def __repr__(self):
@@ -25,11 +25,12 @@ class Gene(GenomeRegion):
                                  self.strand)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, chromosome_id=None, locus_id=None, info=None, long_name=None):
+    def __init__(self, name, leftpos, rightpos, strand, mapped_to_genbank, chromosome_id=None, locus_id=None, info=None, long_name=None):
         super(Gene, self).__init__(leftpos, rightpos, strand, chromosome_id, name)
         self.locus_id = locus_id
         self.info = info
         self.long_name = long_name
+        self.mapped_to_genbank = mapped_to_genbank
 
 
 class Motif(GenomeRegion):

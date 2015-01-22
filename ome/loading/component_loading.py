@@ -391,7 +391,7 @@ def load_genome(genbank_file, base, components, debug=False):
             ome_gene['leftpos'] = int(feature.location.start)
             ome_gene['rightpos'] = int(feature.location.end)
             ome_gene['chromosome_id'] = chromosome.id
-            ome_geme['mappedToGenbank'] = True
+            ome_gene['mapped_to_genbank'] = True
             if feature.strand == 1: ome_gene['strand'] = '+'
             elif feature.strand == -1: ome_gene['strand'] = '-'
 

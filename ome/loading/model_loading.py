@@ -336,12 +336,19 @@ def fix_legacy_id(id, use_hyphens=False):
     return id
     
 def split_compartment(component_id):
-    import re
+    """Split the metabolite bigg_id into a metabolite and a compartment id.
+    
+    Arguments
+    ---------
+    
+    component_id: the bigg_id of the metabolite.
+    
+    """
     match = re.search(r'_[a-z][a-z0-9]?$', component_id)
     if match is None:
-        raise Exception(component_id)
+        raise Exception("No compartment found for %s" % component_id)
     met = component_id[0:match.start()]
-    compartment = component_id[match.start():]
+    compartment = component_id[match.start()+1:]
     return met, compartment
 
 class IndependentObjects:
@@ -372,77 +379,89 @@ class IndependentObjects:
                 pm = base.PublicationModel(publication_id= publication.id, model_id = modelObject.id)
                 session.add(pm)
                 
-    def parse_id(id_string):
-        return str(id_string).replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+    def parse_id(id):
+        id_string = str(id)
+        return id_string.replace("{","").replace("}","").replace('[', '').replace(']', '').replace("&apos;","").replace("'","")
+        
     def loadComponents(self, modellist, session):
         for model in modellist:
             for component in model.metabolites:
                 try:
                     metabolite = session.query(Metabolite).filter(Metabolite.name == split_compartment(component.id)[0])
-                except Exception:
-                    print component.id, model.id
+                except Exception as e:
+                    print "%s. In model %s" (e, model.id)
+                    continue
                     
                 #metabolite = session.query(Metabolite).filter(Metabolite.kegg_id == component.notes.get("KEGGID")[0])
                 if not metabolite.count():
                     try:
                         if isinstance( component.notes.get("KEGGID"), list):
-                            kegg_id = parse_id(component.notes.get("KEGGID"))
+                            _kegg_id = parse_id(component.notes.get("KEGGID"))
                         else:
-                            kegg_id = parse_id(component.notes.get("KEGGID"))
-                    except: kegg_id = None
+                            _kegg_id = parse_id(component.notes.get("KEGGID"))
+                    except: _kegg_id = None
                     try:
                         if isinstance( component.notes.get("CASNUMBER"), list):
-                            cas_number = parse_id(component.notes.get("CASNUMBER"))
+                            _cas_number = parse_id(component.notes.get("CASNUMBER"))
                         else: 
-                            cas_number = parse_id(component.notes.get("CASNUMBER"))
-                    except: cas_number = None
+                            _cas_number = parse_id(component.notes.get("CASNUMBER"))
+                    except: _cas_number = None
                     try: 
                         formula = component.notes.get("FORMULA")
                     except: formula = None
                     try:
-                        if isinstance( component.notes.get("brenda"), list):
-                            brenda = parse_id(component.notes.get("brenda"))
+                        if isinstance( component.notes.get("BRENDA"), list):
+                            _brenda = parse_id(component.notes.get("BRENDA"))
                         else: 
-                            brenda = parse_id(component.notes.get("brenda"))
-                    except: brenda = None
+                            _brenda = parse_id(component.notes.get("BRENDA"))
+                    except: _brenda = None
                     try:
-                        if isinstance( component.notes.get("seed"), list):
-                            seed = parse_id(component.notes.get("seed"))
+                        if isinstance( component.notes.get("SEED"), list):
+                            _seed = parse_id(component.notes.get("SEED"))
                         else: 
-                            seed = parse_id(component.notes.get("seed"))
-                    except: seed = None
+                            _seed = parse_id(component.notes.get("SEED"))
+                    except: _seed = None
                     try:
-                        if isinstance( component.notes.get("chebi"), list):
-                            chebi = parse_id(component.notes.get("chebi"))
+                        if isinstance( component.notes.get("CHEBI"), list):
+                            _chebi = parse_id(component.notes.get("CHEBI"))
                         else:
-                            chebi = parse_id(component.notes.get("chebi"))
-                    except: chebi = None
+                            _chebi = parse_id(component.notes.get("CHEBI"))
+                    except: _chebi = None
                     try:
-                        if isinstance( component.notes.get("metacyc"), list):
-                            metacyc = parse_id(component.notes.get("metacyc")) 
+                        if isinstance( component.notes.get("METACYC"), list):
+                            _metacyc = parse_id(component.notes.get("METACYC")) 
                         else:
-                            metacyc = parse_id(component.notes.get("metacyc"))
-                    except: metacyc = None
+                            _metacyc = parse_id(component.notes.get("METACYC"))
+                    except: _metacyc = None
                     try:
-                        if isinstance( component.notes.get("upa"), list):
-                            upa = parse_id(component.notes.get("upa"))
+                        if isinstance( component.notes.get("UPA"), list):
+                            _upa = parse_id(component.notes.get("UPA"))
                         else:
-                            upa = parse_id(component.notes.get("upa"))
-                    except: upa = None
+                            _upa = parse_id(component.notes.get("UPA"))
+                    except: _upa = None
                     
+                    if component.notes.get("FORMULA1") != None:
+                        _formula = component.notes.get("FORMULA1")
+                    else:
+                        _formula = component.formula
                     metaboliteObject = Metabolite(name = split_compartment(component.id)[0],
                                                   long_name = component.name,
-                                                  kegg_id = kegg_id,
-                                                  cas_number = cas_number,
-                                                  seed = seed, 
-                                                  chebi = chebi, 
-                                                  metacyc = metacyc,
-                                                  upa = upa, 
-                                                  brenda = brenda,
-                                                  formula = str(component.formula),
-                                                  flag = bool(kegg_id))
-
+                                                  kegg_id = _kegg_id,
+                                                  cas_number = _cas_number,
+                                                  seed = _seed, 
+                                                  chebi = _chebi, 
+                                                  metacyc = _metacyc,
+                                                  upa = _upa, 
+                                                  brenda = _brenda,
+                                                  formula = str(_formula),
+                                                  flag = bool(_kegg_id))
                     session.add(metaboliteObject)
+                else:
+                    linkouts = ['KEGGID', 'CAS_NUMBER', 'SEED', 'METACYC', 'CHEBI', 'BRENDA', 'UPA']
+                    for linkout in linkouts:
+                        if (component.notes.get(linkout) is not None and getattr(metabolite, linkout) is not None):
+                            setattr(metabolite, linkout, parse_id(component.notes.get(linkout)))
+                        
     def loadReactions(self , modellist, session):
         for model in modellist:
             for reaction in model.reactions:
@@ -459,22 +478,28 @@ class IndependentObjects:
                     session.add(reactionObject)
 
     def loadCompartments(self, modellist, session):
+        compartments_all = set()
         for model in modellist:
             for component in model.metabolites:
                 if component.id is not None:
-                    #if not session.query(Compartment).filter(Compartment.name == component.id[-1:len(component.id)]).count():
-                        #compartmentObject = Compartment(name = component.id[-1:len(component.id)])
+                    compartments_all.add(split_compartment(component.id)[1])
+            for symbol in compartments_all:
+                if not session.query(Compartment).filter(Compartment.name == symbol).count():
+                    compartmentObject = Compartment(name = symbol)
+                    session.add(compartmentObject)
+"""  
                     if len(component.id.split('_'))>1:
-                        if not session.query(Compartment).filter(Compartment.name == split_compartment(component.id)[1].replace('_', '')).count():
+                        
+                                             
+                        if not session.query(Compartment).filter(Compartment.name == split_compartment(component.id)[1]).count():
                             compartmentObject = Compartment(name = split_compartment(component.id)[1])
                             session.add(compartmentObject)
+                        
                     else:
                         if not session.query(Compartment).filter(Compartment.name == 'none').count():
                             compartmentObject = Compartment(name = 'none')
                             session.add(compartmentObject)
-
-
-
+"""           
 class DependentObjects:
     def loadModelGenes(self, modellist, session):
         for model in modellist:
@@ -482,13 +507,15 @@ class DependentObjects:
                 if gene.id != 's0001':
                     modelquery = session.query(Model).filter(Model.bigg_id == model.id).first()
                     chromosomequery = session.query(Chromosome).filter(Chromosome.genome_id == modelquery.genome_id).all()
+                    if len(chromosomequery) == 0:
+                        print "no chromosome"
                     for chrom in chromosomequery:
                         if session.query(Gene).filter(Gene.locus_id == gene.id).filter(Gene.chromosome_id == chrom.id).first() != None:
                             genequery = session.query(Gene).filter(Gene.locus_id == gene.id).filter(Gene.chromosome_id == chrom.id).first()
                             if not session.query(ModelGene).join(Gene).filter(ModelGene.model_id == modelquery.id).filter(ModelGene.gene_id == genequery.id).count():
                                 object = ModelGene(model_id = modelquery.id, gene_id = genequery.id)
                                 session.add(object)
-                                session.commit()
+                                session.commit() 
                         elif session.query(Gene).filter(Gene.name == gene.id).filter(Gene.chromosome_id == chrom.id).first() != None:
                             genequery = session.query(Gene).filter(Gene.name == gene.id).filter(Gene.chromosome_id == chrom.id).first()
                         
@@ -505,21 +532,41 @@ class DependentObjects:
                                 session.commit()
                         else:
                             synonymquery = session.query(Synonyms).filter(Synonyms.synonym == gene.id.split(".")[0]).filter(Synonyms.type == 'gene').all()
-                            if synonymquery != None:
+                            if len(synonymquery) != 0:
+                                print gene.id
                                 for syn in synonymquery:
                                     genecheck = session.query(Gene).filter(Gene.id == syn.ome_id).first()
-                                    if genecheck:
-                                
+                                    if genecheck is not None:
                                         if not session.query(ModelGene).join(Gene).filter(ModelGene.model_id == modelquery.id).filter(ModelGene.gene_id == genecheck.id).count():
                                             object = ModelGene(model_id = modelquery.id, gene_id = syn.ome_id)
                                             session.add(object)
                                             session.commit()
+                                        else:
+                                            print "no model gene found" 
 
                                         if modelquery.bigg_id == "RECON1" or modelquery.bigg_id == "iMM1415":
                                             genequery = session.query(Gene).filter(Gene.id == syn.ome_id).first()
                                             genequery.locus_id = gene.id
                                     else:
                                         print syn.ome_id
+                            else:
+                                ome_gene = {}
+                                ome_gene['locus_id'] = gene.id
+                                ome_gene['name'] = gene.name
+                                ome_gene['leftpos'] = gene.locus_start
+                                ome_gene['rightpos'] = gene.locus_end
+                                ome_gene['chromosome_id'] = chrom.id
+                                ome_gene['long_name'] = gene.name
+                                ome_gene['strand'] = gene.strand
+                                ome_gene['info'] = str(gene.annotation)
+                                ome_gene['mapped_to_genbank'] = False
+                                geneObject = Gene(**ome_gene)
+                                session.add(geneObject)
+                                geneQuery = session.query(Gene).filter(Gene.locus_id == gene.id).filter(Gene.name == gene.name).filter(Gene.leftpos == gene.locus_start).filter(Gene.rightpos == gene.locus_end).filter(Gene.chromosome_id == chrom.id).filter(Gene.strand == gene.strand).filter(Gene.mapped_to_genbank == False).one()
+                                object = ModelGene(model_id = modelquery.id, gene_id = geneQuery.id)
+                                session.add(object)
+                                session.commit()                            
+                            """
                             elif session.query(Synonyms).filter(Synonyms.synonym == gene.id).filter(Synonyms.type == 'gene').count():
                                 synonymquery = session.query(Synonyms).filter(Synonyms.synonym == gene.id).filter(Synonyms.type == 'gene').all()
                                 for syn in synonymquery:
@@ -537,6 +584,7 @@ class DependentObjects:
                                     else:
                                         print syn.ome_id
                             else:
+                                print " create gene"
                                 ome_gene = {}
                                 ome_gene['locus_id'] = gene.id
                                 ome_gene['name'] = gene.name
@@ -546,15 +594,19 @@ class DependentObjects:
                                 ome_gene['long_name'] = gene.name
                                 ome_gene['strand'] = gene.strand
                                 ome_gene['info'] = str(gene.annotation)
-                                ome_gene['mappedToGenbank'] = False
-                                gene = session.get_or_create(components.Gene, **ome_gene)
+                                ome_gene['mapped_to_genbank'] = False
+                                #gene = session.get_or_create(components.Gene, **ome_gene)
+                                gene = Gene(**ome_gene)
+                                session.add(gene)
+                                
+                                print "gene not from genbank was created"
                                 object = ModelGene(model_id = modelquery.id, gene_id = gene.id)
                                 session.add(object)
                                 session.commit()
                                 #statement = gene.id + 'is missing in the genbank file. model: ' + model.id +'\n'
                                 #missinglist.write(statement)
-                        
-        #missinglist.close()                        
+                            """   
+                            
 
     def loadCompartmentalizedComponent(self, modellist, session):
         for model in modellist:
