@@ -46,3 +46,6 @@ nosetests.xml
 # Other
 gurobi.log
 nohup.out
+
+ome_data/
+ome_data

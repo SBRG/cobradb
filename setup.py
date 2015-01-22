@@ -1,6 +1,10 @@
-from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 from codecs import open  # To use a consistent encoding
 from os import path
+
+try:
+    from setuptools import setup, Command
+except:
+    from distutils.core import setup, Command
 
 here = path.abspath(path.dirname(__file__))
 
@@ -14,7 +18,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='0.0.1',
+    version='0.0.1-bigg',
 
     description='The OME Framework',
     long_description=long_description,
@@ -50,33 +54,18 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
     ],
-
-    # What does your project relate to?
     keywords='systems biology',
-
-    # You can just specify the packages manually here if your project is
-    # simple. Or you can use find_packages().
-    packages=['ome',],
-
-    # List run-time dependencies here.  These will be installed by pip when your
-    # project is installed. For an analysis of "install_requires" vs pip's
-    # requirements files see:
-    # https://packaging.python.org/en/latest/technical.html#install-requires-vs-requirements-files
-    install_requires=['sqlalchemy','numpy','scipy','simplejson','pandas','cobra','pysam','ipython','tornado',
-                      'pyzmq','jinja2'],
-
-    # List additional groups of dependencies here (e.g. development dependencies).
-    # You can install these using the following syntax, for example:
-    # $ pip install -e .[dev,test]
-    extras_require = {
-        'dev': ['check-manifest'],
-        'test': ['coverage'],
-    },
-
-    # If there are data files included in your packages that need to be
-    # installed, specify them here.  If using Python 2.6 or less, then these
-    # have to be included in MANIFEST.in as well.
-    package_data={'ome': ['data/*']},
-
-
-)
+    packages=['ome'],
+    install_requires=['SQLAlchemy>=0.9.8',
+                      'cobra>=0.3.0',
+                      'numpy>=1.9.1',
+                      'pandas>=0.15.2',
+                      'pysam>=0.8.1',
+                      'pyzmq>=14.4.1',
+                      'scipy>=0.15.0',
+                      'simplejson>=3.6.5',
+                      'psycopg2>=2.5.4',
+                      'biopython>=1.65'],
+    extras_require = {'all': ['pymongo>=2.7.2',
+                              'ipython>=2.3.1']},
+    package_data={'ome': ['data/*']})

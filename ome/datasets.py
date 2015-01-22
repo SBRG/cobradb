@@ -11,10 +11,8 @@ from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.sql.expression import join
 from sqlalchemy import func
 
-from pymongo import ASCENDING, DESCENDING
 from math import ceil
 import simplejson as json
-
 
 class ExpandedEnvironments:
     """

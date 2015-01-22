@@ -7,11 +7,17 @@ from ome.loading import component_loading
 from ome.loading import model_loading
 
 from sqlalchemy.schema import Sequence,CreateSequence
-from pymongo import ASCENDING
+from warnings import warn
 import sys
 import os
 import argparse
 
+try:
+    from pymongo import ASCENDING
+    MONGO_INSTALLED = True
+except ImportError:
+    warn('pymongo not installed')
+    MONGO_INSTALLED = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dropall", help="will empty database and reload data", action="store_true")
@@ -67,11 +73,18 @@ if __name__ == "__main__":
     with open(settings.data_directory+'/annotation/model-genome.txt') as file:
         for line in file:
             model_id,genome_id,model_creation_timestamp,pmid = line.rstrip('\n').split(',')
-            model_loading.load_model(model_id, genome_id, model_creation_timestamp, pmid)
-    
+            try:
+                model_loading.load_model(model_id, genome_id, model_creation_timestamp, pmid)
+            except Exception as e:
+                warn('Could not load model %s. %s' % (model_id, e))
+
     genome_data = base.omics_database.genome_data
-    genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
+
+    if MONGO_INSTALLED:
+        genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])
+
     session.close()
+
 """
         dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/crp', group_name='crp', normalize=normalize_flag, raw=raw_flag)
         dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/yome', group_name='yome', normalize=normalize_flag, raw=raw_flag)
@@ -124,10 +137,5 @@ if __name__ == "__main__":
         dataset_loading.run_array_ttests(base, datasets, genome, group_name='asv2')
         dataset_loading.run_array_ttests(base, datasets, genome, group_name='ec2')
 
-        dataset_loading.make_genome_region_map(base, datasets, genome)"""
-
-
-
-    
-    
-
+        dataset_loading.make_genome_region_map(base, datasets, genome)
+        """
