@@ -5,20 +5,19 @@ from pkgutil import extend_path
 __path__ = extend_path(__path__, "ome")
 del extend_path
 import settings
-
+import logging
 
 def timing(function):
     def wrapper(*args, **kwargs):
         arg_str = str(args)
         if arg_str[-2] == ",": # trailing comma
             arg_str = arg_str[:-2] + ")"
-        print "starting %s ... %s\n" % (function.func_name, args[0]),
+        logging.debug("starting %s" % function.func_name)
         _stdout.flush()
         l = len(function.func_name)
         start = _time()
         res = function(*args, **kwargs)
-        print "%s complete (%.2f sec)"% (function.func_name,
-            _time() - start)
+        logging.debug("%s complete (%.2f sec)"% (function.func_name, _time() - start))
         return res
     wrapper.func_doc = function.func_doc
     return wrapper

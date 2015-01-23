@@ -67,5 +67,6 @@ setup(
                       'psycopg2>=2.5.4',
                       'biopython>=1.65'],
     extras_require = {'all': ['pymongo>=2.7.2',
-                              'ipython>=2.3.1']},
+                              'ipython>=2.3.1',
+                              'pytest>=2.6.4']},
     package_data={'ome': ['data/*']})
