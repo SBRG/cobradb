@@ -1,10 +1,12 @@
+# -*- coding: utf-8 -*-
+
+from ome import settings, timing, base
+from ome.components import Gene, Protein
+
 import sys, os, math, re
 from warnings import warn
-
 from sqlalchemy import text, or_, and_, func
-
-from ome import settings, timing
-
+import logging
 
 def getAttributes(file_name):
     file = open(settings.data_directory + '/annotation/MetaCyc/17.1/data/'+file_name,'r')
@@ -312,46 +314,55 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome, 
 
 
 @timing
-def load_genome(genbank_file, base, components, debug=False):
-
+def load_genome(genbank_file, debug=False):
+    # imports 
     from Bio import SeqIO
 
+    # get the session
     session = base.Session()
+    
+    # load the genbank file
+    logging.debug('Loading file: %s' % genbank_file)
     try:
-        gb_file = SeqIO.read(settings.data_directory+'/annotation/genbank/'+genbank_file,'gb')
+        gb_file = SeqIO.read(genbank_file, 'gb')
     except IOError:
-        warn("File '%s' not found" % genbank_file)
+        raise Exception("File '%s' not found" % genbank_file)
     except Exception as e:
-        warn('biopython failed to parse %s with error "%s"' %
-             (genbank_file, e.message))
-        return
+        raise Exception('biopython failed to parse %s with error "%s"' %
+                        (genbank_file, e.message))
 
-    #from IPython import embed; embed()
     bioproject_id = ''
     for value in gb_file.dbxrefs[0].split():
         if 'BioProject' in value:
             bioproject_id = value.split(':')[1]
 
     if not bioproject_id:
-        print 'Invalid genbank file %s: does not contain a BioProject ID' % (genbank_file)
+        raise Exception('Invalid genbank file %s: does not contain a BioProject ID' % (genbank_file))
 
-
-    genome = session.query(base.Genome).filter(base.Genome.bioproject_id == bioproject_id).first()
+    genome = (session
+              .query(base.Genome)
+              .filter(base.Genome.bioproject_id == bioproject_id)
+              .first())
 
     if not genome:
-        ome_genome = {'bioproject_id' : bioproject_id,
-                      'organism'      : gb_file.annotations['organism']}
+        logging.debug('Add new genome: %s' % bioproject_id)
+        ome_genome = {'bioproject_id': bioproject_id,
+                      'organism': gb_file.annotations['organism']}
         genome = base.Genome(**ome_genome)
         session.add(genome)
         session.flush()
 
-    chromosome = session.query(base.Chromosome).filter(base.Chromosome.genbank_id == gb_file.annotations['gi']).filter(base.Chromosome.genome_id == genome.id).first()
+    chromosome = (session
+                  .query(base.Chromosome)
+                  .filter(base.Chromosome.genbank_id == gb_file.annotations['gi'])
+                  .filter(base.Chromosome.genome_id == genome.id)
+                  .first())
 
     if not chromosome:
+        logging.debug('Add new chromosome: %s' % gb_file.annotations['gi'])
         ome_chromosome = {'genome_id': genome.id,
-                      'genbank_id': gb_file.annotations['gi'],
-                      'ncbi_id': gb_file.id}
-
+                          'genbank_id': gb_file.annotations['gi'],
+                          'ncbi_id': gb_file.id}
         chromosome = base.Chromosome(**ome_chromosome)
         session.add(chromosome)
         session.flush()
@@ -405,13 +416,13 @@ def load_genome(genbank_file, base, components, debug=False):
                 ome_protein['long_name'] = feature.qualifiers['function'][0]
 
 
-            gene = session.get_or_create(components.Gene, **ome_gene)
+            gene = session.get_or_create(Gene, **ome_gene)
 
 
             """
             if gene == None:
                 print "get or create returned none"
-                gene = components.Gene(**ome_gene)
+                gene = Gene(**ome_gene)
                 session.add(gene)
             """
             if 'db_xref' in feature.qualifiers:
@@ -476,7 +487,7 @@ def load_genome(genbank_file, base, components, debug=False):
                     continue  # don't make a protein entry
                 ome_protein['gene_id'] = gene.id
 
-                session.get_or_create(components.Protein, **ome_protein)
+                session.get_or_create(Protein, **ome_protein)
 
     session.commit()
     session.close()

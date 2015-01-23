@@ -6,8 +6,8 @@ from types import MethodType
 from os import system
 from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import Session as _SA_Session
-from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
-    String, Float, ForeignKey
+from sqlalchemy import (Table, MetaData, create_engine, Column, Integer, String,
+                        Float, ForeignKey)
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager

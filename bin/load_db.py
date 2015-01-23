@@ -1,16 +1,20 @@
 #! /usr/bin/python
 
-from ome import base,settings,components,datasets,models,timing
-
+from ome import base, settings, components, datasets, models, timing
 from ome.loading import dataset_loading
 from ome.loading import component_loading
 from ome.loading import model_loading
 
-from sqlalchemy.schema import Sequence,CreateSequence
+from sqlalchemy.schema import Sequence, CreateSequence
 from warnings import warn
 import sys
 import os
+from os.path import join
 import argparse
+import logging
+
+# configure the logger
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 try:
     from pymongo import ASCENDING
@@ -20,68 +24,95 @@ except ImportError:
     MONGO_INSTALLED = False
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dropall", help="will empty database and reload data", action="store_true")
-parser.add_argument("--dropmodels", help="will empty model data", action="store_true")
+parser.add_argument('--drop-all', help='Empty database and reload data', action='store_true')
+parser.add_argument('--drop-models', help='Empty model data', action='store_true')
 
 args = parser.parse_args()
 
+def drop_all_tables(engine):
+    """Drops all tables from a postgres database.
+
+    Adapted from: http://www.siafoo.net/snippet/85
+
+    """
+    
+    from sqlalchemy.sql.expression import text
+     
+    table_sql = ("SELECT table_name FROM information_schema.tables "
+                 "WHERE table_schema='public' AND table_name NOT LIKE 'pg_%%'")
+
+    for table in [name for (name, ) in engine.execute(text(table_sql))]:
+        engine.execute(text('DROP TABLE %s CASCADE' % table))
+
 if __name__ == "__main__":
-    """
-    #if not dataset_loading.query_yes_no('This will drop the ENTIRE database and load from scratch, ' + \
-                        'are you sure you want to do this?'): sys.exit()
-    """
-    
-    
-    if args.dropall:
-        base.Base.metadata.drop_all()
+    if args.drop_all:
+        logging.info("Dropping everything from the database")
+        drop_all_tables(base.engine)
+        logging.info("Building the database models")
         base.Base.metadata.create_all()
 
-        try: base.omics_database.genome_data.drop()
-        except: None
-        print "dropping all"
-        #base.engine.execute(CreateSequence(Sequence('wids')))
+        try:
+            base.omics_database.genome_data.drop()
+        except: 
+            pass
     
-    if args.dropmodels:
-        print "dropping rows from models"
+    if args.drop_models:
+        logging.info('Dropping rows from models')
         connection = base.engine.connect()
         trans = connection.begin()
         try:
-            connection.execute('TRUNCATE model,reaction,component,compartment CASCADE;')
+            connection.execute('TRUNCATE model, reaction, component, compartment CASCADE;')
             trans.commit()
         except:
             trans.rollback()
                         
-    for genbank_file in os.listdir(settings.data_directory+'annotation/genbank'):
-        #if genbank_file not in ['NC_000913.2.gb']: continue
-
-        component_loading.load_genome(genbank_file, base, components, debug=False)
-
+    logging.info('Loading genomes')
+    genbank_dir = join(settings.data_directory, 'annotation', 'genbank')
+    dirs = os.listdir(genbank_dir)
+    n = len(dirs)
+    for i, genbank_file in enumerate(dirs):
+        logging.info('Loading genome from genbank file (%d of %d) %s' % (i + 1, n, genbank_file))
+        try:
+            component_loading.load_genome(join(genbank_dir, genbank_file), debug=False)
+        except Exception as e:
+            logging.error(str(e))
 
     session = base.Session()
 
-    data_genomes = session.query(base.Genome).filter(base.Genome.bioproject_id.in_(['PRJNA57779'])).all()
-
+    data_genomes = (session
+                    .query(base.Genome)
+                    .filter(base.Genome.bioproject_id.in_(['PRJNA57779']))
+                    .all())
 
     raw_flag = False
     normalize_flag = False
 
     for genome in data_genomes:
-
         for chromosome in genome.chromosomes:
-            component_loading.write_chromosome_annotation_gff(base, components, chromosome)
+            component_loading.write_chromosome_annotation_gff(base, components,
+                                                              chromosome)
     
-    with open(settings.data_directory+'/annotation/model-genome.txt') as file:
-        for line in file:
-            model_id,genome_id,model_creation_timestamp,pmid = line.rstrip('\n').split(',')
+    logging.info("Loading models")
+    model_dir = join(settings.data_directory, 'annotation', 'models')
+    model_genome_file = join(settings.data_directory,
+                             'annotation',
+                             'model-genome.txt')
+    with open(model_genome_file) as f:
+        n = len(f)
+        for i, line in enumerate(f):
+            model_id, genome_id, timestamp, pmid = line.rstrip('\n').split(',')
+            logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_id))
             try:
-                model_loading.load_model(model_id, genome_id, model_creation_timestamp, pmid)
+                model_loading.load_model(model_id, model_dir, genome_id,
+                                         timestamp, pmid)
             except Exception as e:
-                warn('Could not load model %s. %s' % (model_id, e))
+                logging.error('Could not load model %s. %s' % (model_id, e))
 
     genome_data = base.omics_database.genome_data
 
     if MONGO_INSTALLED:
-        genome_data.create_index([("data_set_id", ASCENDING), ("leftpos", ASCENDING)])
+        genome_data.create_index([("data_set_id", ASCENDING),
+                                  ("leftpos", ASCENDING)])
 
     session.close()
 

@@ -44,6 +44,7 @@ config.set("DATABASE", "postgres_host", "localhost:5432")
 config.set("DATABASE", "postgres_database", "ome_stage_2")
 config.set("DATABASE", "postgres_user", "dbuser")
 config.set("DATABASE", "postgres_password", "")
+config.set("DATABASE", "postgres_test_database", "ome_test")
 
 config.add_section("MISC")
 config.set("MISC", "entrez_email", "SET_ENTREZ_EMAIL")
@@ -124,6 +125,7 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
         __os.environ["PGPASSWORD"] = self.postgres_password
     self.postgres_database = config.get("DATABASE", "postgres_database")
     self.postgres_host = config.get("DATABASE", "postgres_host")
+    self.postgres_test_database = config.get("DATABASE", "postgres_test_database")
     self.psql = _escape_space(config.get("EXECUTABLES", "psql"))
     self.R = _escape_space(config.get("EXECUTABLES", "R"))
     self.Rscript = _escape_space(config.get("EXECUTABLES", "Rscript"))

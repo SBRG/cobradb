@@ -1,411 +1,0 @@
-starting load_genome ...load_genome complete (132.48 sec)
-starting load_genome ...load_genome complete (87.84 sec)
-starting load_genome ...load_genome complete (74.92 sec)
-starting load_genome ...load_genome complete (51.17 sec)
-starting load_genome ...load_genome complete (53.55 sec)
-starting load_genome ...load_genome complete (64.04 sec)
-starting load_genome ...load_genome complete (57.66 sec)
-starting load_genome ...load_genome complete (43.93 sec)
-starting load_genome ...load_genome complete (52.70 sec)
-starting load_genome ...load_genome complete (57.29 sec)
-starting load_genome ...load_genome complete (76.17 sec)
-starting load_genome ...load_genome complete (67.83 sec)
-starting load_genome ...load_genome complete (22.58 sec)
-starting load_genome ...load_genome complete (42.43 sec)
-starting load_genome ...load_genome complete (39.64 sec)
-starting load_genome ...load_genome complete (51.98 sec)
-starting load_genome ...load_genome complete (75.46 sec)
-starting load_genome ...load_genome complete (20.02 sec)
-starting load_genome ...load_genome complete (80.48 sec)
-starting load_genome ...load_genome complete (34.03 sec)
-starting load_genome ...load_genome complete (14.89 sec)
-starting load_genome ...load_genome complete (29.53 sec)
-starting load_genome ...load_genome complete (49.21 sec)
-starting load_genome ...load_genome complete (4.73 sec)
-starting load_genome ...load_genome complete (50.80 sec)
-starting load_genome ...load_genome complete (77.55 sec)
-starting load_genome ...load_genome complete (70.99 sec)
-starting load_genome ...load_genome complete (105.86 sec)
-starting load_genome ...load_genome complete (87.03 sec)
-starting load_genome ...load_genome complete (82.86 sec)
-starting load_genome ...load_genome complete (111.38 sec)
-starting load_genome ...load_genome complete (30.26 sec)
-starting load_genome ...load_genome complete (80.66 sec)
-starting load_genome ...load_genome complete (126.07 sec)
-starting write_chromosome_annotation_gff ...write_chromosome_annotation_gff complete (0.45 sec)
-starting load_raw_files ...load_raw_files complete (0.98 sec)
-starting load_raw_files ...load_raw_files complete (0.66 sec)
-starting load_raw_files ...load_raw_files complete (0.50 sec)
-starting load_raw_files ...load_raw_files complete (1.44 sec)
-starting load_raw_files ...load_raw_files complete (0.54 sec)
-starting load_raw_files ...load_raw_files complete (0.69 sec)
-starting load_raw_files ...load_raw_files complete (0.89 sec)
-starting load_model ...Genbank file PRJNA310 for model iSF_1195 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...26062.1 RECON1
-284208.1 RECON1
-4513.1 RECON1
-4538.1 RECON1
-8781.1 RECON1
-286016.1 RECON1
-26237.1 RECON1
-2679.1 RECON1
-55350.1 RECON1
-6537.1 RECON1
-4845.1 RECON1
-9954.1 RECON1
-4512.1 RECON1
-5240.1 RECON1
-9952.1 RECON1
-4540.1 RECON1
-2544.1 RECON1
-22305.2 RECON1
-22305.1 RECON1
-57733.1 RECON1
-4844.1 RECON1
-80068.1 RECON1
-4514.1 RECON1
-4519.1 RECON1
-2713.1 RECON1
-2351.1 RECON1
-4539.1 RECON1
-4535.1 RECON1
-4537.1 RECON1
-4541.1 RECON1
-4536.1 RECON1
-2655.1 RECON1
-2974.1 RECON1
-348477.1 RECON1
-55350.3 RECON1
-55350.2 RECON1
-285216.1 RECON1
-7359.1 RECON1
-286297.1 RECON1
-mistake 2351.1 5MTHFt
-mistake 284208.1 AG13T10g
-mistake 284208.1 AG13T11g
-mistake 284208.1 AG13T12g
-mistake 284208.1 AG13T13g
-mistake 284208.1 AG13T14g
-mistake 284208.1 AG13T15g
-mistake 284208.1 AG13T16g
-mistake 284208.1 AG13T17g
-mistake 284208.1 AG13T18g
-mistake 284208.1 AG13T1g
-mistake 284208.1 AG13T2g
-mistake 284208.1 AG13T3g
-mistake 284208.1 AG13T4g
-mistake 284208.1 AG13T5g
-mistake 284208.1 AG13T6g
-mistake 284208.1 AG13T7g
-mistake 284208.1 AG13T8g
-mistake 284208.1 AG13T9g
-mistake 57733.1 BDG2HCGHD
-mistake 6537.1 CREATt4(2)r
-mistake 4513.1 CYOOm3
-mistake 4514.1 CYOOm3
-mistake 4512.1 CYOOm3
-mistake 4519.1 CYOR_u10m
-mistake 26237.1 ENO
-mistake 22305.2 FACOAL150
-mistake 22305.1 FACOAL150
-mistake 22305.2 FACOAL160i
-mistake 22305.1 FACOAL160i
-mistake 22305.2 FACOAL170
-mistake 22305.1 FACOAL170
-mistake 22305.2 FACOAL180i
-mistake 22305.1 FACOAL180i
-mistake 22305.1 FACOAL204i
-mistake 22305.2 FACOAL204i
-mistake 286297.1 FTHFL
-mistake 7359.1 GALU
-mistake 2655.1 GGLUCT
-mistake 2713.1 GLYK
-mistake 2713.1 GLYKm
-mistake 2679.1 GTMLTe
-mistake 2974.1 GUACYC
-mistake 26062.1 HPCLx
-mistake 285216.1 MTHFC
-mistake 80068.1 MTHFC
-mistake 285216.1 MTHFD2
-mistake 80068.1 MTHFD2
-mistake 4535.1 NADH2_u10m
-mistake 4536.1 NADH2_u10m
-mistake 4541.1 NADH2_u10m
-mistake 4540.1 NADH2_u10m
-mistake 4538.1 NADH2_u10m
-mistake 4539.1 NADH2_u10m
-mistake 4537.1 NADH2_u10m
-mistake 4844.1 NOS1
-mistake 4845.1 NOS1
-mistake 4844.1 NOS2
-mistake 4845.1 NOS2
-mistake 348477.1 PGK
-mistake 5240.1 PGLYCP
-mistake 2544.1 PIter
-mistake 55350.3 PNTEH
-mistake 55350.2 PNTEH
-mistake 55350.1 PNTEH
-mistake 8781.1 PSP_L
-mistake 9952.1 S3T3g
-mistake 9954.1 S3T3g
-mistake 286016.1 TPI
-close
-load_model complete (325.86 sec)
-starting load_model ...pWW0_102 iJN746
-pWW0_100 iJN746
-pWW0_101 iJN746
-pWW0_099 iJN746
-pWW0_128 iJN746
-pWW0_127 iJN746
-pWW0_130 iJN746
-pWW0_094 iJN746
-pWW0_095 iJN746
-pWW0_096 iJN746
-pWW0_097 iJN746
-pWW0_090 iJN746
-pWW0_091 iJN746
-pWW0_092 iJN746
-pWW0_093 iJN746
-PP_3739 iJN746
-pWW0_131 iJN746
-pWW0_129 iJN746
-mistake pWW0_128 3MBZALDH
-mistake pWW0_131 3MBZDH
-mistake pWW0_097 3MCAT23DOX
-mistake pWW0_128 4MBZALDH
-mistake pWW0_131 4MBZDH
-mistake pWW0_097 4MCAT23DOX
-mistake pWW0_091 4OD
-mistake pWW0_091 4OD2
-mistake pWW0_090 4OT
-mistake pWW0_090 4OT2
-mistake pWW0_093 ACALD
-mistake pWW0_100 BZ12DOX
-mistake pWW0_101 BZ12DOX
-mistake pWW0_102 BZ12DOX
-mistake pWW0_128 BZALDH
-mistake pWW0_131 BZDH
-mistake pWW0_099 BZDIOLDH
-mistake pWW0_097 CAT23DOX
-mistake pWW0_099 DH3MCHCDH
-mistake pWW0_099 DH4MCHCDH
-mistake pWW0_096 HMSD
-mistake pWW0_096 HMSD2
-mistake pWW0_095 HMSH
-mistake pWW0_095 HMSH2
-mistake pWW0_095 HMSH3
-mistake pWW0_092 HOPNTAL
-mistake pWW0_092 HOPNTAL2
-mistake pWW0_092 HOPNTAL3
-mistake pWW0_100 MTOLDOX
-mistake pWW0_101 MTOLDOX
-mistake pWW0_102 MTOLDOX
-mistake pWW0_129 MXMO
-mistake pWW0_130 MXMO
-mistake pWW0_094 OP4ENH
-mistake pWW0_094 OP4ENH2
-mistake pWW0_094 OP4ENH3
-mistake pWW0_100 PTOLDOX
-mistake pWW0_102 PTOLDOX
-mistake pWW0_101 PTOLDOX
-mistake pWW0_129 PXMO
-mistake pWW0_130 PXMO
-mistake pWW0_127 TOLtex
-mistake PP_3739 VANLNtex
-mistake PP_3739 VANLTtex
-mistake pWW0_129 XMO
-mistake pWW0_130 XMO
-close
-load_model complete (87.52 sec)
-starting load_model .../usr/local/lib/python2.7/site-packages/cobra/core/Formula.py:132: UserWarning: Unable to parse your formula: hp.  Perhaps it is not empirical? Perhaps the composition has floats?
-  ' empirical? Perhaps the composition has floats?')
-HP0093 iIT341
-HP0905 iIT341
-HP0903 iIT341
-HP0094 iIT341
-mistake HP0903 ACKr
-mistake HP0093 LPSSYN_HP
-mistake HP0094 LPSSYN_HP
-mistake HP0905 PTAr
-close
-load_model complete (43.44 sec)
-starting load_model ...Rv2322c iNJ661
-Rv2321c iNJ661
-Rv0619 iNJ661
-Rv0618 iNJ661
-Rv2233 iNJ661
-Rv1755c iNJ661
-mistake Rv1755c PLCD
-mistake Rv2233 PGLYCP
-mistake Rv1755c PAPA160
-mistake Rv0619 GALT
-mistake Rv0618 GALT
-mistake Rv2321c ORNTA
-mistake Rv2322c ORNTA
-close
-load_model complete (85.16 sec)
-starting load_model .../usr/local/lib/python2.7/site-packages/cobra/core/Formula.py:132: UserWarning: Unable to parse your formula: c.  Perhaps it is not empirical? Perhaps the composition has floats?
-  ' empirical? Perhaps the composition has floats?')
-/usr/local/lib/python2.7/site-packages/cobra/core/Formula.py:132: UserWarning: Unable to parse your formula: e.  Perhaps it is not empirical? Perhaps the composition has floats?
-  ' empirical? Perhaps the composition has floats?')
-/usr/local/lib/python2.7/site-packages/cobra/core/Formula.py:132: UserWarning: Unable to parse your formula: p.  Perhaps it is not empirical? Perhaps the composition has floats?
-  ' empirical? Perhaps the composition has floats?')
-iroB iAPECO1_1312
-mistake iroB ENTERGLCT1
-mistake iroB ENTERGLCT2
-close
-load_model complete (225.67 sec)
-starting load_model ...close
-load_model complete (220.40 sec)
-starting load_model ...Genbank file PRJNA59391 for model iBWG_1329 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA57915 for model ic_1306 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA59343 for model iE2348C_1286 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJEA40647 for model iEC042_1314 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA33413 for model iEC55989_1330 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA38725 for model iECABU_c1320 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA18281 for model iECB_1328 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA30681 for model iECBD_1354 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA20713 for model iECD_1391 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA30031 for model iEcDH1_1363 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJDA52077 for model iECDH1ME8569_1439 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA20079 for model iECDH10B was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA13960 for model iEcE24377_1341 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA33409 for model iECED1_1282 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA27739 for model iECH74115_1262 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA13959 for model iEcHS_1320 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA33373 for model iECIAI1_1343 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA33411 for model iECIAI39_1322 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA66975 for model iECNA114_1301 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJDA32511 for model iECO103_1326 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJDA32513 for model iECO111_1330 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJDA32509 for model iECO26_1355 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA43693 for model iECOK1_1307 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA18083 for model iEcolC_1368 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA16235 for model iECP_1309 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA33375 for model iECS88_1305 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA226 for model iECs_1301 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA18057 for model iECSE_1348 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJDA19053 for model iECSF_1327 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA19469 for model iEcSMS35_1347 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA30045 for model iECSP_1301 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA33415 for model iECUMN_1333 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA48011 for model iECW_1372 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA33875 for model iEKO11_1354 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJEA42749 for model iETEC_1333 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA42729 for model iG2583_1286 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA33825 for model iLF82_1304 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA41221 for model iNRG857_1313 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA408 for model iS_1188 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA15637 for model iSbBS512_1146 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA13146 for model iSBO_1134 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA13145 for model iSDY_1059 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA16375 for model iSFV_1184 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA33639 for model iSFxv_1172 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA13151 for model iSSON_1240 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA50883 for model iUMN146_1321 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA42137 for model iUMNK88_1353 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA16259 for model iUTI89_1310 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA62301 for model iWFL_1372 was not uploaded
-close
-load_model complete (0.00 sec)
-starting load_model ...Genbank file PRJNA259 for model iZ_1308 was not uploaded
-close
-load_model complete (0.00 sec)
