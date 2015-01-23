@@ -26,6 +26,8 @@ except ImportError:
 parser = argparse.ArgumentParser()
 parser.add_argument('--drop-all', help='Empty database and reload data', action='store_true')
 parser.add_argument('--drop-models', help='Empty model data', action='store_true')
+parser.add_argument('--skip-genomes', help='Skip genome loading', action='store_true')
+parser.add_argument('--skip-models', help='Skip model loading', action='store_true')
 
 args = parser.parse_args()
 
@@ -66,47 +68,50 @@ if __name__ == "__main__":
         except:
             trans.rollback()
                         
-    logging.info('Loading genomes')
-    genbank_dir = join(settings.data_directory, 'annotation', 'genbank')
-    dirs = os.listdir(genbank_dir)
-    n = len(dirs)
-    for i, genbank_file in enumerate(dirs):
-        logging.info('Loading genome from genbank file (%d of %d) %s' % (i + 1, n, genbank_file))
-        try:
-            component_loading.load_genome(join(genbank_dir, genbank_file), debug=False)
-        except Exception as e:
-            logging.error(str(e))
-
-    session = base.Session()
-
-    data_genomes = (session
-                    .query(base.Genome)
-                    .filter(base.Genome.bioproject_id.in_(['PRJNA57779']))
-                    .all())
-
-    raw_flag = False
-    normalize_flag = False
-
-    for genome in data_genomes:
-        for chromosome in genome.chromosomes:
-            component_loading.write_chromosome_annotation_gff(base, components,
-                                                              chromosome)
-    
-    logging.info("Loading models")
-    model_dir = join(settings.data_directory, 'annotation', 'models')
-    model_genome_file = join(settings.data_directory,
-                             'annotation',
-                             'model-genome.txt')
-    with open(model_genome_file) as f:
-        n = len(f)
-        for i, line in enumerate(f):
-            model_id, genome_id, timestamp, pmid = line.rstrip('\n').split(',')
-            logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_id))
+    if not args.skip_genomes:
+        logging.info('Loading genomes')
+        genbank_dir = join(settings.data_directory, 'annotation', 'genbank')
+        dirs = os.listdir(genbank_dir)
+        n = len(dirs)
+        for i, genbank_file in enumerate(dirs):
+            logging.info('Loading genome from genbank file (%d of %d) %s' % (i + 1, n, genbank_file))
             try:
-                model_loading.load_model(model_id, model_dir, genome_id,
-                                         timestamp, pmid)
+                component_loading.load_genome(join(genbank_dir, genbank_file), debug=False)
             except Exception as e:
-                logging.error('Could not load model %s. %s' % (model_id, e))
+                logging.error(str(e))
+
+        session = base.Session()
+
+        data_genomes = (session
+                        .query(base.Genome)
+                        .filter(base.Genome.bioproject_id.in_(['PRJNA57779']))
+                        .all())
+
+        raw_flag = False
+        normalize_flag = False
+
+        for genome in data_genomes:
+            for chromosome in genome.chromosomes:
+                component_loading.write_chromosome_annotation_gff(base, components,
+                                                                  chromosome)
+    
+    if not args.skip_models:
+        logging.info("Loading models")
+        model_dir = join(settings.data_directory, 'models')
+        model_genome_file = join(settings.data_directory,
+                                 'annotation',
+                                 'model-genome.txt')
+        with open(model_genome_file, 'r') as f:
+            lines = f.readlines()
+            n = len(lines)
+            for i, line in enumerate(lines):
+                model_id, genome_id, timestamp, pmid = line.rstrip('\n').split(',')
+                logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_id))
+                try:
+                    model_loading.load_model(model_id, model_dir, genome_id,
+                                             timestamp, pmid)
+                except Exception as e:
+                    logging.error('Could not load model %s. %s' % (model_id, e))
 
     genome_data = base.omics_database.genome_data
 

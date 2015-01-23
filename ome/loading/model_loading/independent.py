@@ -39,7 +39,13 @@ def loadComponents(session, model_list):
                 logging.warn("%s. In model %s" % (e, model.id))
                 continue
 
-            linkouts = ['KEGGID', 'CAS_NUMBER', 'SEED', 'METACYC', 'CHEBI', 'BRENDA', 'UPA']
+            linkouts = [('KEGGID', 'kegg_id'), 
+                        ('CAS_NUMBER', 'cas_number'), 
+                        ('SEED', 'seed'),
+                        ('METACYC', 'metacyc'),
+                        ('CHEBI', 'chebi'),
+                        ('BRENDA', 'brenda'),
+                        ('UPA', 'upa')]
             def parse_linkout_str(id):
                 if id is None:
                     return None
@@ -56,7 +62,7 @@ def loadComponents(session, model_list):
             if metabolite_db is None:
                 found = {}
                 for linkout in linkouts:
-                    found[linkout] = parse_linkout_str(component.notes.get("KEGGID"))
+                    found[linkout[0]] = parse_linkout_str(component.notes.get(linkout[0]))
 
                 # look for the formula
                 if component.notes.get("FORMULA1") is not None:
@@ -78,11 +84,11 @@ def loadComponents(session, model_list):
                 session.add(metaboliteObject)
             else:
                 for linkout in linkouts:
-                    need_linkout = (component.notes.get(linkout) is not None and
-                                    getattr(metabolite_db, linkout) is not None)
+                    need_linkout = (component.notes.get(linkout[0]) is not None and
+                                    getattr(metabolite_db, linkout[1]) is not None)
                     if need_linkout:
-                        setattr(metabolite, linkout,
-                                parse_linkout_str(component.notes.get(linkout)))
+                        setattr(metabolite_db, linkout[1],
+                                parse_linkout_str(component.notes.get(linkout[0])))
                             
 def loadReactions(session, model_list):
     for model in model_list:

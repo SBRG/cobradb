@@ -3,6 +3,7 @@
 import re
 import cobra
 import cobra.io
+from cobra.core import Formula
 from os.path import join
 import hashlib
 
