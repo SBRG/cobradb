@@ -7,7 +7,7 @@ from os import system
 from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import Session as _SA_Session
 from sqlalchemy import (Table, MetaData, create_engine, Column, Integer, String,
-                        Float, ForeignKey)
+                        Float, Numeric, ForeignKey)
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
@@ -109,12 +109,12 @@ class Component(Base):
     __tablename__ = 'component'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-
+    bigg_id = Column(String)
     name = Column(String)
     formula = Column(String)
     type = Column(String(20))
 
-    __table_args__ = (UniqueConstraint('name'),{})
+    __table_args__ = (UniqueConstraint('bigg_id'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'component',
                        'polymorphic_on': type
@@ -132,22 +132,23 @@ class Reaction(Base):
     __tablename__ = 'reaction'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    biggid = Column(String)
+    bigg_id = Column(String)
     name = Column(String)
-    long_name = Column(String)
     type = Column(String(20))
     notes = Column(String)
     reaction_hash = Column(String)
-    __table_args__ = (UniqueConstraint('name'),{})
+    objective_coefficient = Column(Numeric)
+    lower_bound = Column(Numeric)
+    upper_bound = Column(Numeric)
+    __table_args__ = (UniqueConstraint('bigg_id'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'reaction',
                        'polymorphic_on': type
                       }
 
-    def __init__(self, name, long_name, notes, reaction_hash, biggid=""):
+    def __init__(self, name, notes, reaction_hash, bigg_id):
         self.name = name
-        self.biggid = biggid
-        self.long_name = long_name
+        self.bigg_id = bigg_id
         self.notes = notes
         self.reaction_hash = reaction_hash
 
@@ -182,8 +183,8 @@ class DataSource(Base):
         self.institution = institution
 
 
-class Synonyms(Base):
-    __tablename__ = "synonyms"
+class Synonym(Base):
+    __tablename__ = "synonym"
     id = Column(Integer, Sequence('wids'), primary_key=True)
     ome_id = Column(Integer)
     synonym = Column(String)

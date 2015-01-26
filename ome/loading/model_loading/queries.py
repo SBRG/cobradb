@@ -2,7 +2,7 @@
 
 # A collection of common queries from the model loading scripts
 
-from ome.base import Chromosome, Synonyms
+from ome.base import Chromosome, Synonym
 from ome.models import *
 
 def get_model(session, bigg_id):

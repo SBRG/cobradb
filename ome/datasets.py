@@ -502,7 +502,7 @@ grouped = ome.query(func.distinct(ChIPPeakData.dataset_id).label('dataset_id'),\
 gene_expression_data = ome.query(
           Gene.id.label('gene_id'),
           Gene.name.label('gene_name'),
-          Gene.locus_id.label('locus_id'),
+          Gene.bigg_id.label('bigg_id'),
           Strain.id.label('strain_id'),
           Strain.name.label('strain'),
           InVivoEnvironment.id.label('environment_id'),
@@ -516,7 +516,7 @@ gene_expression_data = ome.query(
           func.stddev_pop(GenomeData.value).label('stddev')).\
     join(GenomeData, Dataset, Strain, InVivoEnvironment).\
     group_by(Gene.id, Dataset.group_name, Strain.id, Dataset.type, InVivoEnvironment.id,
-             Gene.locus_id, Gene.name, Strain.name, InVivoEnvironment.carbon_source,
+             Gene.bigg_id, Gene.name, Strain.name, InVivoEnvironment.carbon_source,
                                                     InVivoEnvironment.nitrogen_source,
                                                     InVivoEnvironment.electron_acceptor).order_by(Dataset.type, InVivoEnvironment.id).subquery()
 
@@ -620,7 +620,7 @@ chip_peak_gene = ome.query(ChIPPeakData.value.label('peak_value'),
                            InVivoEnvironment.supplements.label('supplements'),
                            TU.name.label('tu_name'),
                            Gene.id.label('gene_id'),
-                           Gene.locus_id.label('locus_id'),
+                           Gene.bigg_id.label('bigg_id'),
                            GenomeRegion2.name.label('gene_name'),
                            ChIPPeakData.dataset_id.label('chip_peak_id')).\
                     join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
@@ -650,7 +650,7 @@ chip_peak_gene_expression = ome.query(ChIPPeakData.value.label('peak_value'),
                  diff_exp_chip_peak.c.electron_acceptor.label('electron_acceptor'),
                  TU.name.label('tu_name'),
                  Gene.id.label('gene_id'),
-                 Gene.locus_id.label('locus_id'),
+                 Gene.bigg_id.label('bigg_id'),
                  GenomeRegion2.name.label('gene_name'),
                  DiffExpData.type.label('dataset_type'),
                  DiffExpData.genome_region_id.label('gene_genome_region_id'),
@@ -700,7 +700,7 @@ differential_gene_expression_data = ome.query(DiffExpData.value.label('value'),
                                            NormalizedExpression.id.label('expression_id'),
                                            NormalizedExpression.expression_type.label('dataset_type'),
                                            Gene.id.label('gene_id'),
-                                           Gene.locus_id.label('locus_id'),
+                                           Gene.bigg_id.label('bigg_id'),
                                            Gene.name.label('gene_name'),
                                            Strain.name.label('strain1'),
                                            Strain2.name.label('strain2'),

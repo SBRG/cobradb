@@ -27,6 +27,7 @@ class Model(Base):
     genome = relationship('Genome', backref='model')
     notes = Column(String)
     computable = Column(Boolean)
+    description = Column(String)
     #date_created = Column(DateTime)
     
     __table_args__ = (UniqueConstraint('bigg_id', 'genome_id'),{})
@@ -87,7 +88,8 @@ class ModelCompartmentalizedComponent(Base):
 class Compartment(Base):
     __tablename__='compartment'
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    name = Column(String, unique = True)
+    bigg_id  = Column(String, unique = True)
+    name = Column(String)
     #date_created = Column(DateTime)
 
 class ReactionMatrix(Base):

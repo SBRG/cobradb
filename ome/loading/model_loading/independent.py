@@ -10,13 +10,13 @@ import logging
 def loadGenes(model_list, session):
     for model in model_list:
         for gene in model.genes:
-            if not session.query(Gene).filter(Gene.name == gene.id).count():
-                geneObject = Gene(locus_id = gene.id)
+            if not session.query(Gene).filter(Gene.bigg_id == gene.id).count():
+                geneObject = Gene(bigg_id = gene.id)
                 session.add(geneObject)
 
 def loadModel(session, model, genome_db_id, first_created, pmid):
     modelObject = Model(bigg_id=model.id, first_created=first_created,
-                        genome_id=genome_db_id, notes='')
+                        genome_id=genome_db_id, notes='', description = '')
     session.add(modelObject)
     if session.query(base.Publication).filter(base.Publication.pmid == pmid).count() == 0: 
         p = base.Publication(pmid = pmid)
@@ -57,7 +57,7 @@ def loadComponents(session, model_list):
             # if there is no metabolite, add a new one
             metabolite_db = (session
                              .query(Metabolite)
-                             .filter(Metabolite.name == met_id)
+                             .filter(Metabolite.bigg_id == met_id)
                              .first())
             if metabolite_db is None:
                 found = {}
@@ -70,8 +70,8 @@ def loadComponents(session, model_list):
                 else:
                     _formula = component.formula
 
-                metaboliteObject = Metabolite(name=met_id,
-                                              long_name=component.name,
+                metaboliteObject = Metabolite(bigg_id=met_id,
+                                              name=component.name,
                                               kegg_id=found['KEGGID'],
                                               cas_number=found['CAS_NUMBER'],
                                               seed=found['SEED'], 
@@ -79,8 +79,7 @@ def loadComponents(session, model_list):
                                               metacyc=found['METACYC'],
                                               upa=found['UPA'], 
                                               brenda=found['BRENDA'],
-                                              formula=str(_formula),
-                                              flag=False)
+                                              formula=str(_formula))
                 session.add(metaboliteObject)
             else:
                 for linkout in linkouts:
@@ -95,7 +94,7 @@ def loadReactions(session, model_list):
         for reaction in model.reactions:
             reaction_db = queries.get_reaction(session, reaction.id)
             if reaction_db is None:
-                new_object = Reaction(biggid=reaction.id, name=reaction.id, long_name=reaction.name, # fix this, see BiGG2 issue #29
+                new_object = Reaction(bigg_id=reaction.id, name=reaction.name, # fix this, see BiGG2 issue #29
                                       notes='', reaction_hash=parse.hash_reaction(reaction))
                 session.add(new_object)
 
@@ -106,8 +105,8 @@ def loadCompartments(session, model_list):
             if component.id is not None:
                 compartments_all.add(parse.split_compartment(component.id)[1])
         for symbol in compartments_all:
-            if not session.query(Compartment).filter(Compartment.name == symbol).count():
-                compartmentObject = Compartment(name = symbol)
+            if not session.query(Compartment).filter(Compartment.bigg_id == symbol).count():
+                compartmentObject = Compartment(bigg_id = symbol, name = '')
                 session.add(compartmentObject)
 """  
                 if len(component.id.split('_'))>1:

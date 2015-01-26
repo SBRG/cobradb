@@ -13,7 +13,7 @@ class Gene(GenomeRegion):
     __tablename__ = 'gene'
 
     id = Column(Integer, ForeignKey('genome_region.id', onupdate="CASCADE", ondelete="CASCADE"), primary_key=True)
-    locus_id = Column(String(20))
+    bigg_id = Column(String(20))
     info = Column(String(300))
     long_name = Column(String(100))
     mapped_to_genbank = Column(Boolean)
@@ -25,9 +25,9 @@ class Gene(GenomeRegion):
                                  self.strand)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, mapped_to_genbank, chromosome_id=None, locus_id=None, info=None, long_name=None):
+    def __init__(self, name, leftpos, rightpos, strand, mapped_to_genbank, chromosome_id=None, bigg_id=None, info=None, long_name=None):
         super(Gene, self).__init__(leftpos, rightpos, strand, chromosome_id, name)
-        self.locus_id = locus_id
+        self.bigg_id = bigg_id
         self.info = info
         self.long_name = long_name
         self.mapped_to_genbank = mapped_to_genbank
@@ -233,8 +233,8 @@ class Protein(Component):
     gene_id = Column(Integer, ForeignKey('gene.id'))
     gene = relationship('Gene', backref='protein')
 
-    def __init__(self, name, gene_id=None, long_name=None):
-        super(Protein, self).__init__(name)
+    def __init__(self, bigg_id, gene_id=None, long_name=None):
+        super(Protein, self).__init__(bigg_id)
         self.gene_id = gene_id
         self.long_name = long_name
 
@@ -259,22 +259,18 @@ class Metabolite(Component):
     name = Column(String)
     formula = Column(String(200))
     smiles = Column(String(200))
-    long_name = Column(String)
-    flag = Column(Boolean)
-    def __init__(self, name, kegg_id, cas_number, formula, long_name, seed, metacyc, upa, brenda, chebi, flag, smiles=None):
+    def __init__(self, name, kegg_id, cas_number, formula, seed, metacyc, upa, brenda, chebi, smiles=None):
         super(Metabolite, self).__init__(name)
         self.formula = formula
         self.smiles = smiles
         self.kegg_id = kegg_id
         self.cas_number = cas_number
-        self.long_name = long_name
         self.seed = seed
         self.metacyc = metacyc
         self.upa = upa
         self.brenda = brenda
         self.chebi = chebi
-        self.name = name
-        self.flag = flag    
+        self.name = name   
     def __repr__(self):
         return "Small Molecule (#%d, %s)" % \
             (self.id, self.long_name)

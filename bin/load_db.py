@@ -76,7 +76,8 @@ if __name__ == "__main__":
         for i, genbank_file in enumerate(dirs):
             logging.info('Loading genome from genbank file (%d of %d) %s' % (i + 1, n, genbank_file))
             try:
-                component_loading.load_genome(join(genbank_dir, genbank_file), debug=False)
+                if genbank_file != '.DS_Store':
+                    component_loading.load_genome(join(genbank_dir, genbank_file), debug=False)
             except Exception as e:
                 logging.error(str(e))
 

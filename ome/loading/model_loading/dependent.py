@@ -67,9 +67,9 @@ def loadModelGenes(session, model_list):
 
                 # try matching on synonyms
                 synonyms_db = (session
-                               .query(Synonyms)
-                               .filter(Synonyms.synonym == gene.id)
-                               .filter(Synonyms.type == 'gene')
+                               .query(Synonym)
+                               .filter(Synonym.synonym == gene.id.split('.')[0])
+                               .filter(Synonym.type == 'gene')
                                .all())
                 match = False
                 for syn_db in synonyms_db:
@@ -120,7 +120,7 @@ def loadCompartmentalizedComponent(session, model_list):
                           .first())
             m = (session
                  .query(Metabolite)
-                 .filter(Metabolite.name == parse.split_compartment(metabolite.id)[0])
+                 .filter(Metabolite.bigg_id == parse.split_compartment(metabolite.id)[0])
                  .first())
             componentCheck = (session
                               .query(CompartmentalizedComponent)
@@ -135,7 +135,7 @@ def loadModelCompartmentalizedComponent(session, model_list):
         for metabolite in model.metabolites:
             componentquery = (session
                               .query(Metabolite)
-                              .filter(Metabolite.name == parse.split_compartment(metabolite.id)[0])
+                              .filter(Metabolite.bigg_id == parse.split_compartment(metabolite.id)[0])
                               .first())
             #componentquery = (session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first())
             compartmentquery = (session
@@ -166,7 +166,7 @@ def loadModelReaction(session, model_list):
     for model in model_list:
         for reaction in model.reactions:
 
-            reactionquery = (session.query(Reaction).filter(Reaction.name == reaction.id).first())
+            reactionquery = (session.query(Reaction).filter(Reaction.bigg_id == reaction.id).first())
             modelquery = (session.query(Model).filter(Model.bigg_id == model.id).first())
             if reactionquery != None:
                 if not (session.query(ModelReaction).filter(ModelReaction.reaction_id == reactionquery.id).filter(ModelReaction.model_id == modelquery.id).count()):
@@ -224,7 +224,7 @@ def loadGPRMatrix(session, model_list):
                             new_object = GPRMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
                             session.add(new_object)
                     else:
-                        synonymquery = (session.query(Synonyms).filter(Synonyms.synonym == gene.id.split(".")[0]).first())
+                        synonymquery = (session.query(Synonym).filter(Synonym.synonym == gene.id.split(".")[0]).first())
                         if synonymquery != None:
                             if synonymquery.ome_id != None:
                                 model_gene_db = (session.query(ModelGene).filter(ModelGene.gene_id == synonymquery.ome_id).filter(ModelGene.model_id == model_db.id).first())
@@ -245,7 +245,7 @@ def loadGPRMatrix(session, model_list):
 def loadReactionMatrix(session, model_list):
     for model in model_list:
         for reaction in model.reactions:
-            reactionquery = session.query(Reaction).filter(Reaction.name == reaction.id).first()
+            reactionquery = session.query(Reaction).filter(Reaction.bigg_id == reaction.id).first()
             for metabolite in reaction._metabolites:
 
                 componentquery = (session.query(Metabolite).filter(Metabolite.name == parse.split_compartment(metabolite.id)[0]).first())
@@ -302,18 +302,18 @@ def loadOldIdtoSynonyms(session, old_ids):
                 data_source_id = data_source.id
             ome_synonym['synonym_data_source_id'] = data_source_id
             if not (session
-                    .query(base.Synonyms)
-                    .filter(base.Synonyms.ome_id == m.id)
-                    .filter(base.Synonyms.synonym == mvalue)
-                    .filter(base.Synonyms.type == 'metabolite')
+                    .query(base.Synonym)
+                    .filter(base.Synonym.ome_id == m.id)
+                    .filter(base.Synonym.synonym == mvalue)
+                    .filter(base.Synonym.type == 'metabolite')
                     .first()):
-                synonym = base.Synonyms(**ome_synonym)
+                synonym = base.Synonym(**ome_synonym)
                 session.add(synonym)
 
     ome_synonym = {}
     for rkey, rvalue in old_ids['reactions'].iteritems():
         ome_synonym = {'type':'reaction'}
-        r = (session.query(Reaction).filter(Reaction.name == rkey).first())
+        r = (session.query(Reaction).filter(Reaction.bigg_id == rkey).first())
         if r is not None:
             ome_synonym['ome_id'] = r.id
             ome_synonym['synonym'] = rvalue
@@ -328,10 +328,10 @@ def loadOldIdtoSynonyms(session, old_ids):
                 data_source_id = data_source.id
             ome_synonym['synonym_data_source_id'] = data_source_id
             if not (session
-                    .query(base.Synonyms)
-                    .filter(base.Synonyms.ome_id == r.id)
-                    .filter(base.Synonyms.synonym == rvalue)
-                    .filter(base.Synonyms.type == 'reaction')
+                    .query(base.Synonym)
+                    .filter(base.Synonym.ome_id == r.id)
+                    .filter(base.Synonym.synonym == rvalue)
+                    .filter(base.Synonym.type == 'reaction')
                     .first()):
-                synonym = base.Synonyms(**ome_synonym)
+                synonym = base.Synonym(**ome_synonym)
                 session.add(synonym)

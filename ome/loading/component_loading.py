@@ -149,7 +149,7 @@ def get_gene_with_metacyc(session, base, components, genome, gene_entry):
     if vals is None: return None
 
     gene = session.query(components.Gene).filter(and_(components.Gene.chromosome_id == genome.id,
-                                                      or_(components.Gene.locus_id == vals['ACCESSION-1'][0],
+                                                      or_(components.Gene.bigg_id == vals['ACCESSION-1'][0],
                                                           components.Gene.name == vals['COMMON-NAME'][0]))).first()
     if gene is None:
         print 'Exception, MetaCyc gene:'+vals['ACCESSION-1'][0]+' not found in genbank'
@@ -381,23 +381,23 @@ def load_genome(genbank_file, debug=False):
 
         if feature.type == 'CDS':
 
-            locus_id = ''
+            bigg_id = ''
             gene_name = ''
 
             if 'locus_tag' in feature.qualifiers:
-                locus_id = feature.qualifiers['locus_tag'][0]
+                bigg_id = feature.qualifiers['locus_tag'][0]
 
             if 'gene' in feature.qualifiers:
                 gene_name = feature.qualifiers['gene'][0]
 
 
-            if not gene_name and locus_id:
-                gene_name = locus_id
-            elif gene_name and not locus_id:
-                locus_id = gene_name
+            if not gene_name and bigg_id:
+                gene_name = bigg_id
+            elif gene_name and not bigg_id:
+                bigg_id = gene_name
 
 
-            ome_gene['locus_id'] = locus_id
+            ome_gene['bigg_id'] = bigg_id
             ome_gene['name'] = gene_name
             ome_gene['leftpos'] = int(feature.location.start)
             ome_gene['rightpos'] = int(feature.location.end)
@@ -443,8 +443,8 @@ def load_genome(genbank_file, debug=False):
 
 
                         ome_synonym['synonym_data_source_id'] = data_source_id
-                        if not session.query(base.Synonyms).filter(base.Synonyms.ome_id == gene.id).filter(base.Synonyms.synonym == splitrefs[1]).filter(base.Synonyms.type == 'gene').first():
-                            synonym = base.Synonyms(**ome_synonym)
+                        if not session.query(base.Synonym).filter(base.Synonym.ome_id == gene.id).filter(base.Synonym.synonym == splitrefs[1]).filter(base.Synonym.type == 'gene').first():
+                            synonym = base.Synonym(**ome_synonym)
 
                             session.add(synonym)
                     else:
@@ -459,8 +459,8 @@ def load_genome(genbank_file, debug=False):
                         ome_synonym['synonym'] = value
 
                         ome_synonym['synonym_data_source_id'] = None
-                        if not session.query(base.Synonyms).filter(base.Synonyms.ome_id == gene.id).filter(base.Synonyms.synonym == value).filter(base.Synonyms.type == 'gene').first():
-                            synonym = base.Synonyms(**ome_synonym)
+                        if not session.query(base.Synonym).filter(base.Synonym.ome_id == gene.id).filter(base.Synonym.synonym == value).filter(base.Synonym.type == 'gene').first():
+                            synonym = base.Synonym(**ome_synonym)
                             session.add(synonym)
             if 'note' in feature.qualifiers:
                 for ref in feature.qualifiers['note']:
@@ -472,8 +472,8 @@ def load_genome(genbank_file, debug=False):
                             ome_synonym['ome_id'] = gene.id
                             ome_synonym['synonym'] = value[1]
                             ome_synonym['synonym_data_source_id'] = None
-                            if not session.query(base.Synonyms).filter(base.Synonyms.ome_id == gene.id).filter(base.Synonyms.synonym == value[1]).filter(base.Synonyms.type == 'gene').first():
-                                synonym = base.Synonyms(**ome_synonym)
+                            if not session.query(base.Synonym).filter(base.Synonym.ome_id == gene.id).filter(base.Synonym.synonym == value[1]).filter(base.Synonym.type == 'gene').first():
+                                synonym = base.Synonym(**ome_synonym)
                                 session.add(synonym)
             if 'product' in feature.qualifiers and feature.type == 'CDS':
                 try:
@@ -482,7 +482,7 @@ def load_genome(genbank_file, debug=False):
                     None
                 # If there is no protein_id, don't make a protein entry
                 try:
-                    ome_protein['name'] = feature.qualifiers['protein_id'][0]
+                    ome_protein['bigg_id'] = feature.qualifiers['protein_id'][0]
                 except (KeyError, IndexError) as e:
                     continue  # don't make a protein entry
                 ome_protein['gene_id'] = gene.id
@@ -658,7 +658,7 @@ def load_kegg_pathways(base, components):
         pathway_name = vals[1].strip()
         kegg_pathway = session.get_or_create(components.GeneGroup, name = pathway_name)
         for bnum in bnums:
-            gene = session.query(components.Gene).filter_by(locus_id=bnum).first()
+            gene = session.query(components.Gene).filter_by(bigg_id=bnum).first()
             if not gene: continue
             session.get_or_create(components.GeneGrouping, group_id = kegg_pathway.id, gene_id = gene.id)
     session.commit()
@@ -707,7 +707,7 @@ def write_chromosome_annotation_gff(base, components, chromosome):
 
         for gene in session.query(components.Gene).filter(components.Gene.chromosome_id == chromosome.id).all():
 
-            info_string = 'gene_id "%s"; transcript_id "%s"; gene_name "%s";' % (gene.locus_id, gene.locus_id, gene.name)
+            info_string = 'gene_id "%s"; transcript_id "%s"; gene_name "%s";' % (gene.bigg_id, gene.bigg_id, gene.name)
 
             gff_string = '%s\t%s\t%s\t%d\t%d\t.\t%s\t.\t%s\n' % (genbank_fasta_string, 'ome_db', 'exon', gene.leftpos,
                                                                                                          gene.rightpos,
