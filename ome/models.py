@@ -17,6 +17,7 @@ CREATE INDEX model_biggid_trigram_idx ON model USING gin (to_tsvector('english',
 CREATE INDEX genome_organism_trigram_idx ON genome USING gin (to_tsvector('english',organism));
 CREATE INDEX metabolite_name_trigram_idx ON metabolite USING gin (to_tsvector('english',name));
 """
+
 class Model(Base):
     __tablename__='model'
 
@@ -35,46 +36,63 @@ class Model(Base):
     def __repr__(self):
         return "Model (#%d) %s %s" % (self.id, self.bigg_id, self.first_created)
 
+
 class ModelGene(Base):
     __tablename__='model_gene'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    model_id = Column(Integer, ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
-    gene_id = Column(Integer, ForeignKey('gene.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
-    #__table_args__ = (UniqueConstraint('model_id', 'gene_id'),{})
-    #date_created = Column(DateTime)
+    model_id = Column(Integer,
+                      ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), 
+                      nullable=False)
+    gene_id = Column(Integer, 
+                     ForeignKey('gene.id', onupdate="CASCADE", ondelete="CASCADE"), 
+                     nullable=False)
 
+    
 class ModelReaction(Base):
     __tablename__='model_reaction'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    reaction_id = Column(Integer, ForeignKey('reaction.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
-    model_id = Column(Integer, ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
+    reaction_id = Column(Integer, 
+                         ForeignKey('reaction.id', onupdate="CASCADE", ondelete="CASCADE"), 
+                         nullable=False)
+    model_id = Column(Integer, 
+                      ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), 
+                      nullable=False)
     name = Column(String)
-    upperbound = Column(Numeric)
-    lowerbound = Column(Numeric)
+    upper_bound = Column(Numeric)
+    lower_bound = Column(Numeric)
+    objective_coefficient = Column(Numeric)
     gpr = Column(String)
-    #date_created = Column(DateTime)
+
     __table_args__ = (UniqueConstraint('reaction_id', 'model_id'),{})
-    #UniqueConstraint('reaction_id', 'model_id')
+
 
 class GPRMatrix(Base):
     __tablename__='gpr_matrix'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    model_gene_id = Column(Integer, ForeignKey('model_gene.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
-    model_reaction_id = Column(Integer, ForeignKey('model_reaction.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
-    #date_created = Column(DateTime)
+    model_gene_id = Column(Integer, 
+                           ForeignKey('model_gene.id', onupdate="CASCADE", ondelete="CASCADE"), 
+                           nullable=False)
+    model_reaction_id = Column(Integer, 
+                               ForeignKey('model_reaction.id', onupdate="CASCADE", ondelete="CASCADE"), 
+                               nullable=False)
+    
     __table_args__ = (UniqueConstraint('model_gene_id', 'model_reaction_id'),{})
+    
 
 class CompartmentalizedComponent(Base):
     __tablename__='compartmentalized_component'
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    component_id = Column(Integer, ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
-    compartment_id = Column(Integer, ForeignKey('compartment.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
-    #UniqueConstraint('compartment_id', 'component_id')
-    #date_created = Column(DateTime)
-    __table_args__ = (UniqueConstraint('compartment_id', 'component_id'),{})
+    component_id = Column(Integer, 
+                          ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"),
+                          nullable=False)
+    compartment_id = Column(Integer, 
+                            ForeignKey('compartment.id', onupdate="CASCADE", ondelete="CASCADE"),
+                            nullable=False)
+    
+    __table_args__ = (UniqueConstraint('compartment_id', 'component_id'), {})
 
 class ModelCompartmentalizedComponent(Base):
     __tablename__='model_compartmentalized_component'
@@ -106,7 +124,7 @@ class ReactionMatrix(Base):
 class EscherMap(Base):
     __tablename__='escher_map'
     id = Column(Integer, primary_key=True)
-    biggid = Column(String)
+    bigg_id = Column(String)
     category = Column(String)
     model_name = Column(String)
 

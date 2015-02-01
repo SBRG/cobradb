@@ -97,27 +97,3 @@ def loadReactions(session, model_list):
                 new_object = Reaction(bigg_id=reaction.id, name=reaction.name, # fix this, see BiGG2 issue #29
                                       notes='', reaction_hash=parse.hash_reaction(reaction))
                 session.add(new_object)
-
-def loadCompartments(session, model_list):
-    compartments_all = set()
-    for model in model_list:
-        for component in model.metabolites:
-            if component.id is not None:
-                compartments_all.add(parse.split_compartment(component.id)[1])
-        for symbol in compartments_all:
-            if not session.query(Compartment).filter(Compartment.bigg_id == symbol).count():
-                compartmentObject = Compartment(bigg_id = symbol, name = '')
-                session.add(compartmentObject)
-"""  
-                if len(component.id.split('_'))>1:
-
-
-                    if not session.query(Compartment).filter(Compartment.name == parse.split_compartment(component.id)[1]).count():
-                        compartmentObject = Compartment(name = parse.split_compartment(component.id)[1])
-                        session.add(compartmentObject)
-
-                else:
-                    if not session.query(Compartment).filter(Compartment.name == 'none').count():
-                        compartmentObject = Compartment(name = 'none')
-                        session.add(compartmentObject)
-"""           

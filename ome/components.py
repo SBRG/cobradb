@@ -12,11 +12,13 @@ import simplejson as json
 class Gene(GenomeRegion):
     __tablename__ = 'gene'
 
-    id = Column(Integer, ForeignKey('genome_region.id', onupdate="CASCADE", ondelete="CASCADE"), primary_key=True)
+    id = Column(Integer,
+                ForeignKey('genome_region.id', onupdate="CASCADE", ondelete="CASCADE"),
+                primary_key=True)
     bigg_id = Column(String(20))
     info = Column(String(300))
-    long_name = Column(String(100))
     mapped_to_genbank = Column(Boolean)
+
     __mapper_args__ = { 'polymorphic_identity': 'gene' }
 
     def __repr__(self):
@@ -25,11 +27,11 @@ class Gene(GenomeRegion):
                                  self.strand)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, mapped_to_genbank, chromosome_id=None, bigg_id=None, info=None, long_name=None):
+    def __init__(self, bigg_id, leftpos, rightpos, strand, mapped_to_genbank,
+                 chromosome_id=None, info=None, name=None):
         super(Gene, self).__init__(leftpos, rightpos, strand, chromosome_id, name)
         self.bigg_id = bigg_id
         self.info = info
-        self.long_name = long_name
         self.mapped_to_genbank = mapped_to_genbank
 
 
@@ -75,80 +77,78 @@ class Complex(Component):
 
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
 
-    long_name = Column(String(200))
-    children = relationship("Component", secondary="complex_composition",\
-                            primaryjoin = id == ComplexComposition.complex_id,\
+    children = relationship("Component", secondary="complex_composition",
+                            primaryjoin = id == ComplexComposition.complex_id,
                             backref="parent")
 
     @hybrid_property
     def all_children(self):
         session = Session()
-        included_components = session.query(
-                                    ComplexComposition.complex_id,
-                                    ComplexComposition.component_id).\
-                            filter(ComplexComposition.complex_id == self.id).\
-                            cte(name="included_components", recursive=True)
-
+        included_components = (session
+                               .query(ComplexComposition.complex_id, ComplexComposition.component_id)
+                               .filter(ComplexComposition.complex_id==self.id)
+                               .cte(name="included_components", recursive=True))
 
         incl_alias = aliased(included_components, name="incl_cplx")
         complex_alias = aliased(ComplexComposition, name="cplx")
-        included_components = included_components.union_all(
-                                                session.query(
-                                                    complex_alias.complex_id,
-                                                    complex_alias.component_id).\
-                                                    filter(complex_alias.complex_id==incl_alias.c.component_id)
-                                                )
+        included_components = (included_components
+                               .union_all(session
+                                          .query(complex_alias.complex_id, complex_alias.component_id)
+                                          .filter(complex_alias.complex_id==incl_alias.c.component_id)))
 
-        return session.query(Component).join(included_components, Component.id == included_components.c.component_id).all()
+        return (session
+                .query(Component)
+                .join(included_components,
+                      Component.id==included_components.c.component_id)
+                .all())
 
+    def __init__(self, bigg_id, name):
+        super(Complex, self).__init__(bigg_id, name)
 
     def __repr__(self):
         return "Complex (#%d):  %s" % \
-            (self.id, self.long_name)
-
-
-    def __init__(self, name, long_name=None):
-        super(Complex, self).__init__(name)
-        self.long_name = long_name
+            (self.id, self.bigg_id)
 
 
 class DNA(Component):
     __tablename__ = 'dna'
 
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-    type = Column(String(20))
 
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
     genome_region = relationship('GenomeRegion', backref=backref('dna', lazy='dynamic'))
+    dna_type = Column(String(20))
 
-    __mapper_args__ = { 'polymorphic_identity': 'dna',
-                        'polymorphic_on': type
-                      }
+    __mapper_args__ = {
+        'polymorphic_identity': 'dna',
+        'polymorphic_on': dna_type
+    }
 
-
-    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None, chromosome_id=None):
-        super(DNA, self).__init__(name)
+    def __init__(self, bigg_id, name, leftpos=None, rightpos=None, strand=None, chromosome_id=None):
+        super(DNA, self).__init__(bigg_id, name)
         session = Session()
-        self.genome_region_id = session.get_or_create(GenomeRegion, name=name, leftpos=leftpos,\
-                                                      rightpos=rightpos, chromosome_id=chromosome_id,
+        self.genome_region_id = session.get_or_create(GenomeRegion, name=name,
+                                                      leftpos=leftpos,
+                                                      rightpos=rightpos,
+                                                      chromosome_id=chromosome_id,
                                                       strand=strand).id
         session.close()
 
     def __repr__(self):
-        return "DNA (#%d, %s) %d-%d %s"% \
-            (self.id, self.name, self.genome_region.leftpos, self.genome_region.rightpos,\
-                                 self.genome_region.strand)
+        return ("DNA (#%d, %s) %d-%d %s" % (self.id, self.bigg_id,
+                                            self.genome_region.leftpos,
+                                            self.genome_region.rightpos,
+                                            self.genome_region.strand))
 
 
 class DnaBindingSite(DNA):
     __tablename__ = 'dna_binding_site'
 
-    __mapper_args__ = { 'polymorphic_identity': 'binding_site' }
-
     id = Column(Integer, ForeignKey('dna.id'), primary_key=True)
     centerpos = Column(Integer)
     width = Column(Integer)
 
+    __mapper_args__ = { 'polymorphic_identity': 'binding_site' }
 
     def __init__(self, name, leftpos, rightpos, strand, chromosome_id, centerpos, width):
         super(DnaBindingSite, self).__init__(name, leftpos, rightpos, strand, chromosome_id)
@@ -159,15 +159,14 @@ class DnaBindingSite(DNA):
 class RNA(Component):
     __tablename__ = 'rna'
 
-    __mapper_args__ = { 'polymorphic_identity': 'rna' }
-
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-    type = Column(String(20))
+
     genome_region_id = Column(Integer, ForeignKey('genome_region.id'))
 
+    __mapper_args__ = { 'polymorphic_identity': 'rna' }
 
-    def __init__(self, name=None, leftpos=None, rightpos=None, strand=None, chromosome_id=None):
-        super(RNA, self).__init__(name)
+    def __init__(self, bigg_id, name, leftpos=None, rightpos=None, strand=None, chromosome_id=None):
+        super(RNA, self).__init__(bigg_id, name)
         session = Session()
         self.genome_region_id = session.get_or_create(GenomeRegion, name=name, leftpos=leftpos,\
                                                       rightpos=rightpos, strand=strand,
@@ -176,7 +175,7 @@ class RNA(Component):
 
     def __repr__(self):
         return "RNA (#%d, %s)" % \
-            (self.id, self.name)
+            (self.id, self.bigg_id)
 
 
 class TUGenes(Base):
@@ -195,15 +194,12 @@ class TUGenes(Base):
 class TU(RNA):
     __tablename__ = 'tu'
 
-    __mapper_args__ = { 'polymorphic_identity': 'tu' }
-
     id = Column(Integer, ForeignKey('rna.id'), primary_key=True)
     genome_region = relationship("GenomeRegion")
-    genes = relationship("Gene", secondary="tu_genes",\
-                                 primaryjoin = id == TUGenes.tu_id,\
-                                 backref="tu")
+    genes = relationship("Gene", secondary="tu_genes", backref="tu",
+                         primaryjoin=(id == TUGenes.tu_id))
 
-    long_name = Column(String(200))
+    __mapper_args__ = { 'polymorphic_identity': 'tu' }
 
     """
     @hybrid_property
@@ -214,9 +210,8 @@ class TU(RNA):
             return self.genome_region.rightpos
     """
 
-    def __init__(self, name, leftpos, rightpos, strand, genome_id, long_name=None):
+    def __init__(self, name, leftpos, rightpos, strand, genome_id):
         super(TU, self).__init__(name, leftpos, rightpos, strand, genome_id)
-        self.long_name = long_name
 
     def __repr__(self):
         return "TU (#%d, %s)" % \
@@ -229,18 +224,16 @@ class Protein(Component):
     __mapper_args__ = { 'polymorphic_identity': 'protein' }
 
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-    long_name = Column(String(200))
     gene_id = Column(Integer, ForeignKey('gene.id'))
     gene = relationship('Gene', backref='protein')
 
-    def __init__(self, bigg_id, gene_id=None, long_name=None):
-        super(Protein, self).__init__(bigg_id)
+    def __init__(self, bigg_id, name, gene_id=None):
+        super(Protein, self).__init__(bigg_id, name)
         self.gene_id = gene_id
-        self.long_name = long_name
 
     def __repr__(self):
         return "Protein (#%d, %s)" % \
-            (self.id, self.long_name)
+            (self.id, self.bigg_id)
 
 
 class Metabolite(Component):
@@ -248,7 +241,12 @@ class Metabolite(Component):
 
     __mapper_args__ = { 'polymorphic_identity': 'metabolite' }
 
-    id = Column(Integer, ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"), primary_key=True)
+    id = Column(Integer,
+                ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"),
+                primary_key=True)
+
+    formula = Column(String)
+
     kegg_id = Column(String)
     seed = Column(String)
     chebi = Column(String)
@@ -256,11 +254,11 @@ class Metabolite(Component):
     upa = Column(String)
     brenda = Column(String)
     cas_number = Column(String)
-    name = Column(String)
-    formula = Column(String(200))
     smiles = Column(String(200))
-    def __init__(self, name, kegg_id, cas_number, formula, seed, metacyc, upa, brenda, chebi, smiles=None):
-        super(Metabolite, self).__init__(name)
+
+    def __init__(self, bigg_id, name, kegg_id, cas_number, formula, seed,
+                 metacyc, upa, brenda, chebi, smiles=None):
+        super(Metabolite, self).__init__(bigg_id, name)
         self.formula = formula
         self.smiles = smiles
         self.kegg_id = kegg_id
@@ -270,11 +268,9 @@ class Metabolite(Component):
         self.upa = upa
         self.brenda = brenda
         self.chebi = chebi
-        self.name = name   
-    def __repr__(self):
-        return "Small Molecule (#%d, %s)" % \
-            (self.id, self.long_name)
 
+    def __repr__(self):
+        return "Small Molecule (#%d, %s)" % (self.id, self.bigg_id)
 
 
 class GeneGrouping(Base):
@@ -288,8 +284,6 @@ class GeneGrouping(Base):
     def __init__(self, group_id, gene_id):
         self.group_id = group_id
         self.gene_id = gene_id
-
-
 
 class GeneGroup(Base):
     __tablename__ = 'gene_group'

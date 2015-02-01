@@ -31,7 +31,7 @@ def loadModelGenes(session, model_list):
                 # look for genes, matching on genes locus id
                 gene_db = (session
                            .query(Gene)
-                           .filter(Gene.locus_id == gene.id)
+                           .filter(Gene.bigg_id == gene.id)
                            .filter(Gene.chromosome_id == chromosome_db.id)
                            .first())
                 if gene_db is not None:
@@ -86,7 +86,7 @@ def loadModelGenes(session, model_list):
                         # TODO what is this?
                         # if modelquery.bigg_id == "RECON1" or modelquery.bigg_id == "iMM1415":
                         #     gene_db = (session.query(Gene).filter(Gene.id == syn.ome_id).first())
-                        #     gene_db.locus_id = gene.id
+                        #     gene_db.bigg_id = gene.id
                 # if we found a synonym, then we are done
                 if match: 
                     continue
@@ -96,12 +96,12 @@ def loadModelGenes(session, model_list):
                              (gene.id, gene.name, model.id))
 
                 ome_gene = {}
-                ome_gene['locus_id'] = gene.id
+                ome_gene['bigg_id'] = gene.id
                 ome_gene['name'] = gene.name
                 ome_gene['leftpos'] = gene.locus_start
                 ome_gene['rightpos'] = gene.locus_end
                 ome_gene['chromosome_id'] = chromosome_db.id
-                ome_gene['long_name'] = gene.name
+                ome_gene['name'] = gene.name
                 ome_gene['strand'] = gene.strand
                 ome_gene['info'] = str(gene.annotation)
                 ome_gene['mapped_to_genbank'] = False
@@ -111,66 +111,99 @@ def loadModelGenes(session, model_list):
                 session.commit() # commit, so that gene_object has a primary key id
                 queries.add_model_gene(session, model_db.id, gene_object.id)
 
-def loadCompartmentalizedComponent(session, model_list):
-    for model in model_list:
-        for metabolite in model.metabolites:
-            identifier = (session
-                          .query(Compartment)
-                          .filter(Compartment.name == parse.split_compartment(metabolite.id)[1])
-                          .first())
-            m = (session
-                 .query(Metabolite)
-                 .filter(Metabolite.bigg_id == parse.split_compartment(metabolite.id)[0])
-                 .first())
-            componentCheck = (session
-                              .query(CompartmentalizedComponent)
-                              .filter(CompartmentalizedComponent.component_id == m.id)
-                              .filter(CompartmentalizedComponent.compartment_id == identifier.id))
-            if not componentCheck.count():
-                new_object = CompartmentalizedComponent(component_id = m.id, compartment_id = identifier.id)
-                session.add(new_object)
-
 def loadModelCompartmentalizedComponent(session, model_list):
+    """Load the Compartments, CompartmentalizedComponents, and
+    ModelCompartmentalizedComponent for each metabolite in the models in
+    model_list.
+
+    """
+
     for model in model_list:
         for metabolite in model.metabolites:
-            componentquery = (session
-                              .query(Metabolite)
-                              .filter(Metabolite.bigg_id == parse.split_compartment(metabolite.id)[0])
+            try:
+                metabolite_id, compartment_id = parse.split_compartment(metabolite.id)
+            except Exception:
+                logging.error(('Could not find compartment for metabolite %s in'
+                               'model %s' % (metabolite.id, model.id)))
+                continue
+
+            # Compartment
+            compartment_db = (session
+                              .query(Compartment)
+                              .filter(Compartment.bigg_id == compartment_id)
                               .first())
-            #componentquery = (session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first())
-            compartmentquery = (session
-                                .query(Compartment)
-                                .filter(Compartment.name == parse.split_compartment(metabolite.id)[1])
-                                .first())
-            compartmentalized_component_db = (session
-                                              .query(CompartmentalizedComponent)
-                                              .filter(CompartmentalizedComponent.component_id == componentquery.id)
-                                              .filter(CompartmentalizedComponent.compartment_id == compartmentquery.id)
-                                              .first())
-            modelquery = (session
-                          .query(Model)
-                          .filter(Model.bigg_id == model.id)
-                          .first())
-            if modelquery is None:
-                logging.debug("model %s query is none" % model.id)
-                #from IPython import embed; embed()
-
-            if compartmentalized_component_db is None:
-                print "compartmentalized_component_db is none", metabolite.id
-            if not (session.query(ModelCompartmentalizedComponent).filter(ModelCompartmentalizedComponent.compartmentalized_component_id == compartmentalized_component_db.id).filter(ModelCompartmentalizedComponent.model_id == modelquery.id).count()):
-                new_object = ModelCompartmentalizedComponent(model_id = modelquery.id, compartmentalized_component_id = compartmentalized_component_db.id, compartment_id = compartmentquery.id)
+            if compartment_db is None:
+                compartment_db = Compartment(bigg_id=compartment_id, name='')
+                session.add(compartment_db)
+                session.commit()
+                
+            # get the Metabolite
+            metabolite_db = (session
+                             .query(Metabolite)
+                             .filter(Metabolite.bigg_id == metabolite_id)
+                             .first())
+            if metabolite_db is None:
+                logging.error('Could not find Metabolite %s in the database' % metabolite.id)
+                continue
+                             
+            # CompartmentalizedComponent
+            comp_component_db = (session
+                                 .query(CompartmentalizedComponent)
+                                 .filter(CompartmentalizedComponent.component_id == metabolite_db.id)
+                                 .filter(CompartmentalizedComponent.compartment_id == compartment_db.id)
+                                 .first())
+            if comp_component_db is None:
+                comp_component_db = CompartmentalizedComponent(component_id=metabolite_db.id,
+                                                               compartment_id=compartment_db.id)
+                session.add(comp_component_db)
+                session.commit()
+                
+            # ModelCompartmentalizedComponent
+            model_db = (session
+                        .query(Model)
+                        .filter(Model.bigg_id == model.id)
+                        .first())
+            if model_db is None:
+                logging.error('Could not find model %s in the database' % model.id)
+                continue
+            
+            found_model_comp_comp = (session
+                                     .query(ModelCompartmentalizedComponent)
+                                     .filter(ModelCompartmentalizedComponent.compartmentalized_component_id == comp_component_db.id)
+                                     .filter(ModelCompartmentalizedComponent.model_id == model_db.id)
+                                     .count() > 0)
+            if not found_model_comp_comp:
+                new_object = ModelCompartmentalizedComponent(model_id=model_db.id,
+                                                             compartmentalized_component_id=comp_component_db.id,
+                                                             compartment_id=compartment_db.id)
                 session.add(new_object)
-
+            
 
 def loadModelReaction(session, model_list):
     for model in model_list:
         for reaction in model.reactions:
-
-            reactionquery = (session.query(Reaction).filter(Reaction.bigg_id == reaction.id).first())
-            modelquery = (session.query(Model).filter(Model.bigg_id == model.id).first())
-            if reactionquery != None:
-                if not (session.query(ModelReaction).filter(ModelReaction.reaction_id == reactionquery.id).filter(ModelReaction.model_id == modelquery.id).count()):
-                    new_object = ModelReaction(reaction_id = reactionquery.id, model_id = modelquery.id, name = reaction.id, upperbound = reaction.upper_bound, lowerbound = reaction.lower_bound, gpr = reaction.gene_reaction_rule)
+            reaction_db = (session
+                           .query(Reaction)
+                           .filter(Reaction.bigg_id == reaction.id)
+                           .first())
+            model_db = (session
+                        .query(Model)
+                        .filter(Model.bigg_id == model.id)
+                        .first())
+            if reaction_db != None:
+                has_model_reaction = (session
+                                      .query(ModelReaction)
+                                      .filter(ModelReaction.reaction_id == reaction_db.id)
+                                      .filter(ModelReaction.model_id == model_db.id)
+                                      .count() > 0)
+                if not has_model_reaction:
+                    new_object = ModelReaction(reaction_id=reaction_db.id,
+                                               model_id=model_db.id,
+                                               name=reaction.id,
+                                               upper_bound=reaction.upper_bound,
+                                               lower_bound=reaction.lower_bound,
+                                               gpr=reaction.gene_reaction_rule,
+                                               objective_coefficient=reaction.objective_coefficient)
                     session.add(new_object)
 
 
@@ -188,7 +221,7 @@ def loadGPRMatrix(session, model_list):
                 model_gene_db = (session
                                  .query(ModelGene)
                                  .join(Gene)
-                                 .filter(Gene.locus_id == gene.id)
+                                 .filter(Gene.bigg_id == gene.id)
                                  .filter(ModelGene.model_id == model_db.id)
                                  .first())
 
@@ -245,18 +278,55 @@ def loadGPRMatrix(session, model_list):
 def loadReactionMatrix(session, model_list):
     for model in model_list:
         for reaction in model.reactions:
-            reactionquery = session.query(Reaction).filter(Reaction.bigg_id == reaction.id).first()
-            for metabolite in reaction._metabolites:
+            reaction_db = (session
+                           .query(Reaction)
+                           .filter(Reaction.bigg_id == reaction.id)
+                           .first())
+            if reaction_db is None:
+                logging.error('Could not find reaction %s in the database' % reaction.id)
+                continue
+                
+            for metabolite, stoich in reaction.metabolites.iteritems():
+                try:
+                    metabolite_id, compartment_id = parse.split_compartment(metabolite.id)
+                except Exception:
+                    logging.error('Could not split metabolite %s in model %s' % (metabolite.id, model.id))
+                    continue
+                    
+                component_db = (session
+                                .query(Metabolite)
+                                .filter(Metabolite.bigg_id == metabolite_id)
+                                .first())
+                if component_db is None:
+                    logging.error('Could not find metabolite %s in the database' % metabolite_id)
+                    continue
 
-                componentquery = (session.query(Metabolite).filter(Metabolite.name == parse.split_compartment(metabolite.id)[0]).first())
-                #componentquery = (session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first())
-                compartmentquery = (session.query(Compartment).filter(Compartment.name == parse.split_compartment(metabolite.id)[1]).first())
-                compartmentalized_component_db = (session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == componentquery.id).filter(CompartmentalizedComponent.compartment_id == compartmentquery.id).first())
-                if not (session.query(ReactionMatrix).filter(ReactionMatrix.reaction_id == reactionquery.id).filter(ReactionMatrix.compartmentalized_component_id == compartmentalized_component_db.id).count()):
-                    for stoichKey in reaction._metabolites.keys():
-                        if str(stoichKey) == metabolite.id:
-                            stoichiometryobject = reaction._metabolites[stoichKey]
-                    new_object = ReactionMatrix(reaction_id = reactionquery.id, compartmentalized_component_id = compartmentalized_component_db.id, stoichiometry = stoichiometryobject)
+                compartment_db = (session
+                                  .query(Compartment)
+                                  .filter(Compartment.bigg_id == compartment_id)
+                                  .first())
+                if compartment_db is None:
+                    logging.error('Could not find compartment %s in the database' % compartment_id)
+                    continue
+
+                comp_component_db = (session
+                                     .query(CompartmentalizedComponent)
+                                     .filter(CompartmentalizedComponent.component_id == component_db.id)
+                                     .filter(CompartmentalizedComponent.compartment_id == compartment_db.id)
+                                     .first())
+                if comp_component_db is None:
+                    logging.error('Could not find CompartmentalizedComponent for %s in the database' % metabolite.id)
+                    continue
+                    
+                found_reaction_matrix = (session
+                                         .query(ReactionMatrix)
+                                         .filter(ReactionMatrix.reaction_id == reaction_db.id)
+                                         .filter(ReactionMatrix.compartmentalized_component_id == comp_component_db.id)
+                                         .count() > 0)
+                if not found_reaction_matrix:
+                    new_object = ReactionMatrix(reaction_id=reaction_db.id,
+                                                compartmentalized_component_id=comp_component_db.id,
+                                                stoichiometry=stoich)
                     session.add(new_object)
 
 def loadEscher(session):
