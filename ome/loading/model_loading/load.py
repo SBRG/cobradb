@@ -5,6 +5,7 @@ from ome.models import Model
 from ome.loading.model_loading import independent, dependent, parse
 
 import os
+import logging
 
 def get_model_list():
     """Get the models that are available, as SBML, in ome_data/models"""
@@ -53,14 +54,16 @@ def load_model(model_id, model_dir, genome_id, model_timestamp, pmid):
         raise Exception('Model %s already loaded' % model_id)
 
     # apply id normalization
+    logging.debug('Parsing SBML')
     model, old_ids = parse.load_and_normalize(model_id, model_dir)
 
+    # Load the model components. Remember: ORDER MATTERS! So don't mess around.
+    logging.debug('Loading independent objects')
     independent.loadModel(session, model, genome_db.id, model_timestamp, pmid)
     independent.loadComponents(session, [model])
-    independent.loadCompartments(session, [model])
     independent.loadReactions(session, [model])
 
-    dependent.loadCompartmentalizedComponent(session, [model])
+    logging.debug('Loading dependent objects')
     dependent.loadModelGenes(session, [model])
     dependent.loadModelCompartmentalizedComponent(session, [model])
     dependent.loadModelReaction(session, [model])
