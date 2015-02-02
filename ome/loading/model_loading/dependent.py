@@ -9,6 +9,7 @@ import logging
 
 def loadModelGenes(session, model_list):
     """Load the database with all genes in the list of models"""
+    
     for model in model_list:
         # find the model in the db
         model_db = queries.get_model(session, model.id)
@@ -24,20 +25,20 @@ def loadModelGenes(session, model_list):
             # don't ignore spontaneous
             # if gene.id == 's0001':
             #     continue
-                
             # TODO do we have to go through chromosomes here?
             for chromosome_db in chromosomes_db: 
-
+                created = False
                 # look for genes, matching on genes locus id
                 gene_db = (session
                            .query(Gene)
-                           .filter(Gene.locus_id == gene.id)
+                           .filter(Gene.bigg_id == gene.id)
                            .filter(Gene.chromosome_id == chromosome_db.id)
                            .first())
                 if gene_db is not None:
                     # check for model genes
                     if not queries.has_model_gene(session, model_db.id, gene_db.id):
                         queries.add_model_gene(session, model_db.id, gene_db.id)
+                        created = True
                     continue
 
                 # try matching on gene name
@@ -50,6 +51,7 @@ def loadModelGenes(session, model_list):
                     # check for model genes
                     if not queries.has_model_gene(session, model_db.id, gene_db.id):
                         queries.add_model_gene(session, model_db.id, gene_db.id)
+                        created = True
                     continue
 
                 # try matching on the part of the gene id before '.'
@@ -63,6 +65,7 @@ def loadModelGenes(session, model_list):
                     # check for model genes
                     if not queries.has_model_gene(session, model_db.id, gene_db.id):
                         queries.add_model_gene(session, model_db.id, gene_db.id)
+                        created = True
                     continue
 
                 # try matching on synonyms
@@ -81,6 +84,7 @@ def loadModelGenes(session, model_list):
                         # check for model genes
                         if not queries.has_model_gene(session, model_db.id, gene_db.id):
                             queries.add_model_gene(session, model_db.id, gene_db.id)
+                            created = True
                         match = True
                         break
                         # TODO what is this?
@@ -88,47 +92,58 @@ def loadModelGenes(session, model_list):
                         #     gene_db = (session.query(Gene).filter(Gene.id == syn.ome_id).first())
                         #     gene_db.locus_id = gene.id
                 # if we found a synonym, then we are done
-                if match: 
+                if match:
+                    created = True 
                     continue
-
                 # otherwise, add a new gene and a new model gene
+                if created == True:
+                    logging.warn('created should always equal false')
+                    
                 logging.warn('Gene not in genbank file: %s (%s) from model %s' %
-                             (gene.id, gene.name, model.id))
+                         (gene.id, gene.name, model.id))
+                if not (session
+                        .query(GenomeRegion)
+                        .filter(GenomeRegion.name == gene.name)
+                        .filter(GenomeRegion.leftpos == gene.locus_start)
+                        .filter(GenomeRegion.rightpos == gene.locus_end)
+                        .filter(GenomeRegion.strand == gene.strand)
+                        .filter(GenomeRegion.chromosome_id == chromosome_db.id)
+                        .count()):
+                    ome_gene = {}
+                    ome_gene['bigg_id'] = gene.id
+                    ome_gene['name'] = gene.name
+                    ome_gene['leftpos'] = gene.locus_start
+                    ome_gene['rightpos'] = gene.locus_end
+                    ome_gene['chromosome_id'] = chromosome_db.id
+                    ome_gene['long_name'] = gene.name
+                    ome_gene['strand'] = gene.strand
+                    ome_gene['info'] = str(gene.annotation)
+                    ome_gene['mapped_to_genbank'] = False
 
-                ome_gene = {}
-                ome_gene['locus_id'] = gene.id
-                ome_gene['name'] = gene.name
-                ome_gene['leftpos'] = gene.locus_start
-                ome_gene['rightpos'] = gene.locus_end
-                ome_gene['chromosome_id'] = chromosome_db.id
-                ome_gene['long_name'] = gene.name
-                ome_gene['strand'] = gene.strand
-                ome_gene['info'] = str(gene.annotation)
-                ome_gene['mapped_to_genbank'] = False
-
-                gene_object = Gene(**ome_gene)
-                session.add(gene_object)
-                session.commit() # commit, so that gene_object has a primary key id
-                queries.add_model_gene(session, model_db.id, gene_object.id)
+                    gene_object = Gene(**ome_gene)
+                    session.add(gene_object)
+                    session.commit() # commit, so that gene_object has a primary key id
+                    queries.add_model_gene(session, model_db.id, gene_object.id)
 
 def loadCompartmentalizedComponent(session, model_list):
     for model in model_list:
         for metabolite in model.metabolites:
             identifier = (session
                           .query(Compartment)
-                          .filter(Compartment.name == parse.split_compartment(metabolite.id)[1])
+                          .filter(Compartment.bigg_id == parse.split_compartment(metabolite.id)[1])
                           .first())
             m = (session
                  .query(Metabolite)
                  .filter(Metabolite.bigg_id == parse.split_compartment(metabolite.id)[0])
                  .first())
-            componentCheck = (session
+            if m != None and identifier != None:
+                componentCheck = (session
                               .query(CompartmentalizedComponent)
                               .filter(CompartmentalizedComponent.component_id == m.id)
                               .filter(CompartmentalizedComponent.compartment_id == identifier.id))
-            if not componentCheck.count():
-                new_object = CompartmentalizedComponent(component_id = m.id, compartment_id = identifier.id)
-                session.add(new_object)
+                if not componentCheck.count():
+                    new_object = CompartmentalizedComponent(component_id = m.id, compartment_id = identifier.id)
+                    session.add(new_object)
 
 def loadModelCompartmentalizedComponent(session, model_list):
     for model in model_list:
@@ -140,26 +155,27 @@ def loadModelCompartmentalizedComponent(session, model_list):
             #componentquery = (session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first())
             compartmentquery = (session
                                 .query(Compartment)
-                                .filter(Compartment.name == parse.split_compartment(metabolite.id)[1])
+                                .filter(Compartment.bigg_id == parse.split_compartment(metabolite.id)[1])
                                 .first())
-            compartmentalized_component_db = (session
+            if componentquery != None and compartmentquery != None:
+                compartmentalized_component_db = (session
                                               .query(CompartmentalizedComponent)
                                               .filter(CompartmentalizedComponent.component_id == componentquery.id)
                                               .filter(CompartmentalizedComponent.compartment_id == compartmentquery.id)
                                               .first())
-            modelquery = (session
+                modelquery = (session
                           .query(Model)
                           .filter(Model.bigg_id == model.id)
                           .first())
-            if modelquery is None:
-                logging.debug("model %s query is none" % model.id)
-                #from IPython import embed; embed()
+                if modelquery is None:
+                    logging.debug("model %s query is none" % model.id)
+                    #from IPython import embed; embed()
 
-            if compartmentalized_component_db is None:
-                print "compartmentalized_component_db is none", metabolite.id
-            if not (session.query(ModelCompartmentalizedComponent).filter(ModelCompartmentalizedComponent.compartmentalized_component_id == compartmentalized_component_db.id).filter(ModelCompartmentalizedComponent.model_id == modelquery.id).count()):
-                new_object = ModelCompartmentalizedComponent(model_id = modelquery.id, compartmentalized_component_id = compartmentalized_component_db.id, compartment_id = compartmentquery.id)
-                session.add(new_object)
+                if compartmentalized_component_db is None:
+                    print "compartmentalized_component_db is none", metabolite.id
+                if not (session.query(ModelCompartmentalizedComponent).filter(ModelCompartmentalizedComponent.compartmentalized_component_id == compartmentalized_component_db.id).filter(ModelCompartmentalizedComponent.model_id == modelquery.id).count()):
+                    new_object = ModelCompartmentalizedComponent(model_id = modelquery.id, compartmentalized_component_id = compartmentalized_component_db.id, compartment_id = compartmentquery.id)
+                    session.add(new_object)
 
 
 def loadModelReaction(session, model_list):
@@ -188,7 +204,7 @@ def loadGPRMatrix(session, model_list):
                 model_gene_db = (session
                                  .query(ModelGene)
                                  .join(Gene)
-                                 .filter(Gene.locus_id == gene.id)
+                                 .filter(Gene.bigg_id == gene.id)
                                  .filter(ModelGene.model_id == model_db.id)
                                  .first())
 
@@ -248,16 +264,17 @@ def loadReactionMatrix(session, model_list):
             reactionquery = session.query(Reaction).filter(Reaction.bigg_id == reaction.id).first()
             for metabolite in reaction._metabolites:
 
-                componentquery = (session.query(Metabolite).filter(Metabolite.name == parse.split_compartment(metabolite.id)[0]).first())
+                componentquery = (session.query(Metabolite).filter(Metabolite.bigg_id == parse.split_compartment(metabolite.id)[0]).first())
                 #componentquery = (session.query(Metabolite).filter(Metabolite.kegg_id == metabolite.notes.get("KEGGID")[0]).first())
-                compartmentquery = (session.query(Compartment).filter(Compartment.name == parse.split_compartment(metabolite.id)[1]).first())
-                compartmentalized_component_db = (session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == componentquery.id).filter(CompartmentalizedComponent.compartment_id == compartmentquery.id).first())
-                if not (session.query(ReactionMatrix).filter(ReactionMatrix.reaction_id == reactionquery.id).filter(ReactionMatrix.compartmentalized_component_id == compartmentalized_component_db.id).count()):
-                    for stoichKey in reaction._metabolites.keys():
-                        if str(stoichKey) == metabolite.id:
-                            stoichiometryobject = reaction._metabolites[stoichKey]
-                    new_object = ReactionMatrix(reaction_id = reactionquery.id, compartmentalized_component_id = compartmentalized_component_db.id, stoichiometry = stoichiometryobject)
-                    session.add(new_object)
+                compartmentquery = (session.query(Compartment).filter(Compartment.bigg_id == parse.split_compartment(metabolite.id)[1]).first())
+                if componentquery != None and compartmentquery != None:
+                    compartmentalized_component_db = (session.query(CompartmentalizedComponent).filter(CompartmentalizedComponent.component_id == componentquery.id).filter(CompartmentalizedComponent.compartment_id == compartmentquery.id).first())
+                    if not (session.query(ReactionMatrix).filter(ReactionMatrix.reaction_id == reactionquery.id).filter(ReactionMatrix.compartmentalized_component_id == compartmentalized_component_db.id).count()):
+                        for stoichKey in reaction._metabolites.keys():
+                            if str(stoichKey) == metabolite.id:
+                                stoichiometryobject = reaction._metabolites[stoichKey]
+                        new_object = ReactionMatrix(reaction_id = reactionquery.id, compartmentalized_component_id = compartmentalized_component_db.id, stoichiometry = stoichiometryobject)
+                        session.add(new_object)
 
 def loadEscher(session):
     m = models.parse_model('iJO1366')
@@ -286,7 +303,7 @@ def loadOldIdtoSynonyms(session, old_ids):
         ome_synonym = {'type': 'metabolite'}
         m = (session
              .query(Metabolite)
-             .filter(Metabolite.name == parse.split_compartment(mkey)[0])
+             .filter(Metabolite.bigg_id == parse.split_compartment(mkey)[0])
              .first())
         if m is not None:
             ome_synonym['ome_id'] = m.id

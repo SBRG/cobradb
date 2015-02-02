@@ -54,7 +54,7 @@ def load_model(model_id, model_dir, genome_id, model_timestamp, pmid):
 
     # apply id normalization
     model, old_ids = parse.load_and_normalize(model_id, model_dir)
-
+    
     independent.loadModel(session, model, genome_db.id, model_timestamp, pmid)
     independent.loadComponents(session, [model])
     independent.loadCompartments(session, [model])

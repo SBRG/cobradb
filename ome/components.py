@@ -21,11 +21,11 @@ class Gene(GenomeRegion):
 
     def __repr__(self):
         return "Gene: (%s, %s) %d-%d (%s)"% \
-            (self.locus_id, self.name, self.leftpos, self.rightpos,\
+            (self.bigg_id, self.name, self.leftpos, self.rightpos,\
                                  self.strand)
 
 
-    def __init__(self, name, leftpos, rightpos, strand, mapped_to_genbank, chromosome_id=None, bigg_id=None, info=None, long_name=None):
+    def __init__(self, bigg_id, leftpos, rightpos, strand, mapped_to_genbank, chromosome_id=None, name=None, info=None, long_name=None):
         super(Gene, self).__init__(leftpos, rightpos, strand, chromosome_id, name)
         self.bigg_id = bigg_id
         self.info = info
@@ -237,7 +237,6 @@ class Protein(Component):
         super(Protein, self).__init__(bigg_id)
         self.gene_id = gene_id
         self.long_name = long_name
-
     def __repr__(self):
         return "Protein (#%d, %s)" % \
             (self.id, self.long_name)
@@ -249,27 +248,13 @@ class Metabolite(Component):
     __mapper_args__ = { 'polymorphic_identity': 'metabolite' }
 
     id = Column(Integer, ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"), primary_key=True)
-    kegg_id = Column(String)
-    seed = Column(String)
-    chebi = Column(String)
-    metacyc = Column(String)
-    upa = Column(String)
-    brenda = Column(String)
-    cas_number = Column(String)
     name = Column(String)
     formula = Column(String(200))
     smiles = Column(String(200))
-    def __init__(self, name, kegg_id, cas_number, formula, seed, metacyc, upa, brenda, chebi, smiles=None):
-        super(Metabolite, self).__init__(name)
+    def __init__(self, bigg_id, name, formula, smiles=None):
+        super(Metabolite, self).__init__(bigg_id)
         self.formula = formula
         self.smiles = smiles
-        self.kegg_id = kegg_id
-        self.cas_number = cas_number
-        self.seed = seed
-        self.metacyc = metacyc
-        self.upa = upa
-        self.brenda = brenda
-        self.chebi = chebi
         self.name = name   
     def __repr__(self):
         return "Small Molecule (#%d, %s)" % \

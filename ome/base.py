@@ -7,7 +7,7 @@ from os import system
 from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import Session as _SA_Session
 from sqlalchemy import (Table, MetaData, create_engine, Column, Integer, String,
-                        Float, Numeric, ForeignKey)
+                        Float, Numeric, ForeignKey, Boolean)
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
@@ -85,7 +85,6 @@ class GenomeRegion(Base):
     rightpos = Column(Integer)
     strand = Column(String(1))
     type = Column(String(20))
-
     __table_args__ = (UniqueConstraint('name','leftpos','rightpos','strand','chromosome_id'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'genome_region',
@@ -120,8 +119,8 @@ class Component(Base):
                        'polymorphic_on': type
                       }
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, bigg_id):
+        self.bigg_id = bigg_id
 
     def __repr__(self):
         return "Component (#%d):  %s" % \
@@ -224,6 +223,13 @@ class PublicationModel(Base):
         self.model_id = model_id
         self.publication_id = publication_id
         
+class LinkOut(Base):
+    __tablename__="link_out"
+    id = Column(Integer, Sequence('wids'), primary_key=True) 
+    external_id = Column(String)
+    external_source = Column(String)
+    ome_id = Column(Integer)
+    type = Column(String)
         
 class GenomeRegionMap(Base):
         __tablename__ = 'genome_region_map'

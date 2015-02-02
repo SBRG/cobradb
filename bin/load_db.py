@@ -101,7 +101,7 @@ if __name__ == "__main__":
         model_dir = join(settings.data_directory, 'models')
         model_genome_file = join(settings.data_directory,
                                  'annotation',
-                                 'model-genome.txt')
+                                 'model-genome_test.txt')
         with open(model_genome_file, 'r') as f:
             lines = f.readlines()
             n = len(lines)
@@ -112,8 +112,8 @@ if __name__ == "__main__":
                     model_loading.load_model(model_id, model_dir, genome_id,
                                              timestamp, pmid)
                 except Exception as e:
-                    logging.error('Could not load model %s. %s' % (model_id, e))
-
+                    logging.exception('Could not load model %s. %s' % (model_id, e))
+                    raise
     genome_data = base.omics_database.genome_data
 
     if MONGO_INSTALLED:

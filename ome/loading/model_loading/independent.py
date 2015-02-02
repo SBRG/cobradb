@@ -29,23 +29,27 @@ def loadModel(session, model, genome_db_id, first_created, pmid):
         pm = base.PublicationModel(publication_id= publication.id, model_id = modelObject.id)
         session.add(pm)
 
-
 def loadComponents(session, model_list):
     for model in model_list:
         for component in model.metabolites:
             try:
                 met_id = parse.split_compartment(component.id)[0]
             except Exception as e:
-                logging.warn("%s. In model %s" % (e, model.id))
+                logging.exception("%s. In model %s" % (e, model.id))
                 continue
 
             linkouts = [('KEGGID', 'kegg_id'), 
-                        ('CAS_NUMBER', 'cas_number'), 
+                        ('CASNUMBER', 'cas_number'), 
                         ('SEED', 'seed'),
                         ('METACYC', 'metacyc'),
                         ('CHEBI', 'chebi'),
                         ('BRENDA', 'brenda'),
-                        ('UPA', 'upa')]
+                        ('UPA', 'upa'),
+                        ('HMDB', 'hmdb'),
+                        ('BIOPATH', 'biopath'),
+                        ('REACTOME', 'reactome'),
+                        ('LIPIDMAPS', 'lipidmaps'),
+                        ('CASID', 'casid')]
             def parse_linkout_str(id):
                 if id is None:
                     return None
@@ -72,22 +76,21 @@ def loadComponents(session, model_list):
 
                 metaboliteObject = Metabolite(bigg_id=met_id,
                                               name=component.name,
-                                              kegg_id=found['KEGGID'],
-                                              cas_number=found['CAS_NUMBER'],
-                                              seed=found['SEED'], 
-                                              chebi=found['CHEBI'], 
-                                              metacyc=found['METACYC'],
-                                              upa=found['UPA'], 
-                                              brenda=found['BRENDA'],
                                               formula=str(_formula))
+                
                 session.add(metaboliteObject)
+                for _key in component.notes.keys():
+                    if _key != 'FORMULA1':
+                        linkout = LinkOut(external_id = found[parse_linkout_str(_key)], external_source = _key, type = "metabolite", ome_id = metaboliteObject.id)
+                        session.add(linkout)
+            """
             else:
                 for linkout in linkouts:
                     need_linkout = (component.notes.get(linkout[0]) is not None and
                                     getattr(metabolite_db, linkout[1]) is not None)
                     if need_linkout:
                         setattr(metabolite_db, linkout[1],
-                                parse_linkout_str(component.notes.get(linkout[0])))
+                                parse_linkout_str(component.notes.get(linkout[0])))"""
                             
 def loadReactions(session, model_list):
     for model in model_list:
@@ -97,6 +100,11 @@ def loadReactions(session, model_list):
                 new_object = Reaction(bigg_id=reaction.id, name=reaction.name, # fix this, see BiGG2 issue #29
                                       notes='', reaction_hash=parse.hash_reaction(reaction))
                 session.add(new_object)
+            else:
+                if reaction_db.name == '' or (reaction_db.name == reaction_db.bigg_id and (reaction.name != '' or reaction.name != None)):
+                    reaction_db.name = reaction.name
+                    
+                    
 
 def loadCompartments(session, model_list):
     compartments_all = set()

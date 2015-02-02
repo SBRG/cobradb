@@ -14,7 +14,7 @@ def get_model(session, bigg_id):
 def get_reaction(session, bigg_id):
     return (session
             .query(Reaction)
-            .filter(Reaction.name == bigg_id)
+            .filter(Reaction.bigg_id == bigg_id)
             .first())
 
 def chromosomes_for_genome(session, genome_id):
