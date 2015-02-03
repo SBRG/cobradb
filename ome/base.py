@@ -103,30 +103,31 @@ class GenomeRegion(Base):
         self.chromosome_id = chromosome_id
         self.name = name
 
-
+        
 class Component(Base):
     __tablename__ = 'component'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
     bigg_id = Column(String)
     name = Column(String)
-    formula = Column(String)
     type = Column(String(20))
 
-    __table_args__ = (UniqueConstraint('bigg_id'),{})
+    __table_args__ = (UniqueConstraint('bigg_id'), {})
 
-    __mapper_args__ = {'polymorphic_identity': 'component',
-                       'polymorphic_on': type
-                      }
+    __mapper_args__ = {
+        'polymorphic_identity': 'component',
+        'polymorphic_on': type
+    }
 
-    def __init__(self, bigg_id):
+    def __init__(self, bigg_id, name):
         self.bigg_id = bigg_id
+        self.name = name
 
     def __repr__(self):
         return "Component (#%d):  %s" % \
             (self.id, self.name)
 
-
+        
 class Reaction(Base):
     __tablename__ = 'reaction'
 
@@ -141,9 +142,10 @@ class Reaction(Base):
     upper_bound = Column(Numeric)
     __table_args__ = (UniqueConstraint('bigg_id'),{})
 
-    __mapper_args__ = {'polymorphic_identity': 'reaction',
-                       'polymorphic_on': type
-                      }
+    __mapper_args__ = {
+        'polymorphic_identity': 'reaction',
+        'polymorphic_on': type
+    }
 
     def __init__(self, name, notes, reaction_hash, bigg_id):
         self.name = name

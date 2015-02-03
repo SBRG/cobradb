@@ -77,7 +77,7 @@ if __name__ == "__main__":
             logging.info('Loading genome from genbank file (%d of %d) %s' % (i + 1, n, genbank_file))
             try:
                 if genbank_file != '.DS_Store':
-                    component_loading.load_genome(join(genbank_dir, genbank_file), debug=False)
+                    component_loading.load_genome(join(genbank_dir, genbank_file))
             except Exception as e:
                 logging.error(str(e))
 
@@ -147,11 +147,11 @@ if __name__ == "__main__":
 
         old_gff_file = settings.data_directory+'/annotation/NC_000913.2_old.gff'
 
-        #dataset_loading.run_cuffquant(base, datasets, genome, group_name='crp', debug=False)
-        #dataset_loading.run_cuffnorm(base, datasets, genome, group_name='crp', gff_file=old_gff_file, debug=False, overwrite=True)
-        #dataset_loading.run_cuffnorm(base, datasets, genome, group_name='yome', debug=False, overwrite=True)
-        #dataset_loading.run_cuffdiff(base, datasets, genome, group_name='crp', gff_file=old_gff_file, debug=False, overwrite=True)
-        #dataset_loading.run_cuffdiff(base, datasets, genome, group_name='yome', debug=False, overwrite=True)
+        #dataset_loading.run_cuffquant(base, datasets, genome, group_name='crp')
+        #dataset_loading.run_cuffnorm(base, datasets, genome, group_name='crp', gff_file=old_gff_file, overwrite=True)
+        #dataset_loading.run_cuffnorm(base, datasets, genome, group_name='yome', overwrite=True)
+        #dataset_loading.run_cuffdiff(base, datasets, genome, group_name='crp', gff_file=old_gff_file, overwrite=True)
+        #dataset_loading.run_cuffdiff(base, datasets, genome, group_name='yome', overwrite=True)
         #dataset_loading.run_gem(base, datasets, genome, debug=True)
 
 

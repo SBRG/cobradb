@@ -51,7 +51,6 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
     ],
     keywords='systems biology',
@@ -59,13 +58,13 @@ setup(
     install_requires=['SQLAlchemy>=0.9.8',
                       'cobra>=0.3.0',
                       'numpy>=1.9.1',
-                      'pandas>=0.15.2',
-                      'pysam>=0.8.1',
-                      'pyzmq>=14.4.1',
-                      'scipy>=0.15.0',
+                      'pandas>=0.15.2', # could be optional
+                      'pysam>=0.8.1', # could be optional
+                      'pyzmq>=14.4.1', # could be optional
+                      'scipy>=0.15.0', # could be optional
                       'simplejson>=3.6.5',
                       'psycopg2>=2.5.4',
-                      'biopython>=1.65'],
+                      'biopython>=1.65'], # could be optional
     extras_require = {'all': ['pymongo>=2.7.2',
                               'ipython>=2.3.1',
                               'pytest>=2.6.4']},

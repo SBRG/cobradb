@@ -83,14 +83,13 @@ def loadComponents(session, model_list):
                     if _key != 'FORMULA1':
                         linkout = LinkOut(external_id = found[parse_linkout_str(_key)], external_source = _key, type = "metabolite", ome_id = metaboliteObject.id)
                         session.add(linkout)
-            """
             else:
-                for linkout in linkouts:
-                    need_linkout = (component.notes.get(linkout[0]) is not None and
-                                    getattr(metabolite_db, linkout[1]) is not None)
-                    if need_linkout:
-                        setattr(metabolite_db, linkout[1],
-                                parse_linkout_str(component.notes.get(linkout[0])))"""
+                for _key in component.notes.keys():
+                    if _key !=  'FORMULA1':
+                        external_link = session.query(LinkOut).filter(LinkOut.external_source == _key).filter(LinkOut.ome_id == metabolite_db.id).one()
+                        if external_link.external_id == None or external_link.external_id == "":
+                            external_link.external_id = found[parse_linkout_str(_key)]
+
                             
 def loadReactions(session, model_list):
     for model in model_list:
@@ -103,29 +102,4 @@ def loadReactions(session, model_list):
             else:
                 if reaction_db.name == '' or (reaction_db.name == reaction_db.bigg_id and (reaction.name != '' or reaction.name != None)):
                     reaction_db.name = reaction.name
-                    
-                    
 
-def loadCompartments(session, model_list):
-    compartments_all = set()
-    for model in model_list:
-        for component in model.metabolites:
-            if component.id is not None:
-                compartments_all.add(parse.split_compartment(component.id)[1])
-        for symbol in compartments_all:
-            if not session.query(Compartment).filter(Compartment.bigg_id == symbol).count():
-                compartmentObject = Compartment(bigg_id = symbol, name = '')
-                session.add(compartmentObject)
-"""  
-                if len(component.id.split('_'))>1:
-
-
-                    if not session.query(Compartment).filter(Compartment.name == parse.split_compartment(component.id)[1]).count():
-                        compartmentObject = Compartment(name = parse.split_compartment(component.id)[1])
-                        session.add(compartmentObject)
-
-                else:
-                    if not session.query(Compartment).filter(Compartment.name == 'none').count():
-                        compartmentObject = Compartment(name = 'none')
-                        session.add(compartmentObject)
-"""           
