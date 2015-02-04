@@ -10,12 +10,12 @@ from ome.components import *
 
 """
 CREATE EXTENSION pg_trgm;
-CREATE INDEX gene_locus_trigram_idx ON gene USING gin (to_tsvector('english',locus_id));
-CREATE INDEX reaction_name_trigram_idx ON reaction USING gin (to_tsvector('english',name));
+CREATE INDEX gene_biggid_trigram_idx ON gene USING gin (to_tsvector('english',bigg_id));
+CREATE INDEX reaction_biggid_trigram_idx ON reaction USING gin (to_tsvector('english',bigg_id));
 CREATE INDEX genome_name_trigram_idx ON genome_region USING gin (to_tsvector('english',name));
 CREATE INDEX model_biggid_trigram_idx ON model USING gin (to_tsvector('english',bigg_id));
 CREATE INDEX genome_organism_trigram_idx ON genome USING gin (to_tsvector('english',organism));
-CREATE INDEX metabolite_name_trigram_idx ON metabolite USING gin (to_tsvector('english',name));
+CREATE INDEX metabolite_biggid_trigram_idx ON metabolite USING gin (to_tsvector('english',bigg_id));
 """
 
 class Model(Base):

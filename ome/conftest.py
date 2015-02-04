@@ -17,14 +17,19 @@ def setup_logger():
 
 @pytest.fixture(scope='session')
 def test_genbank():
-    return { 'genome_id': 'PRJNA57779-core',
-             'path': realpath(join(dirname(__file__), 'test_data', 'core.gb')) }
+    return [{ 'genome_id': 'PRJNA57779-core',
+             'path': realpath(join(dirname(__file__), 'test_data', 'core.gb')) },
+             { 'genome_id': 'PRJNA57779-core-2',
+             'path': realpath(join(dirname(__file__), 'test_data', 'core_2.gb'))}]
 
 @pytest.fixture(scope='session')
 def test_model():
-    return { 'id': 'ecoli_core_model',
+    return [{ 'id': 'ecoli_core_model',
              'bigg_id': 'Ecoli_core_model', # TODO bigg_id and id should not be different
-             'dir': realpath(join(dirname(__file__), 'test_data')) }
+             'dir': realpath(join(dirname(__file__), 'test_data')) },
+             { 'id': 'ecoli_core_model_2',
+             'bigg_id': 'Ecoli_core_model_2', # TODO bigg_id and id should not be different
+             'dir': realpath(join(dirname(__file__), 'test_data')) }]
 
 @pytest.fixture(scope='session')
 def test_db_create(setup_logger):

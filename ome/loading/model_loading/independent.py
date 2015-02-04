@@ -86,9 +86,13 @@ def loadComponents(session, model_list):
             else:
                 for _key in component.notes.keys():
                     if _key !=  'FORMULA1':
-                        external_link = session.query(LinkOut).filter(LinkOut.external_source == _key).filter(LinkOut.ome_id == metabolite_db.id).one()
-                        if external_link.external_id == None or external_link.external_id == "":
-                            external_link.external_id = found[parse_linkout_str(_key)]
+                        external_link = (session.query(LinkOut)
+                                        .filter(LinkOut.external_source == _key)
+                                        .filter(LinkOut.ome_id == metabolite_db.id)
+                                        .first())
+                        if external_link != None:
+                            if external_link.external_id == None or external_link.external_id == "":
+                                external_link.external_id = found[parse_linkout_str(_key)]
 
                             
 def loadReactions(session, model_list):

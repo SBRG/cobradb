@@ -1,7 +1,7 @@
 from ome.loading.model_loading.parse import *
 
 def test_hash_reaction(test_model):
-    model, _ = load_and_normalize(test_model['id'], test_model['dir'])
+    model, _ = load_and_normalize(test_model[0]['id'], test_model[0]['dir'])
 
     # just the string
     string = hash_reaction(model.reactions.GAPD, string_only=True)

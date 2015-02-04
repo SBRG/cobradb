@@ -248,7 +248,7 @@ class Metabolite(Component):
     formula = Column(String)
     smiles = Column(String(200))
 
-    def __init__(self, bigg_id, name, smiles=None):
+    def __init__(self, bigg_id, name, formula, smiles=None):
         super(Metabolite, self).__init__(bigg_id, name)
         self.formula = formula
         self.smiles = smiles

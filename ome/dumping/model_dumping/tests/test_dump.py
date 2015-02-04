@@ -9,18 +9,18 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger):
     
     timestamp = '2014-9-16 14:26:22'
     pmid = '25575024'
-
     # load the test genome
-    load_genome(test_genbank['path'])
+    
+    load_genome(test_genbank[0]['path'])
 
     # load the model
-    load_model(test_model['id'], test_model['dir'], test_genbank['genome_id'],
+    load_model(test_model[0]['id'], test_model[0]['dir'], test_genbank[0]['genome_id'],
                timestamp, pmid)
     
     with pytest.raises(Exception):
         dump_model('C3PO')
         
-    model = dump_model(test_model['bigg_id'])
+    model = dump_model(test_model[0]['bigg_id'])
     
     assert len(model.reactions) == 95
     assert len(model.metabolites) == 72
