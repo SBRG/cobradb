@@ -93,6 +93,10 @@ def loadComponents(session, model_list):
                         if external_link != None:
                             if external_link.external_id == None or external_link.external_id == "":
                                 external_link.external_id = found[parse_linkout_str(_key)]
+                        else:
+                            linkout = LinkOut(external_id = found[parse_linkout_str(_key)], external_source = _key, type = "metabolite", ome_id = metaboliteObject.id)
+                            session.add(linkout)
+                            
 
                             
 def loadReactions(session, model_list):
