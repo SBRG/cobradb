@@ -66,6 +66,7 @@ def loadComponents(session, model_list):
             if metabolite_db is None:
                 found = {}
                 for linkout in linkouts:
+                     
                     found[linkout[0]] = parse_linkout_str(component.notes.get(linkout[0]))
 
                 # look for the formula
@@ -81,11 +82,14 @@ def loadComponents(session, model_list):
                 session.add(metaboliteObject)
                 for _key in component.notes.keys():
                     if _key != 'FORMULA1':
-                        linkout = LinkOut(external_id = found[parse_linkout_str(_key)], external_source = _key, type = "metabolite", ome_id = metaboliteObject.id)
+                        linkout = LinkOut(external_id = found[parse_linkout_str(_key)], 
+                                            external_source = _key, 
+                                            type = "metabolite", 
+                                            ome_id = metaboliteObject.id)
                         session.add(linkout)
             else:
                 for _key in component.notes.keys():
-                    if _key !=  'FORMULA1':
+                    if _key !=  'FORMULA1' and _key != 'FORMULA':
                         external_link = (session.query(LinkOut)
                                         .filter(LinkOut.external_source == _key)
                                         .filter(LinkOut.ome_id == metabolite_db.id)
@@ -94,7 +98,10 @@ def loadComponents(session, model_list):
                             if external_link.external_id == None or external_link.external_id == "":
                                 external_link.external_id = found[parse_linkout_str(_key)]
                         else:
-                            linkout = LinkOut(external_id = found[parse_linkout_str(_key)], external_source = _key, type = "metabolite", ome_id = metaboliteObject.id)
+                            linkout = LinkOut(external_id = found[parse_linkout_str(_key)], 
+                                                external_source = _key, 
+                                                type = "metabolite", 
+                                                ome_id = metaboliteObject.id)
                             session.add(linkout)
                             
 

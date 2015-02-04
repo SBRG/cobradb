@@ -101,7 +101,7 @@ if __name__ == "__main__":
         model_dir = join(settings.data_directory, 'models')
         model_genome_file = join(settings.data_directory,
                                  'annotation',
-                                 'model-genome_test.txt')
+                                 'model-genome.txt')
         with open(model_genome_file, 'r') as f:
             lines = f.readlines()
             n = len(lines)
