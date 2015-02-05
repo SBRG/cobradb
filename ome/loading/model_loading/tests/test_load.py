@@ -24,7 +24,7 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
 
     # load the model
         load_model(test_model[x]['id'], test_model[x]['dir'], test_genbank[x]['genome_id'],
-                                timestamp, pmid)
+                    timestamp, pmid)
     
     # test the model
     session = base.Session()
@@ -34,8 +34,18 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
     assert session.query(CompartmentalizedComponent).count() == 72
     assert session.query(ModelCompartmentalizedComponent).count() == 72 * 2
     assert session.query(Metabolite).count() == 54
+    assert session.query(LinkOut).count() == 10
     assert session.query(Gene).count() == 137 * 2
     assert session.query(ModelGene).count() == 137 * 2
+    
+    # test linkouts
+    result = (session
+              .query(LinkOut.external_source, LinkOut.external_id, LinkOut.ome_id)
+              .join(Metabolite, Metabolite.id == LinkOut.ome_id)
+              .filter(Metabolite.bigg_id == '13dpg')
+              .filter(LinkOut.external_source == 'KEGGID')
+              .all())
+    assert len(result) == 2
 
     r_db =  (session.query(ModelReaction)
              .join(Reaction)

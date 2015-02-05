@@ -63,12 +63,11 @@ def loadComponents(session, model_list):
                              .query(Metabolite)
                              .filter(Metabolite.bigg_id == met_id)
                              .first())
-            found = {}
+                             
+            found = {linkout[0]: parse_linkout_str(component.notes.get(linkout[0]))
+                     for linkout in linkouts}
+            
             if metabolite_db is None:
-                
-                for linkout in linkouts:
-                     
-                    found[linkout[0]] = parse_linkout_str(component.notes.get(linkout[0]))
 
                 # look for the formula
                 if component.notes.get("FORMULA1") is not None:
@@ -76,34 +75,30 @@ def loadComponents(session, model_list):
                 else:
                     _formula = component.formula
 
-                metaboliteObject = Metabolite(bigg_id=met_id,
+                metabolite_db = Metabolite(bigg_id=met_id,
                                               name=component.name,
                                               formula=str(_formula))
-                
-                session.add(metaboliteObject)
-                for _key in component.notes.keys():
-                    if _key != 'FORMULA1':
+                session.add(metabolite_db)
+                session.commit()
+    
+            #load new linkouts even ones that are pointing to previously created universal
+            #metabolites. The only scenario where we don't load a linkout is if the 
+            #external id and metabolite is exactly the same as a previous linkout.
+            
+            for _key in component.notes.keys():
+                if _key !=  'FORMULA1' and _key != 'FORMULA':
+                    if (session
+                        .query(LinkOut)
+                        .filter(LinkOut.external_id == found[parse_linkout_str(_key)])
+                        .filter(LinkOut.external_source == _key)
+                        .filter(LinkOut.type == "metabolite")
+                        .filter(LinkOut.ome_id == metabolite_db.id)
+                        .count()) == 0:
                         linkout = LinkOut(external_id = found[parse_linkout_str(_key)], 
                                             external_source = _key, 
                                             type = "metabolite", 
-                                            ome_id = metaboliteObject.id)
+                                            ome_id = metabolite_db.id)
                         session.add(linkout)
-            else:
-                for _key in component.notes.keys():
-                    if _key !=  'FORMULA1' and _key != 'FORMULA':
-                        external_link = (session.query(LinkOut)
-                                        .filter(LinkOut.external_source == _key)
-                                        .filter(LinkOut.ome_id == metabolite_db.id)
-                                        .first())
-                        if external_link != None:
-                            if external_link.external_id == None or external_link.external_id == "":
-                                external_link.external_id = found[parse_linkout_str(_key)]
-                        else:
-                            linkout = LinkOut(external_id = found[parse_linkout_str(_key)], 
-                                                external_source = _key, 
-                                                type = "metabolite", 
-                                                ome_id = metaboliteObject.id)
-                            session.add(linkout)
                             
 
                             

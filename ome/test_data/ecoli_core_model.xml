@@ -20,7 +20,19 @@
     <listOfSpecies>
       <species id="M_13dpg_c" name="3-Phospho-D-glyceroyl-phosphate" compartment="C_c">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: C3H4O10P2</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml">
+            <p>FORMULA: C3H4O10P2</p>
+            <p>metacyc: DPG</p>
+            <p>brenda: [&apos;BG18032&apos;, &apos;BG87317&apos;]</p>
+            <p>chebi: [&apos;16001&apos;, &apos;1658&apos;, &apos;20189&apos;, &apos;57604&apos;, &apos;11881&apos;]</p>
+            <p>upa: UPC00236</p>
+            <p>CHARGE: -4</p>
+            <p>KEGGID: C00236</p>
+            <p>hmdb: HMDB01270</p>
+            <p>biopath: 1,3-Diphospho-D-glycerate</p>
+            <p>reactome: 29800</p>
+            <p>seed: cpd00203</p>
+            </html>
         </notes>
       </species>
       <species id="M_2pg_c" name="D-Glycerate-2-phosphate" compartment="C_c">

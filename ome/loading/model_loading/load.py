@@ -66,7 +66,7 @@ def load_model(model_id, model_dir, genome_id, model_timestamp, pmid):
     dependent.loadModelGenes(session, [model])
     dependent.loadModelCompartmentalizedComponent(session, [model])
     dependent.loadModelReaction(session, [model])
-    dependent.loadGPRMatrix(session, [model])
+    dependent.loadGeneReactionMatrix(session, [model])
     dependent.loadReactionMatrix(session, [model])
     dependent.loadModelCount(session, [model])
     dependent.loadOldIdtoSynonyms(session, old_ids)

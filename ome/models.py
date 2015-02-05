@@ -63,13 +63,13 @@ class ModelReaction(Base):
     upper_bound = Column(Numeric)
     lower_bound = Column(Numeric)
     objective_coefficient = Column(Numeric)
-    gpr = Column(String)
+    gene_reaction_rule = Column(String)
 
     __table_args__ = (UniqueConstraint('reaction_id', 'model_id'),{})
 
 
-class GPRMatrix(Base):
-    __tablename__='gpr_matrix'
+class GeneReactionMatrix(Base):
+    __tablename__='gene_reaction_matrix'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
     model_gene_id = Column(Integer, 

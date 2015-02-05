@@ -209,12 +209,12 @@ def loadModelReaction(session, model_list):
                                                name=reaction.id,
                                                upper_bound=reaction.upper_bound,
                                                lower_bound=reaction.lower_bound,
-                                               gpr=reaction.gene_reaction_rule,
+                                               gene_reaction_rule=reaction.gene_reaction_rule,
                                                objective_coefficient=reaction.objective_coefficient)
                     session.add(new_object)
 
 
-def loadGPRMatrix(session, model_list):
+def loadGeneReactionMatrix(session, model_list):
     for model in model_list:
         for reaction in model.reactions:
             for gene in reaction._genes:
@@ -239,11 +239,11 @@ def loadGPRMatrix(session, model_list):
                                          .filter(ModelReaction.model_id == model_db.id)
                                          .first())
                     if not (session
-                            .query(GPRMatrix)
-                            .filter(GPRMatrix.model_gene_id == model_gene_db.id)
-                            .filter(GPRMatrix.model_reaction_id == model_reaction_db.id)
+                            .query(GeneReactionMatrix)
+                            .filter(GeneReactionMatrix.model_gene_id == model_gene_db.id)
+                            .filter(GeneReactionMatrix.model_reaction_id == model_reaction_db.id)
                             .count()):
-                        new_object = GPRMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
+                        new_object = GeneReactionMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
                         session.add(new_object)
                 else:
                     model_gene_db = (session
@@ -259,9 +259,9 @@ def loadGPRMatrix(session, model_list):
                                              .filter(ModelReaction.name == reaction.id)
                                              .filter(ModelReaction.model_id == model_db.id)
                                              .first())
-                        if not (session.query(GPRMatrix).filter(GPRMatrix.model_gene_id == model_gene_db.id).filter(GPRMatrix.model_reaction_id == model_reaction_db.id).count()):
+                        if not (session.query(GeneReactionMatrix).filter(GeneReactionMatrix.model_gene_id == model_gene_db.id).filter(GeneReactionMatrix.model_reaction_id == model_reaction_db.id).count()):
 
-                            new_object = GPRMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
+                            new_object = GeneReactionMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
                             session.add(new_object)
                     else:
                         synonymquery = (session.query(Synonym).filter(Synonym.synonym == gene.id.split(".")[0]).first())
@@ -271,9 +271,9 @@ def loadGPRMatrix(session, model_list):
                                 model_reaction_db = (session.query(ModelReaction).filter(ModelReaction.name == reaction.id).filter(ModelReaction.model_id == model_db.id).first())
 
                                 if model_reaction_db and model_gene_db:
-                                    if not (session.query(GPRMatrix).filter(GPRMatrix.model_gene_id == model_gene_db.id).filter(GPRMatrix.model_reaction_id == model_reaction_db.id).count()):
+                                    if not (session.query(GeneReactionMatrix).filter(GeneReactionMatrix.model_gene_id == model_gene_db.id).filter(GeneReactionMatrix.model_reaction_id == model_reaction_db.id).count()):
 
-                                        new_object = GPRMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
+                                        new_object = GeneReactionMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
                                         session.add(new_object)
                                 else:
                                     print "model reaction or model gene was not found " + str(reaction.id) + " " + str(synonymquery.ome_id)

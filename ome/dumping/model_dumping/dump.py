@@ -41,7 +41,7 @@ def dump_model(bigg_id):
     for r_db, mr_db in reactions_db:
         r = cobra.core.Reaction(r_db.bigg_id)
         r.name = r_db.name
-        r.gene_reaction_rule = mr_db.gpr
+        r.gene_reaction_rule = mr_db.gene_reaction_rule
         r.lower_bound = mr_db.lower_bound
         r.upper_bound = mr_db.upper_bound
         r.objective_coefficient = mr_db.objective_coefficient
