@@ -49,7 +49,8 @@ def loadComponents(session, model_list):
                         'BIOPATH',
                         'REACTOME',
                         'LIPIDMAPS', 
-                        'CASID']
+                        'CASID',
+                        'PUBCHEM ID']
             def parse_linkout_str(id):
                 if id is None:
                     return None
@@ -87,7 +88,10 @@ def loadComponents(session, model_list):
             
             for _key in component.notes.keys():
                 if _key !=  'FORMULA1' and _key != 'FORMULA':
-                    external_id_string  = found[parse_linkout_str(_key)].strip()
+                    try:
+                        external_id_string  = found[parse_linkout_str(_key)].strip()
+                    except:
+                        logging.warning('the external id is not in our list')
                     if external_id_string.lower() != "none":
                         for external_id in [x.strip() for x in external_id_string.split(',')]:
                             if (session
