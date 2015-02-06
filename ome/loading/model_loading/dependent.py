@@ -101,7 +101,7 @@ def loadModelGenes(session, model_list):
                     
                 logging.warn('Gene not in genbank file: %s (%s) from model %s' %
                              (gene.id, gene.name, model.id))
-
+                            
                 ome_gene = {}
                 ome_gene['bigg_id'] = gene.id
                 ome_gene['name'] = gene.name

@@ -15,8 +15,8 @@ class Gene(GenomeRegion):
     id = Column(Integer,
                 ForeignKey('genome_region.id', onupdate="CASCADE", ondelete="CASCADE"),
                 primary_key=True)
-    bigg_id = Column(String(20))
     info = Column(String(300))
+    name = Column(String)
     mapped_to_genbank = Column(Boolean)
 
     __mapper_args__ = { 'polymorphic_identity': 'gene' }
@@ -29,8 +29,8 @@ class Gene(GenomeRegion):
     def __init__(self, bigg_id, leftpos, rightpos, strand, mapped_to_genbank,
                  chromosome_id=None, info=None, name=None):
 
-        super(Gene, self).__init__(leftpos, rightpos, strand, chromosome_id, name)
-        self.bigg_id = bigg_id
+        super(Gene, self).__init__(leftpos, rightpos, strand, chromosome_id, bigg_id)
+        self.name = name
         self.info = info
         self.mapped_to_genbank = mapped_to_genbank
 
