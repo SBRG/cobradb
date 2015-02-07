@@ -80,12 +80,12 @@ class GenomeRegion(Base):
     __tablename__ = 'genome_region'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     chromosome_id = Column(Integer, ForeignKey('chromosome.id'))
-    name = Column(String)
+    bigg_id = Column(String(20))
     leftpos = Column(Integer)
     rightpos = Column(Integer)
     strand = Column(String(1))
     type = Column(String(20))
-    __table_args__ = (UniqueConstraint('name','leftpos','rightpos','strand','chromosome_id'),{})
+    __table_args__ = (UniqueConstraint('bigg_id','leftpos','rightpos','strand','chromosome_id'),{})
 
     __mapper_args__ = {'polymorphic_identity': 'genome_region',
                        'polymorphic_on': type
@@ -96,12 +96,12 @@ class GenomeRegion(Base):
                 (self.leftpos, self.rightpos, self.strand)
 
 
-    def __init__(self, leftpos, rightpos, strand, chromosome_id, name=None):
+    def __init__(self, leftpos, rightpos, strand, chromosome_id, bigg_id):
         self.leftpos = leftpos
         self.rightpos = rightpos
         self.strand = strand
         self.chromosome_id = chromosome_id
-        self.name = name
+        self.bigg_id = bigg_id
 
         
 class Component(Base):

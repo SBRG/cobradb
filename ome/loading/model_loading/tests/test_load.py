@@ -34,7 +34,7 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
     assert session.query(CompartmentalizedComponent).count() == 72
     assert session.query(ModelCompartmentalizedComponent).count() == 72 * 2
     assert session.query(Metabolite).count() == 54
-    assert session.query(LinkOut).count() == 10
+    assert session.query(LinkOut).count() == 16
     assert session.query(Gene).count() == 137 * 2
     assert session.query(ModelGene).count() == 137 * 2
     

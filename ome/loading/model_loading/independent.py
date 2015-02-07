@@ -38,18 +38,19 @@ def loadComponents(session, model_list):
                 logging.exception("%s. In model %s" % (e, model.id))
                 continue
 
-            linkouts = [('KEGGID', 'kegg_id'), 
-                        ('CASNUMBER', 'cas_number'), 
-                        ('SEED', 'seed'),
-                        ('METACYC', 'metacyc'),
-                        ('CHEBI', 'chebi'),
-                        ('BRENDA', 'brenda'),
-                        ('UPA', 'upa'),
-                        ('HMDB', 'hmdb'),
-                        ('BIOPATH', 'biopath'),
-                        ('REACTOME', 'reactome'),
-                        ('LIPIDMAPS', 'lipidmaps'),
-                        ('CASID', 'casid')]
+            linkouts = ['KEGGID', 
+                        'CASNUMBER', 
+                        'SEED',
+                        'METACYC',
+                        'CHEBI',
+                        'BRENDA',
+                        'UPA',
+                        'HMDB',
+                        'BIOPATH',
+                        'REACTOME',
+                        'LIPIDMAPS', 
+                        'CASID',
+                        'PUBCHEM ID']
             def parse_linkout_str(id):
                 if id is None:
                     return None
@@ -64,7 +65,7 @@ def loadComponents(session, model_list):
                              .filter(Metabolite.bigg_id == met_id)
                              .first())
                              
-            found = {linkout[0]: parse_linkout_str(component.notes.get(linkout[0]))
+            found = {linkout: parse_linkout_str(component.notes.get(linkout))
                      for linkout in linkouts}
             
             if metabolite_db is None:
@@ -87,20 +88,24 @@ def loadComponents(session, model_list):
             
             for _key in component.notes.keys():
                 if _key !=  'FORMULA1' and _key != 'FORMULA':
-                    if (session
-                        .query(LinkOut)
-                        .filter(LinkOut.external_id == found[parse_linkout_str(_key)])
-                        .filter(LinkOut.external_source == _key)
-                        .filter(LinkOut.type == "metabolite")
-                        .filter(LinkOut.ome_id == metabolite_db.id)
-                        .count()) == 0:
-                        linkout = LinkOut(external_id = found[parse_linkout_str(_key)], 
-                                            external_source = _key, 
-                                            type = "metabolite", 
-                                            ome_id = metabolite_db.id)
-                        session.add(linkout)
-                            
-
+                    try:
+                        external_id_string  = found[parse_linkout_str(_key)].strip()
+                    except:
+                        logging.warning('the external id is not in our list')
+                    if external_id_string.lower() != "none":
+                        for external_id in [x.strip() for x in external_id_string.split(',')]:
+                            if (session
+                                .query(LinkOut)
+                                .filter(LinkOut.external_id == external_id)
+                                .filter(LinkOut.external_source == _key)
+                                .filter(LinkOut.type == "metabolite")
+                                .filter(LinkOut.ome_id == metabolite_db.id)
+                                .count()) == 0:
+                                linkout = LinkOut(external_id = external_id, 
+                                                    external_source = _key, 
+                                                    type = "metabolite", 
+                                                    ome_id = metabolite_db.id)
+                                session.add(linkout)
                             
 def loadReactions(session, model_list):
     for model in model_list:
