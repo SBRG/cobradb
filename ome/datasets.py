@@ -620,8 +620,8 @@ chip_peak_gene = ome.query(ChIPPeakData.value.label('peak_value'),
                            InVivoEnvironment.supplements.label('supplements'),
                            TU.name.label('tu_name'),
                            Gene.id.label('gene_id'),
-                           Gene.bigg_id.label('bigg_id'),
-                           GenomeRegion2.name.label('gene_name'),
+                           Gene.name.label('name'),
+                           GenomeRegion2.bigg_id.label('gene_bigg_id'),
                            ChIPPeakData.dataset_id.label('chip_peak_id')).\
                     join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
                     join(TU, GenomeRegionMap.genome_region_id_2 == TU.genome_region_id).\
