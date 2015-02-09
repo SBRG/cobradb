@@ -1,4 +1,5 @@
-from sqlalchemy import create_engine, ForeignKey, Column, Integer, String, Numeric, Table, MetaData, DateTime
+from sqlalchemy import (create_engine, ForeignKey, Column, Integer, String,
+                        Numeric, Table, MetaData, DateTime, LargeBinary)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import UniqueConstraint
@@ -100,33 +101,40 @@ class ModelCompartmentalizedComponent(Base):
     model_id = Column(Integer, ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
     compartmentalized_component_id = Column(Integer, ForeignKey('compartmentalized_component.id'), nullable=False)
     compartment_id = Column(Integer, ForeignKey('compartment.id'), nullable=False)
-    #date_created = Column(DateTime)
     __table_args__ = (UniqueConstraint('compartment_id', 'compartmentalized_component_id', 'model_id'),{})
 
 class Compartment(Base):
-    __tablename__='compartment'
+    __tablename__ = 'compartment'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     bigg_id  = Column(String, unique = True)
     name = Column(String)
-    #date_created = Column(DateTime)
 
 class ReactionMatrix(Base):
-    __tablename__='reaction_matrix'
+    __tablename__ = 'reaction_matrix'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     reaction_id = Column(Integer, ForeignKey('reaction.id'), nullable=False)
     compartmentalized_component_id = Column(Integer, ForeignKey('compartmentalized_component.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
     stoichiometry = Column(Numeric)
-    #UniqueConstraint('reaction_id', 'compartmentalized_component')
-    #date_created = Column(DateTime)
     __table_args__ = (UniqueConstraint('reaction_id', 'compartmentalized_component_id'),{})
 
-
 class EscherMap(Base):
-    __tablename__='escher_map'
-    id = Column(Integer, primary_key=True)
-    bigg_id = Column(String)
-    category = Column(String)
-    model_name = Column(String)
+    __tablename__ = 'escher_map'
+    id = Column(Integer, Sequence('wids'), primary_key=True)
+    map_name = Column(String, nullable=False)
+    map_data = Column(LargeBinary, nullable=False)
+    model_id = Column(Integer, ForeignKey(Model.id), nullable=False)
+    priority = Column(Integer, nullable=False)
+    __table_args__ = (UniqueConstraint('map_name'), {})
+    
+class EscherMapMatrix(Base):
+    __tablename__ = 'escher_map_matrix'
+    id = Column(Integer, Sequence('wids'), primary_key=True)
+    ome_id = Column(Integer, nullable=False)
+    escher_map_id = Column(Integer, ForeignKey(EscherMap.id), nullable=False)
+    # the reaction id or node id
+    escher_map_element_id = Column(String(50))
+    type = Column(String, nullable=False)
+    __table_args__ = (UniqueConstraint('ome_id', 'escher_map_id'), {})
 
 class Comments(Base):
     __tablename__ = 'comments'
@@ -134,16 +142,6 @@ class Comments(Base):
     email = Column(String)
     text = Column(String)
 
-"""
-class ModelVersion(Base):
-    __tablename__='model_version'
-    id = Column(Integer, primary_key=True)
-    first_created = Column(DateTime)
-    email = Column(String)
-    organization = Column(String)
-    modification_date = Column(DateTime)
-    model_id = Column(Integer, ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), nullable=False)
-"""
 class ModelCount(Base):
     __tablename__='model_count'
     id = Column(Integer, primary_key=True)

@@ -14,8 +14,7 @@ except ImportError:
     pass
 
 @timing
-def dump_model(bigg_id):
-    session = Session()
+def dump_model(bigg_id, session):
     
     # find the model
     model_db = (session
@@ -25,7 +24,6 @@ def dump_model(bigg_id):
 
     if model_db is None:
         session.commit()
-        session.close()
         raise Exception('Could not find model %s' % bigg_id)
 
     model = cobra.core.Model(bigg_id)
@@ -94,12 +92,10 @@ def dump_model(bigg_id):
         r.add_metabolites({ m: stoich }) 
 
     session.commit()
-    session.close()
 
     return model
 
-def dump_universal_model():
-    session = Session()
+def dump_universal_model(session):
     
     model = cobra.core.Model('Universal model')
 
@@ -163,6 +159,5 @@ def dump_universal_model():
     # TODO genes
 
     session.commit()
-    session.close()
 
     return model

@@ -57,6 +57,7 @@ setup(
     packages=['ome'],
     install_requires=['SQLAlchemy>=0.9.8',
                       'cobra>=0.3.0',
+                      'escher>=1.0.0', # could be optional
                       'numpy>=1.9.1',
                       'pandas>=0.15.2', # could be optional
                       'pysam>=0.8.1', # could be optional

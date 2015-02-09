@@ -64,8 +64,13 @@ def loadComponents(session, model_list):
                              .filter(Metabolite.bigg_id == met_id)
                              .first())
                              
-            found = {linkout: parse_linkout_str(component.notes.get(linkout))
-                     for linkout in linkouts}
+            found = {}
+            for linkout in linkouts:
+                try:
+                    vl = parse_linkout_str(component.notes.get(linkout))
+                except:
+                    continue
+                found[linkout] = vl
             
             if metabolite_db is None:
 
