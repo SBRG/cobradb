@@ -46,6 +46,11 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
               .filter(LinkOut.external_source == 'KEGGID')
               .all())
     assert len(result) == 2
+    
+    assert session.query(Synonym).filter(Synonym.synonym == '904').count() == 1
+    assert session.query(Gene).filter(Gene.bigg_id == '904.1').count() == 1
+    assert session.query(Gene).filter(Gene.name == 'focA').count() == 1
+    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.1').first().id).count() == 1
 
     r_db =  (session.query(ModelReaction)
              .join(Reaction)

@@ -1380,7 +1380,7 @@
       </reaction>
       <reaction id="R_FORt2" name="formate transport via proton symport (uptake only)" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0904 or b2492)</p><p>GENE_LIST: b0904 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904.1 or b2492)</p><p>GENE_LIST: 904.1 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_for_e"/>
@@ -1404,7 +1404,7 @@
       </reaction>
       <reaction id="R_FORti" name="formate transport via diffusion" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0904 or b2492)</p><p>GENE_LIST: b0904 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904.1 or b2492)</p><p>GENE_LIST: 904.1 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_for_c"/>

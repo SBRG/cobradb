@@ -27,8 +27,13 @@ def load_and_normalize(model_id, model_dir):
     """Load a model, and give it a particular id style"""
 
     # load the model
-    model = cobra.io.read_sbml_model(join(model_dir, model_id+'.xml'))
-
+    try:
+        model = cobra.io.read_sbml_model(join(model_dir, model_id+'.xml'))
+    except:
+        try:
+            model = cobra.io.read_matlab_model(join(model_dir, model_id+'.mat'))
+        except:
+            logging.warning('the %s file was not found', model_id)
     # convert the ids
     model, old_ids = convert_ids(model, 'cobrapy')
 
@@ -263,3 +268,5 @@ def split_compartment(component_id):
     met = component_id[0:match.start()]
     compartment = component_id[match.start()+1:]
     return met, compartment
+
+    

@@ -47,7 +47,7 @@ class ModelGene(Base):
     gene_id = Column(Integer, 
                      ForeignKey('gene.id', onupdate="CASCADE", ondelete="CASCADE"), 
                      nullable=False)
-
+    __table_args__ = (UniqueConstraint('model_id', 'gene_id'),{})
     
 class ModelReaction(Base):
     __tablename__='model_reaction'

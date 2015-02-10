@@ -30,7 +30,6 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger):
     
     assert 'GAPD' in model.reactions
     assert model.reactions.get_by_id('GAPD').name == 'glyceraldehyde-3-phosphate dehydrogenase'
-    
     # test solve
     model.reactions.get_by_id('EX_glc_e').lower_bound = -10
     assert model.optimize().f > 0

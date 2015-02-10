@@ -4,7 +4,7 @@ from ome import base
 from ome.models import *
 from ome.components import *
 from ome.loading.model_loading import queries, parse
-
+import re
 import logging
 
 def loadModelGenes(session, model_list):
@@ -67,26 +67,65 @@ def loadModelGenes(session, model_list):
                         queries.add_model_gene(session, model_db.id, gene_db.id)
                         created = True
                     continue
-
-                # try matching on synonyms
-                synonyms_db = (session
-                               .query(Synonym)
-                               .filter(Synonym.synonym == gene.id.split('.')[0])
-                               .filter(Synonym.type == 'gene')
-                               .all())
                 match = False
-                for syn_db in synonyms_db:
-                    gene_db = (session
-                               .query(Gene)
-                               .filter(Gene.id == syn_db.ome_id)
-                               .first())
-                    if gene_db is not None:
-                        # check for model genes
-                        if not queries.has_model_gene(session, model_db.id, gene_db.id):
-                            queries.add_model_gene(session, model_db.id, gene_db.id)
-                            created = True
+                # try matching on synonyms
+                if re.match(r'.*\.[0-9]$',gene.id):
+                    synonyms_db = (session
+                                   .query(Synonym)
+                                   .filter(Synonym.synonym == gene.id[:-2])
+                                   .filter(Synonym.type == 'gene')
+                                   .all())
+                    
+                    syn_to_delete = []
+                    gene_to_delete = None
+                    if synonyms_db != None:
                         match = True
-                        break
+                        ome_gene = {}
+                        ome_gene['bigg_id'] = gene.id
+                        ome_gene['name'] = gene.name
+                        ome_gene['leftpos'] = gene.locus_start
+                        ome_gene['rightpos'] = gene.locus_end
+                        ome_gene['chromosome_id'] = chromosome_db.id
+                        ome_gene['strand'] = gene.strand
+                        ome_gene['info'] = str(gene.annotation)
+                        ome_gene['mapped_to_genbank'] = True
+                        gene_object = Gene(**ome_gene)
+                        session.add(gene_object)
+                        session.commit()
+                        for syn_db in synonyms_db:
+                            gene_db = (session
+                                       .query(Gene)
+                                       .filter(Gene.id == syn_db.ome_id)
+                                       .first())
+                            if gene_db is not None:
+                                gene_to_delete = gene_db
+                                syn_to_delete.append(syn_db)                
+                                ome_synonym = { 'type': 'gene' }
+                                ome_synonym['ome_id'] = gene_object.id
+                                ome_synonym['synonym'] = syn_db.synonym  
+                                ome_synonym['synonym_data_source_id'] = None                 
+                                synonym_object = Synonym(**ome_synonym)
+                                session.add(synonym_object)
+                                session.commit()
+                        if gene_to_delete != None:
+                            session.delete(gene_to_delete)
+                            session.commit()
+                        for syn in syn_to_delete:
+                            session.delete(syn)
+                            session.commit()
+                        if not queries.has_model_gene(session, model_db.id, gene_object.id):
+                            queries.add_model_gene(session, model_db.id, gene_object.id)
+                            created = True
+                    continue
+                
+                """
+                # check for model genes
+                if not queries.has_model_gene(session, model_db.id, gene_db.id):
+                    queries.add_model_gene(session, model_db.id, gene_db.id)
+                    created = True
+                match = True
+                break
+                """
                         # TODO what is this?
                         # if modelquery.bigg_id == "RECON1" or modelquery.bigg_id == "iMM1415":
                         #     gene_db = (session.query(Gene).filter(Gene.id == syn.ome_id).first())
@@ -108,7 +147,6 @@ def loadModelGenes(session, model_list):
                 ome_gene['leftpos'] = gene.locus_start
                 ome_gene['rightpos'] = gene.locus_end
                 ome_gene['chromosome_id'] = chromosome_db.id
-                ome_gene['name'] = gene.name
                 ome_gene['strand'] = gene.strand
                 ome_gene['info'] = str(gene.annotation)
                 ome_gene['mapped_to_genbank'] = False

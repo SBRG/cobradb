@@ -161,6 +161,13 @@ def dump_universal_model():
         r.add_metabolites({ m: float(stoich) }) 
 
     # TODO genes
+    gene_names = (session
+                .query(Gene.name)
+                .join(ModelGene)
+                .all())
+    
+    for gene_name in gene_names:
+        model.genes.get_by_id(gene_name).name = "empty"
 
     session.commit()
     session.close()
