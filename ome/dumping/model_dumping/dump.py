@@ -93,6 +93,14 @@ def dump_model(bigg_id):
         m = model.metabolites.get_by_id(component_id + '_' + compartment_id)
         r.add_metabolites({ m: stoich }) 
 
+    gene_names = (session
+                .query(Gene.bigg_id, Gene.name)
+                .join(ModelGene)
+                .all())
+    
+    for gene_id,gene_name  in gene_names:
+        model.genes.get_by_id(gene_id).name = gene_name
+
     session.commit()
     session.close()
 
@@ -159,15 +167,6 @@ def dump_universal_model():
             m = cobra.core.Metabolite(met_bigg_id)
             m.bigg_id = '%s (%s)' % (component.bigg_id, component.kegg_id)
         r.add_metabolites({ m: float(stoich) }) 
-
-    # TODO genes
-    gene_names = (session
-                .query(Gene.name)
-                .join(ModelGene)
-                .all())
-    
-    for gene_name in gene_names:
-        model.genes.get_by_id(gene_name).name = "empty"
 
     session.commit()
     session.close()
