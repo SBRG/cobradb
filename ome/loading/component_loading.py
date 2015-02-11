@@ -350,13 +350,10 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome,
 
 
 @timing
-def load_genome(genbank_file):
+def load_genome(genbank_file, session):
     # imports 
     from Bio import SeqIO
 
-    # get the session
-    session = base.Session()
-    
     # load the genbank file
     logging.debug('Loading file: %s' % genbank_file)
     try:
@@ -546,7 +543,6 @@ def load_genome(genbank_file):
                             session.add(synonym)
 
     session.commit()
-    session.close()
 
 
 @timing

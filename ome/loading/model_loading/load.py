@@ -23,7 +23,7 @@ def check_for_model(name):
     return None
 
 @timing
-def load_model(model_id, model_dir, genome_id, model_timestamp, pmid):
+def load_model(model_id, model_dir, genome_id, model_timestamp, pmid, session):
     """Load a model into the database.
 
     Arguments
@@ -40,8 +40,6 @@ def load_model(model_id, model_dir, genome_id, model_timestamp, pmid):
     pmid: a publication PMID for the model.
 
     """
-    
-    session = base.Session()
     
     # check for a genome annotation for this model
     genome_db = session.query(base.Genome).filter_by(bioproject_id=genome_id).first()
@@ -71,7 +69,4 @@ def load_model(model_id, model_dir, genome_id, model_timestamp, pmid):
     dependent.loadModelCount(session, [model])
     dependent.loadOldIdtoSynonyms(session, old_ids)
 
-    #dependent.loadEscher(session)
-
     session.commit()
-    session.close()
