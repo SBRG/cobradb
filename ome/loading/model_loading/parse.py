@@ -6,6 +6,7 @@ import cobra.io
 from cobra.core import Formula
 from os.path import join
 import hashlib
+import logging
 
 def hash_reaction(reaction, string_only=False):
     """Generate a unique hash for the metabolites and coefficients of the

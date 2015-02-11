@@ -1426,7 +1426,7 @@
       </reaction>
       <reaction id="R_FRD7" name="fumarate reductase" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b4151 and b4152 and b4153 and b4154)</p><p>GENE_LIST: b4151 b4152 b4153 b4154</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904.2 and gene_with_period.22 and b4153 and b4154)</p><p>GENE_LIST: 904.2 gene_with_period.22 b4153 b4154</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_fum_c"/>

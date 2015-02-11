@@ -35,8 +35,8 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
     assert session.query(ModelCompartmentalizedComponent).count() == 72 * 2
     assert session.query(Metabolite).count() == 54
     assert session.query(LinkOut).count() == 16
-    assert session.query(Gene).count() == 137 * 2
-    assert session.query(ModelGene).count() == 137 * 2
+    assert session.query(Gene).count() == 276
+    assert session.query(ModelGene).count() == 274
     
     # test linkouts
     result = (session
@@ -47,11 +47,15 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
               .all())
     assert len(result) == 2
     
-    assert session.query(Synonym).filter(Synonym.synonym == '904').count() == 1
+    assert session.query(Synonym).filter(Synonym.synonym == '904').count() == 2
     assert session.query(Gene).filter(Gene.bigg_id == '904.1').count() == 1
-    assert session.query(Gene).filter(Gene.name == 'focA').count() == 1
-    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.1').first().id).count() == 1
-
+    assert session.query(ModelGene).join(Gene).filter(ModelGene.gene_id == Gene.id).filter(Gene.bigg_id == '904.1').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(ModelGene.gene_id == Gene.id).filter(Gene.bigg_id == '904.2').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(ModelGene.gene_id == Gene.id).filter(Gene.bigg_id == 'gene_with_period.22').count() == 1
+    assert session.query(Gene).filter(Gene.bigg_id == '904.2').count() == 1
+    assert session.query(Gene).filter(Gene.name == 'focA').count() == 3
+    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.1').first().id).count() == 8
+    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.2').first().id).count() == 8
     r_db =  (session.query(ModelReaction)
              .join(Reaction)
              .filter(Reaction.bigg_id == 'GAPD')

@@ -4,6 +4,8 @@ from ome import base
 from ome.models import *
 from ome.components import *
 from ome.loading.model_loading import queries, parse
+
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 import re
 import logging
 
@@ -21,7 +23,13 @@ def loadModelGenes(session, model_list):
             continue
 
         # load the genes
+        # we might delete some things later
+        genes_to_delete = set()
+        syn_to_delete = set()
+        synonyms_to_add = []
+        # load the genes
         for gene in model.genes:
+            
             # don't ignore spontaneous
             # if gene.id == 's0001':
             #     continue
@@ -53,109 +61,107 @@ def loadModelGenes(session, model_list):
                         queries.add_model_gene(session, model_db.id, gene_db.id)
                         created = True
                     continue
-
-                # try matching on the part of the gene id before '.'
-                # TODO what is the correct way to handle this?
-                gene_db = (session
-                           .query(Gene)
-                           .filter(Gene.name == gene.id.split('.')[0])
-                           .filter(Gene.chromosome_id == chromosome_db.id)
-                           .first())
-                if gene_db is not None:
-                    # check for model genes
-                    if not queries.has_model_gene(session, model_db.id, gene_db.id):
-                        queries.add_model_gene(session, model_db.id, gene_db.id)
-                        created = True
-                    continue
-                match = False
-                # try matching on synonyms
-                if re.match(r'.*\.[0-9]$',gene.id):
-                    synonyms_db = (session
-                                   .query(Synonym)
-                                   .filter(Synonym.synonym == gene.id[:-2])
-                                   .filter(Synonym.type == 'gene')
-                                   .all())
                     
-                    syn_to_delete = []
-                    gene_to_delete = None
-                    if synonyms_db != None:
+                # try matching on synonyms
+                match = False
+                
+                # check for alternative transcripts/splicing
+                if re.match(r'.*\.[0-9]$', gene.id):
+                    # look for a matching gene for the entrez id (gene.id[:-2])
+                    try:
+                        old_gene_db = (session
+                                       .query(Gene)
+                                       .join(Synonym, Synonym.ome_id == Gene.id)
+                                       .filter(Synonym.synonym == gene.id[:-2])
+                                       .one())
+                    except MultipleResultsFound:
+                        logging.warn('Found duplicate synonyms for gene %s' % gene.id[:-2])
+                    except NoResultFound:
+                        pass
+
+                    # if we find an old gene to match
+                    if old_gene_db is not None:
+                                        
                         match = True
+                        
+                        # make a gene for the alternative transcript
                         ome_gene = {}
                         ome_gene['bigg_id'] = gene.id
-                        ome_gene['name'] = gene.name
-                        ome_gene['leftpos'] = gene.locus_start
-                        ome_gene['rightpos'] = gene.locus_end
-                        ome_gene['chromosome_id'] = chromosome_db.id
-                        ome_gene['strand'] = gene.strand
-                        ome_gene['info'] = str(gene.annotation)
+                        ome_gene['name'] = old_gene_db.name
+                        ome_gene['leftpos'] = old_gene_db.leftpos
+                        ome_gene['rightpos'] = old_gene_db.rightpos
+                        ome_gene['chromosome_id'] = old_gene_db.chromosome_id
+                        ome_gene['strand'] = old_gene_db.strand
+                        ome_gene['info'] = old_gene_db.info
                         ome_gene['mapped_to_genbank'] = True
                         gene_object = Gene(**ome_gene)
                         session.add(gene_object)
                         session.commit()
+                        
+                        # make the model gene
+                        queries.add_model_gene(session, model_db.id, gene_object.id)
+                        # remember to delete this later
+                        genes_to_delete.add(old_gene_db.id)
+                                
+                        # find all the synonyms
+                        synonyms_db = (session
+                                       .query(Synonym)
+                                       .filter(Synonym.ome_id == old_gene_db.id)
+                                       .all())
                         for syn_db in synonyms_db:
-                            gene_db = (session
-                                       .query(Gene)
-                                       .filter(Gene.id == syn_db.ome_id)
-                                       .first())
-                            if gene_db is not None:
-                                gene_to_delete = gene_db
-                                syn_to_delete.append(syn_db)                
-                                ome_synonym = { 'type': 'gene' }
+                                # remember to delete this later
+                                syn_to_delete.add(syn_db.id)   
+                                
+                                # add a new synonym             
+                                ome_synonym = {}
                                 ome_synonym['ome_id'] = gene_object.id
+                                ome_synonym['type'] = syn_db.type
                                 ome_synonym['synonym'] = syn_db.synonym  
-                                ome_synonym['synonym_data_source_id'] = None                 
-                                synonym_object = Synonym(**ome_synonym)
-                                session.add(synonym_object)
-                                session.commit()
-                        if gene_to_delete != None:
-                            session.delete(gene_to_delete)
-                            session.commit()
-                        for syn in syn_to_delete:
-                            session.delete(syn)
-                            session.commit()
-                        if not queries.has_model_gene(session, model_db.id, gene_object.id):
-                            queries.add_model_gene(session, model_db.id, gene_object.id)
-                            created = True
+                                ome_synonym['synonym_data_source_id'] = syn_db.synonym_data_source_id
+                                synonyms_to_add.append(Synonym(**ome_synonym))            
+                                #synonym_object = Synonym(**ome_synonym)
+                                #session.add(synonym_object)
                     continue
-                
-                """
-                # check for model genes
-                if not queries.has_model_gene(session, model_db.id, gene_db.id):
-                    queries.add_model_gene(session, model_db.id, gene_db.id)
-                    created = True
-                match = True
-                break
-                """
-                        # TODO what is this?
-                        # if modelquery.bigg_id == "RECON1" or modelquery.bigg_id == "iMM1415":
-                        #     gene_db = (session.query(Gene).filter(Gene.id == syn.ome_id).first())
-                        #     gene_db.bigg_id = gene.id
-                # if we found a synonym, then we are done
-                if match:
-                    created = True 
-                    continue
-                # otherwise, add a new gene and a new model gene
-                if created == True:
+                        
+                # double triple check that this worked
+    
+                if match == True:
                     logging.warn('created should always equal false')
                     
+                # otherwise, add a new gene and a new model gene
                 logging.warn('Gene not in genbank file: %s (%s) from model %s' %
                              (gene.id, gene.name, model.id))
-                            
+
                 ome_gene = {}
                 ome_gene['bigg_id'] = gene.id
                 ome_gene['name'] = gene.name
-                ome_gene['leftpos'] = gene.locus_start
-                ome_gene['rightpos'] = gene.locus_end
+                ome_gene['leftpos'] = None
+                ome_gene['rightpos'] = None
                 ome_gene['chromosome_id'] = chromosome_db.id
-                ome_gene['strand'] = gene.strand
+                ome_gene['strand'] = None
                 ome_gene['info'] = str(gene.annotation)
                 ome_gene['mapped_to_genbank'] = False
-
                 gene_object = Gene(**ome_gene)
                 session.add(gene_object)
                 session.commit() # commit, so that gene_object has a primary key id
+                
+                # make the model gene
                 queries.add_model_gene(session, model_db.id, gene_object.id)
+                
+        for gene_id in genes_to_delete:
+            gene_object = session.query(Gene).get(gene_id)
+            session.delete(gene_object)
+            session.commit()
+        for syn_object in synonyms_to_add:
+            session.add(syn_object)
+            session.commit()
+        for syn_id in syn_to_delete:
+            syn_object = session.query(Synonym).get(syn_id)
+            session.delete(syn_object)
+            session.commit()
+        session.commit()
 
+    
 
 def loadModelCompartmentalizedComponent(session, model_list):
     """Load the Compartments, CompartmentalizedComponents, and
