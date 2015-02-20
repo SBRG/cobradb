@@ -2,9 +2,11 @@
 
 from ome import base, settings, components, timing
 from ome.models import Model
+import cobra.io
 from ome.loading.model_loading import independent, dependent, parse
-
+from ome.dumping.model_dumping import dump_model
 import os
+from os.path import join
 import logging
 
 def get_model_list():
@@ -23,15 +25,14 @@ def check_for_model(name):
     return None
 
 @timing
-def load_model(model_id, model_dir, genome_id, model_timestamp, pmid, session):
-    """Load a model into the database.
+def load_model(model_filepath, genome_id, model_timestamp, pmid, session, 
+               dump_directory=settings.model_dump_directory):
+    """Load a model into the database. Returns the bigg_id for the new model.
 
     Arguments
     ---------
 
-    model_id: bigg_id for the model
-    
-    model_dir: the directory where models are stored.
+    model_filepath: the path to the file where model is stored.
 
     genome_id: id for the loaded genome annotation.
 
@@ -40,26 +41,27 @@ def load_model(model_id, model_dir, genome_id, model_timestamp, pmid, session):
     pmid: a publication PMID for the model.
 
     """
+
+    # apply id normalization
+    logging.debug('Parsing SBML')
+    model, old_ids = parse.load_and_normalize(model_filepath)
+    model_bigg_id = model.id
     
     # check for a genome annotation for this model
     genome_db = session.query(base.Genome).filter_by(bioproject_id=genome_id).first()
     if genome_db is None:
         raise Exception('Genbank file %s for model %s not found in the database' %
-                        (genome_id, model_id))
+                        (genome_id, model_bigg_id))
 
     # check that the model doesn't already exist
-    if session.query(Model).filter_by(bigg_id=model_id).count() > 0:
-        raise Exception('Model %s already loaded' % model_id)
+    if session.query(Model).filter_by(bigg_id=model_bigg_id).count() > 0:
+        raise Exception('Model %s already loaded' % model_bigg_id)
 
-    # apply id normalization
-    logging.debug('Parsing SBML')
-    model, old_ids = parse.load_and_normalize(model_id, model_dir)
     # Load the model components. Remember: ORDER MATTERS! So don't mess around.
     logging.debug('Loading independent objects')
     independent.loadModel(session, model, genome_db.id, model_timestamp, pmid)
     independent.loadComponents(session, [model])
     independent.loadReactions(session, [model])
-
     logging.debug('Loading dependent objects')
     dependent.loadModelGenes(session, [model])
     dependent.loadModelCompartmentalizedComponent(session, [model])
@@ -68,5 +70,15 @@ def load_model(model_id, model_dir, genome_id, model_timestamp, pmid, session):
     dependent.loadReactionMatrix(session, [model])
     dependent.loadModelCount(session, [model])
     dependent.loadOldIdtoSynonyms(session, old_ids)
-
     session.commit()
+    
+    if dump_directory:
+        cobra_model = dump_model(model_bigg_id)
+        # make folder if it doesn't exist
+        try:
+            os.makedirs(dump_directory)
+        except OSError:
+            pass
+        cobra.io.write_sbml_model(cobra_model, join(dump_directory, model_bigg_id + '.xml'))
+
+    return model_bigg_id

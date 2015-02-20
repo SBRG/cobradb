@@ -18,6 +18,7 @@ def loadModelGenes(session, model_list):
 
         # find the chromosomes in the db
         chromosomes_db = queries.chromosomes_for_genome(session, model_db.genome_id)
+        chromosome_ids = [x.id for x in chromosomes_db]
         if len(chromosomes_db) == 0:
             logging.warn('No chromosome for model %s' % model.id)
             continue
@@ -27,141 +28,156 @@ def loadModelGenes(session, model_list):
         genes_to_delete = set()
         syn_to_delete = set()
         synonyms_to_add = []
+        genes_to_add = []
         # load the genes
         for gene in model.genes:
             
-            # don't ignore spontaneous
-            # if gene.id == 's0001':
-            #     continue
-            # TODO do we have to go through chromosomes here?
-            for chromosome_db in chromosomes_db: 
-                created = False
-                # look for genes, matching on genes locus id
-                gene_db = (session
-                           .query(Gene)
-                           .filter(Gene.bigg_id == gene.id)
-                           .filter(Gene.chromosome_id == chromosome_db.id)
-                           .first())
-                if gene_db is not None:
-                    # check for model genes
-                    if not queries.has_model_gene(session, model_db.id, gene_db.id):
-                        queries.add_model_gene(session, model_db.id, gene_db.id)
-                        created = True
-                    continue
+            # look for genes, matching on genes locus id
+            gene_db = (session
+                       .query(Gene)
+                       .filter(Gene.bigg_id == gene.id)
+                       #.filter(Gene.chromosome_id == chromosome_db.id)
+                       .filter(Gene.chromosome_id.in_(chromosome_ids))
+                       .first())
 
-                # try matching on gene name
-                gene_db = (session
-                           .query(Gene)
-                           .filter(Gene.name == gene.id)
-                           .filter(Gene.chromosome_id == chromosome_db.id)
-                           .first())
-                if gene_db is not None:
-                    # check for model genes
-                    if not queries.has_model_gene(session, model_db.id, gene_db.id):
-                        queries.add_model_gene(session, model_db.id, gene_db.id)
-                        created = True
-                    continue
-                    
-                # try matching on synonyms
-                match = False
+            if gene_db is not None:
+                # check for model genes
+                if not queries.has_model_gene(session, model_db.id, gene_db.id):
+                    queries.add_model_gene(session, model_db.id, gene_db.id)
+                continue
+
+            # try matching on gene name
+            gene_db = (session
+                       .query(Gene)
+                       .filter(Gene.name == gene.id)
+                       .filter(Gene.chromosome_id.in_(chromosome_ids))
+                       .first())
+            if gene_db is not None:
+                # check for model genes
+                if not queries.has_model_gene(session, model_db.id, gene_db.id):
+                    queries.add_model_gene(session, model_db.id, gene_db.id)
+                continue
                 
-                # check for alternative transcripts/splicing
-                if re.match(r'.*\.[0-9]$', gene.id):
-                    # look for a matching gene for the entrez id (gene.id[:-2])
-                    try:
-                        old_gene_db = (session
-                                       .query(Gene)
-                                       .join(Synonym, Synonym.ome_id == Gene.id)
-                                       .filter(Synonym.synonym == gene.id[:-2])
-                                       .one())
-                    except MultipleResultsFound:
-                        logging.warn('Found duplicate synonyms for gene %s' % gene.id[:-2])
-                    except NoResultFound:
-                        pass
-
-                    # if we find an old gene to match
-                    if old_gene_db is not None:
-                                        
-                        match = True
-                        
-                        # make a gene for the alternative transcript
-                        ome_gene = {}
-                        ome_gene['bigg_id'] = gene.id
-                        ome_gene['name'] = old_gene_db.name
-                        ome_gene['leftpos'] = old_gene_db.leftpos
-                        ome_gene['rightpos'] = old_gene_db.rightpos
-                        ome_gene['chromosome_id'] = old_gene_db.chromosome_id
-                        ome_gene['strand'] = old_gene_db.strand
-                        ome_gene['info'] = old_gene_db.info
-                        ome_gene['mapped_to_genbank'] = True
-                        gene_object = Gene(**ome_gene)
-                        session.add(gene_object)
-                        session.commit()
-                        
-                        # make the model gene
-                        queries.add_model_gene(session, model_db.id, gene_object.id)
-                        # remember to delete this later
-                        genes_to_delete.add(old_gene_db.id)
-                                
-                        # find all the synonyms
-                        synonyms_db = (session
-                                       .query(Synonym)
-                                       .filter(Synonym.ome_id == old_gene_db.id)
-                                       .all())
-                        for syn_db in synonyms_db:
-                                # remember to delete this later
-                                syn_to_delete.add(syn_db.id)   
-                                
-                                # add a new synonym             
-                                ome_synonym = {}
-                                ome_synonym['ome_id'] = gene_object.id
-                                ome_synonym['type'] = syn_db.type
-                                ome_synonym['synonym'] = syn_db.synonym  
-                                ome_synonym['synonym_data_source_id'] = syn_db.synonym_data_source_id
-                                synonyms_to_add.append(Synonym(**ome_synonym))            
-                                #synonym_object = Synonym(**ome_synonym)
-                                #session.add(synonym_object)
-                    continue
-                        
-                # double triple check that this worked
-    
-                if match == True:
-                    logging.warn('created should always equal false')
-                    
-                # otherwise, add a new gene and a new model gene
-                logging.warn('Gene not in genbank file: %s (%s) from model %s' %
-                             (gene.id, gene.name, model.id))
-
+            # try matching on synonyms
+            gene_db = (session
+                       .query(Gene)
+                       .join(Synonym, Synonym.ome_id == Gene.id)
+                       .filter(Gene.chromosome_id.in_(chromosome_ids))
+                       .filter(Synonym.synonym == gene.id)
+                       .first())
+            if gene_db is not None:
+                # check for model genes
+                if not queries.has_model_gene(session, model_db.id, gene_db.id):
+                    queries.add_model_gene(session, model_db.id, gene_db.id)
+                continue
+            
+            # function to check for the alternative transcript match
+            def old_gene_for_alt_transcript(gene_id): 
+                check = re.match(r'(.*)\.[0-9]{1,2}$', gene.id)
+                if not check:
+                    return None
+                # just find the old gene
+                ogdb = (session
+                        .query(Gene)
+                        .filter(Gene.chromosome_id.in_(chromosome_ids))
+                        .join(Synonym, Synonym.ome_id == Gene.id)
+                        .filter(Synonym.synonym == check.group(1))
+                        .first())
+                return ogdb
+            
+            # check for alternative transcripts/splicing
+            old_gene_db = old_gene_for_alt_transcript(gene.id)
+            if old_gene_db is not None:
+                # make a gene for the alternative transcript
                 ome_gene = {}
                 ome_gene['bigg_id'] = gene.id
-                ome_gene['name'] = gene.name
-                ome_gene['leftpos'] = None
-                ome_gene['rightpos'] = None
-                ome_gene['chromosome_id'] = chromosome_db.id
-                ome_gene['strand'] = None
-                ome_gene['info'] = str(gene.annotation)
-                ome_gene['mapped_to_genbank'] = False
+                ome_gene['name'] = old_gene_db.name
+                ome_gene['leftpos'] = old_gene_db.leftpos
+                ome_gene['rightpos'] = old_gene_db.rightpos
+                ome_gene['chromosome_id'] = old_gene_db.chromosome_id
+                ome_gene['strand'] = old_gene_db.strand
+                ome_gene['info'] = old_gene_db.info
+                ome_gene['mapped_to_genbank'] = True
                 gene_object = Gene(**ome_gene)
-                session.add(gene_object)
-                session.commit() # commit, so that gene_object has a primary key id
+                genes_to_add.append(gene_object)
                 
                 # make the model gene
-                queries.add_model_gene(session, model_db.id, gene_object.id)
+                #queries.add_model_gene(session, model_db.id, gene_object.id)
+                # remember to delete this later
+                genes_to_delete.add(old_gene_db.id)
+                        
+                # find all the synonyms
+                synonyms_db = (session
+                               .query(Synonym)
+                               .filter(Synonym.ome_id == old_gene_db.id)
+                               .all())
+                for syn_db in synonyms_db:
+                    # remember to delete this later
+                    syn_to_delete.add(syn_db.id)   
+                    
+                    # add a new synonym             
+                    ome_synonym = {}
+                    ome_synonym['type'] = syn_db.type
+                    ome_synonym['synonym'] = syn_db.synonym  
+                    ome_synonym['synonym_data_source_id'] = syn_db.synonym_data_source_id
+                    # save the synonym for later, and remember the bigg_id and chrom id 
+                    # of the new gene along with it
+                    synonyms_to_add.append((gene_object.bigg_id, 
+                                            gene_object.chromosome_id,
+                                            ome_synonym))
+                    
+                continue
+                
+                    
+            # otherwise, add a new gene and a new model gene
+            logging.warn('Gene not in genbank file: %s (%s) from model %s' %
+                         (gene.id, gene.name, model.id))
+            ome_gene = {}
+            ome_gene['bigg_id'] = gene.id
+            ome_gene['name'] = gene.name
+            ome_gene['leftpos'] = None
+            ome_gene['rightpos'] = None
+            ome_gene['chromosome_id'] = None
+            ome_gene['strand'] = None
+            ome_gene['info'] = str(gene.annotation)
+            ome_gene['mapped_to_genbank'] = False
+            gene_object = Gene(**ome_gene)
+            session.add(gene_object)
+            session.commit() # commit, so that gene_object has a primary key id
+            
+            # make the model gene
+            queries.add_model_gene(session, model_db.id, gene_object.id)
                 
         for gene_id in genes_to_delete:
             gene_object = session.query(Gene).get(gene_id)
             session.delete(gene_object)
+
+        for gene_object in genes_to_add:
+            session.add(gene_object)
             session.commit()
-        for syn_object in synonyms_to_add:
-            session.add(syn_object)
-            session.commit()
+            queries.add_model_gene(session, model_db.id, gene_object.id)
+        session.commit()
+        
+        for syn_object_tuple in synonyms_to_add:
+            # get the id for the appropriate gene
+            gene_id_db = (session
+                         .query(Gene.id)
+                         .filter(Gene.bigg_id == syn_object_tuple[0])
+                         .filter(Gene.chromosome_id == syn_object_tuple[1])
+                         .first())
+            if gene_id is None:
+                logging.error('Could not find gene %s in the db to add synonyms' % syn_object_tuple[0])
+                continue
+            syn_obj = syn_object_tuple[2]
+            syn_obj['ome_id'] = gene_id_db[0]
+            session.add(Synonym(**syn_obj))
+
         for syn_id in syn_to_delete:
             syn_object = session.query(Synonym).get(syn_id)
             session.delete(syn_object)
-            session.commit()
+
         session.commit()
 
-    
 
 def loadModelCompartmentalizedComponent(session, model_list):
     """Load the Compartments, CompartmentalizedComponents, and
@@ -269,6 +285,7 @@ def loadGeneReactionMatrix(session, model_list):
                             .query(Model)
                             .filter(Model.bigg_id == model.id)
                             .first())
+                
                 model_gene_db = (session
                                  .query(ModelGene)
                                  .join(Gene)
@@ -276,7 +293,9 @@ def loadGeneReactionMatrix(session, model_list):
                                  .filter(ModelGene.model_id == model_db.id)
                                  .first())
 
-                if model_gene_db != None:
+                # if there is already a ModelGene for this gene, and there is not existing row in the GeneReactionMatrix,
+                # just add ot the GeneReactionMatrix
+                if model_gene_db is not None:
                     model_reaction_db = (session
                                          .query(ModelReaction)
                                          .filter(ModelReaction.name == reaction.id)
@@ -287,8 +306,10 @@ def loadGeneReactionMatrix(session, model_list):
                             .filter(GeneReactionMatrix.model_gene_id == model_gene_db.id)
                             .filter(GeneReactionMatrix.model_reaction_id == model_reaction_db.id)
                             .count()):
-                        new_object = GeneReactionMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
+                        new_object = GeneReactionMatrix(model_gene_id = model_gene_db.id, 
+                                                        model_reaction_id = model_reaction_db.id)
                         session.add(new_object)
+                # if there is no ModelGene, then try with name instead of BiGG ID
                 else:
                     model_gene_db = (session
                                      .query(ModelGene)
@@ -307,24 +328,25 @@ def loadGeneReactionMatrix(session, model_list):
 
                             new_object = GeneReactionMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
                             session.add(new_object)
+                    # if there is no ModelGene, then try with synonyms instead of BiGG ID
                     else:
-                        synonymquery = (session.query(Synonym).filter(Synonym.synonym == gene.id.split(".")[0]).first())
-                        if synonymquery != None:
-                            if synonymquery.ome_id != None:
-                                model_gene_db = (session.query(ModelGene).filter(ModelGene.gene_id == synonymquery.ome_id).filter(ModelGene.model_id == model_db.id).first())
-                                model_reaction_db = (session.query(ModelReaction).filter(ModelReaction.name == reaction.id).filter(ModelReaction.model_id == model_db.id).first())
+                        synonymquery = (session
+                                        .query(Synonym)
+                                        .filter(Synonym.synonym == gene.id)
+                                        .first())
+                        if synonymquery is not None:
+                            model_gene_db = (session.query(ModelGene).filter(ModelGene.gene_id == synonymquery.ome_id).filter(ModelGene.model_id == model_db.id).first())
+                            model_reaction_db = (session.query(ModelReaction).filter(ModelReaction.name == reaction.id).filter(ModelReaction.model_id == model_db.id).first())
 
-                                if model_reaction_db and model_gene_db:
-                                    if not (session.query(GeneReactionMatrix).filter(GeneReactionMatrix.model_gene_id == model_gene_db.id).filter(GeneReactionMatrix.model_reaction_id == model_reaction_db.id).count()):
+                            if model_reaction_db and model_gene_db:
+                                if not (session.query(GeneReactionMatrix).filter(GeneReactionMatrix.model_gene_id == model_gene_db.id).filter(GeneReactionMatrix.model_reaction_id == model_reaction_db.id).count()):
 
-                                        new_object = GeneReactionMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
-                                        session.add(new_object)
-                                else:
-                                    print "model reaction or model gene was not found " + str(reaction.id) + " " + str(synonymquery.ome_id)
+                                    new_object = GeneReactionMatrix(model_gene_id = model_gene_db.id, model_reaction_id = model_reaction_db.id)
+                                    session.add(new_object)
                             else:
-                                print "ome id is null " + synonymquery.ome_id
+                                logging.warn("model reaction or model gene was not found %s %s" % (reaction.id, synonymquery.ome_id))
                         else:
-                            print "mistake", gene.id, reaction.id
+                            logging.warn('No ModelGene found for gene %s in reaction %s' % (gene.id, reaction.id))
 
 def loadReactionMatrix(session, model_list):
     for model in model_list:

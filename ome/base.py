@@ -85,7 +85,7 @@ class GenomeRegion(Base):
     rightpos = Column(Integer)
     strand = Column(String(1))
     type = Column(String(20))
-    __table_args__ = (UniqueConstraint('bigg_id','leftpos','rightpos','strand','chromosome_id'),{})
+    __table_args__ = (UniqueConstraint('bigg_id', 'chromosome_id'), {})
 
     __mapper_args__ = {'polymorphic_identity': 'genome_region',
                        'polymorphic_on': type

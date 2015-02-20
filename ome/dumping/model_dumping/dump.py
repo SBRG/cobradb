@@ -14,7 +14,8 @@ except ImportError:
     pass
 
 @timing
-def dump_model(bigg_id, session):
+def dump_model(bigg_id):
+    session = Session()
     
     # find the model
     model_db = (session
@@ -24,9 +25,10 @@ def dump_model(bigg_id, session):
 
     if model_db is None:
         session.commit()
+        session.close()
         raise Exception('Could not find model %s' % bigg_id)
 
-    model = cobra.core.Model(bigg_id)
+    model = cobra.core.Model(str(bigg_id))
 
     # reactions
     logging.info('Dumping reactions')
@@ -37,12 +39,12 @@ def dump_model(bigg_id, session):
                     .all())
     reactions = []
     for r_db, mr_db in reactions_db:
-        r = cobra.core.Reaction(r_db.bigg_id)
-        r.name = r_db.name
-        r.gene_reaction_rule = mr_db.gene_reaction_rule
-        r.lower_bound = mr_db.lower_bound
-        r.upper_bound = mr_db.upper_bound
-        r.objective_coefficient = mr_db.objective_coefficient
+        r = cobra.core.Reaction(str(r_db.bigg_id))
+        r.name = str(r_db.name)
+        r.gene_reaction_rule = str(mr_db.gene_reaction_rule)
+        r.lower_bound = float(mr_db.lower_bound)
+        r.upper_bound = float(mr_db.upper_bound)
+        r.objective_coefficient = float(mr_db.objective_coefficient)
         reactions.append(r)
     model.add_reactions(reactions) 
 
@@ -61,8 +63,9 @@ def dump_model(bigg_id, session):
                       .all())
     metabolites = []
     for component_id, compartment_id in metabolites_db:
-        m = cobra.core.Metabolite(id=component_id + '_' + compartment_id)
-        metabolites.append(m)
+        if component_id is not None and compartment_id is not None:
+            m = cobra.core.Metabolite(id=str(component_id + '_' + compartment_id), compartment=str(compartment_id))
+            metabolites.append(m)
     model.add_metabolites(metabolites) 
 
     # reaction matrix
@@ -87,23 +90,28 @@ def dump_model(bigg_id, session):
                  .all())
 
     for stoich, reaction_id, component_id, compartment_id in matrix_db:
+        
         r = model.reactions.get_by_id(reaction_id)
         m = model.metabolites.get_by_id(component_id + '_' + compartment_id)
-        r.add_metabolites({ m: stoich }) 
+        if r is not None and m is not None:
+            r.add_metabolites({ m: float(stoich) }) 
 
     gene_names = (session
                 .query(Gene.bigg_id, Gene.name)
                 .join(ModelGene)
+                .filter(ModelGene.model_id == model_db.id)
                 .all())
     
-    for gene_id,gene_name  in gene_names:
-        model.genes.get_by_id(gene_id).name = gene_name
+    for gene_id,gene_name in gene_names:
+        model.genes.get_by_id(gene_id).name = str(gene_name)
 
     session.commit()
+    session.close()
 
     return model
 
-def dump_universal_model(session):
+def dump_universal_model():
+    session = Session()
     
     model = cobra.core.Model('Universal model')
 
@@ -132,8 +140,8 @@ def dump_universal_model(session):
 
     def assign_reaction(reaction, db_reaction, db_model_reaction, model_bigg_id):
         reaction.bigg_id = '%s (%s)' % (db_reaction.bigg_id, model_bigg_id)
-        reaction.name = db_reaction.name
-        reaction.gene_reaction_rule = db_model_reaction.gpr
+        reaction.name = str(db_reaction.name)
+        reaction.gene_reaction_rule = str(db_model_reaction.gpr)
         reaction.lower_bound = float(db_model_reaction.lower_bound)
         reaction.upper_bound = float(db_model_reaction.upper_bound)
         reaction.objective_coefficient = float(db_model_reaction.objective_coefficient)
@@ -165,5 +173,6 @@ def dump_universal_model(session):
         r.add_metabolites({ m: float(stoich) }) 
 
     session.commit()
+    session.close()
 
     return model

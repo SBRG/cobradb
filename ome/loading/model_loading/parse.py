@@ -24,17 +24,16 @@ def hash_reaction(reaction, string_only=False):
 
     return hash_fn(''.join(['%s%.3f' % t for t in sorted_mets(reaction)]))
 
-def load_and_normalize(model_id, model_dir):
+def load_and_normalize(model_filepath):
     """Load a model, and give it a particular id style"""
 
     # load the model
-    try:
-        model = cobra.io.read_sbml_model(join(model_dir, model_id+'.xml'))
-    except:
-        try:
-            model = cobra.io.read_matlab_model(join(model_dir, model_id+'.mat'))
-        except:
-            logging.warning('the %s file was not found', model_id)
+    if model_filepath.endswith('.xml'):
+        model = cobra.io.read_sbml_model(model_filepath)
+    elif model_filepath.endswith('.mat'):
+        model = cobra.io.read_matlab_model(model_filepath)
+    else:
+       logging.warning('the %s file is not a valid filetype', model_filepath)
     # convert the ids
     model, old_ids = convert_ids(model, 'cobrapy')
 

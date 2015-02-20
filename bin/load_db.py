@@ -86,7 +86,6 @@ if __name__ == "__main__":
             except Exception as e:
                 logging.error(str(e))
 
-
         data_genomes = (session
                         .query(base.Genome)
                         .filter(base.Genome.bioproject_id.in_(['PRJNA57779']))
@@ -105,20 +104,20 @@ if __name__ == "__main__":
         model_dir = join(settings.data_directory, 'models')
         model_genome_file = join(settings.data_directory,
                                  'annotation',
-                                 'model-genome.txt')
+                                 'model-genome_test.txt')
         with open(model_genome_file, 'r') as f:
             lines = f.readlines()
             n = len(lines)
             for i, line in enumerate(lines):
-                model_id, genome_id, timestamp, pmid = line.rstrip('\n').split(',')
-                logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_id))
-                try:
-                    model_loading.load_model(model_id, model_dir, genome_id,
+                model_filename, genome_id, timestamp, pmid = line.rstrip('\n').split(',')
+                logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_filename))
+                #try:
+                model_loading.load_model(join(model_dir, model_filename), genome_id,
                                              timestamp, pmid, session)
-                except Exception as e:
+                """except Exception as e:
                     logging.error('Could not load model %s. %s' % (model_id, e))
                     # raise
-
+                    """
     logging.info("Loading Escher maps")
     map_loading.load_maps_from_server(session, drop_maps=args.drop_models)
 
@@ -128,6 +127,7 @@ if __name__ == "__main__":
                                   ("leftpos", ASCENDING)])
 
     session.close()
+    base.Session.close_all()
 
 """
         dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/crp', group_name='crp', normalize=normalize_flag, raw=raw_flag)

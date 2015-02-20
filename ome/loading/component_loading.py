@@ -384,7 +384,7 @@ def load_genome(genbank_file, session):
         genome = base.Genome(**ome_genome)
         session.add(genome)
         session.flush()
-
+    
     chromosome = (session
                   .query(base.Chromosome)
                   .filter(base.Chromosome.genbank_id == gb_file.annotations['gi'])
@@ -435,29 +435,39 @@ def load_genome(genbank_file, session):
             logging.error(('No locus_tag or gene name for gene %d in chromosome '
                            '%s' % (i, chromosome.genbank_id)))
             continue
+        
+        gene_db = (session
+                   .query(Gene)
+                   .filter(Gene.bigg_id == bigg_id)
+                   .filter(Gene.chromosome_id == chromosome.id)
+                   .first())
+        if gene_db is None:
+            ome_gene = {}
+            ome_gene['bigg_id'] = bigg_id
+            ome_gene['chromosome_id'] = chromosome.id
+            ome_gene['name'] = gene_name
+            ome_gene['leftpos'] = int(feature.location.start)
+            ome_gene['rightpos'] = int(feature.location.end)
+            ome_gene['mapped_to_genbank'] = True
+            ome_gene['info'] = ''
+            if feature.strand == 1: ome_gene['strand'] = '+'
+            elif feature.strand == -1: ome_gene['strand'] = '-'
 
-        ome_gene = {}
-        ome_gene['bigg_id'] = bigg_id
-        ome_gene['name'] = gene_name
-        ome_gene['leftpos'] = int(feature.location.start)
-        ome_gene['rightpos'] = int(feature.location.end)
-        ome_gene['chromosome_id'] = chromosome.id
-        ome_gene['mapped_to_genbank'] = True
-        ome_gene['info'] = ''
-        if feature.strand == 1: ome_gene['strand'] = '+'
-        elif feature.strand == -1: ome_gene['strand'] = '-'
-
-        # record the notes in info
-        elif 'note' in feature.qualifiers:
-            ome_gene['info'] = feature.qualifiers['note'][0][0:300]
+            # record the notes in info
+            elif 'note' in feature.qualifiers:
+                ome_gene['info'] = feature.qualifiers['note'][0][0:300]
             
-        # record the function in info
-        if 'function' in feature.qualifiers:
-            ome_gene['info'] = ome_gene['info'] + ',' + feature.qualifiers['function'][0]
+            # record the function in info
+            if 'function' in feature.qualifiers:
+                ome_gene['info'] = ome_gene['info'] + ',' + feature.qualifiers['function'][0]
 
-        # finally, create the gene
-        gene = session.get_or_create(Gene, **ome_gene)
-        session.commit()
+            # finally, create the gene
+            gene = Gene(**ome_gene)
+            session.add(gene)
+            session.commit()
+        else:
+            gene = gene_db
+            logging.warn('Duplicate genes %s on chromosome %s' % (bigg_id, chromosome.id))
 
         # get the protein
         if 'protein_id' in feature.qualifiers and len(feature.qualifiers['protein_id']) > 0:

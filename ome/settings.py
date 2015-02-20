@@ -1,6 +1,6 @@
 """retrive local user settings"""
 
-from ConfigParser import SafeConfigParser
+from ConfigParser import SafeConfigParser, NoOptionError
 import os as __os
 from os.path import split as __split, join as __join, abspath as __abspath, \
     isfile as __isfile
@@ -141,6 +141,11 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
     #set home directory
     self.home_directory = config.get("MISC", "home_directory")
     self.data_directory = config.get("MISC", "data_directory")
+    # this one is optional
+    try:
+        self.model_dump_directory = config.get("MISC", "model_dump_directory")
+    except NoOptionError:
+        self.model_dump_directory = None
 
 
 load_settings_from_file()

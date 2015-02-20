@@ -24,12 +24,8 @@ def test_genbank():
 
 @pytest.fixture(scope='session')
 def test_model():
-    return [{ 'id': 'ecoli_core_model',
-             'bigg_id': 'Ecoli_core_model', # TODO bigg_id and id should not be different
-             'dir': realpath(join(dirname(__file__), 'test_data')) },
-             { 'id': 'ecoli_core_model_2',
-             'bigg_id': 'Ecoli_core_model_2', # TODO bigg_id and id should not be different
-             'dir': realpath(join(dirname(__file__), 'test_data')) }]
+    return [{ 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model.xml')) },
+             { 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model_2.xml')) }]
 
 @pytest.fixture(scope='session')
 def test_db_create(setup_logger):

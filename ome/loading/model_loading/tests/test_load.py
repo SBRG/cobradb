@@ -26,18 +26,20 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
         load_genome(test_genbank[x]['path'], session)
 
     # load the model
-        load_model(test_model[x]['id'], test_model[x]['dir'], test_genbank[x]['genome_id'],
+        load_model(test_model[x]['path'], test_genbank[x]['genome_id'],
                     timestamp, pmid, session)
     
     # test the model
     assert session.query(Model).count() == 2
+    assert session.query(Genome).count() == 2
+    assert session.query(Chromosome).count() == 2
     assert session.query(Reaction).count() == 95
     assert session.query(ModelReaction).count() == 95 * 2 
     assert session.query(CompartmentalizedComponent).count() == 72
     assert session.query(ModelCompartmentalizedComponent).count() == 72 * 2
     assert session.query(Metabolite).count() == 54
     assert session.query(LinkOut).count() == 16
-    assert session.query(Gene).count() == 276
+    assert session.query(Gene).count() == 276 # b4151 and b4152 are in genome1 but not in model1
     assert session.query(ModelGene).count() == 274
     
     # test linkouts
@@ -48,22 +50,46 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
               .filter(LinkOut.external_source == 'KEGGID')
               .all())
     assert len(result) == 2
+
+    # check s0001
+    assert session.query(Gene).filter(Gene.bigg_id == 's0001').count() == 2
     
-    assert session.query(Synonym).filter(Synonym.synonym == '904').count() == 2
+    # check alternate transcripts
+    # these are in model 2 but not in model 1:
+    assert (session
+            .query(ModelGene)
+            .join(Gene)
+            .join(Model)
+            .filter(Gene.bigg_id.in_(['b4151', 'b4152']))
+            .filter(Model.bigg_id == 'Ecoli_core_model')
+            .count()) == 0
+    assert (session
+            .query(ModelGene)
+            .join(Gene)
+            .join(Model)
+            .filter(Gene.bigg_id.in_(['b4151', 'b4152']))
+            .filter(Model.bigg_id == 'Ecoli_core_model_2')
+            .count()) == 2
+    # these alt. transcripts in model 1:
+    assert session.query(Synonym).filter(Synonym.synonym == '904').count() == 2 # 2 in first model, 0 in second model
+    assert session.query(Gene).filter(Gene.name == 'focA').count() == 3 # 2 in first model, 1 in second model
+    
     assert session.query(Gene).filter(Gene.bigg_id == '904.1').count() == 1
-    assert session.query(ModelGene).join(Gene).filter(ModelGene.gene_id == Gene.id).filter(Gene.bigg_id == '904.1').count() == 1
-    assert session.query(ModelGene).join(Gene).filter(ModelGene.gene_id == Gene.id).filter(Gene.bigg_id == '904.2').count() == 1
-    assert session.query(ModelGene).join(Gene).filter(ModelGene.gene_id == Gene.id).filter(Gene.bigg_id == 'gene_with_period.22').count() == 1
-    assert session.query(Gene).filter(Gene.bigg_id == '904.2').count() == 1
-    assert session.query(Gene).filter(Gene.name == 'focA').count() == 3
+    assert session.query(Gene).filter(Gene.bigg_id == '904.12').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904.1').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904.12').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == 'gene_with_period.22').count() == 1
+    
     assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.1').first().id).count() == 8
-    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.2').first().id).count() == 8
+    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.12').first().id).count() == 8
+    
     r_db =  (session.query(ModelReaction)
              .join(Reaction)
              .filter(Reaction.bigg_id == 'GAPD')
              .first())
     assert r_db.objective_coefficient == 0
     assert r_db.upper_bound == 1000
+    assert r_db.lower_bound == -1000
 
     # can't load the same model twice
     with pytest.raises(Exception):
