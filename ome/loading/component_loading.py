@@ -531,6 +531,24 @@ def load_genome(genbank_file, session):
                     if not found_synonym:
                         synonym = base.Synonym(**ome_synonym)
                         session.add(synonym)
+        
+        if 'old_locus_tag' in feature.qualifiers:
+            for ref in feature.qualifiers['old_locus_tag']:
+                syn = ref.split(';')
+                for value in syn:
+                    ome_synonym = {'type': 'gene'}
+                    ome_synonym['ome_id'] = gene.id
+                    ome_synonym['synonym'] = value
+                    ome_synonym['synonym_data_source_id'] = None
+                    found_synonym = (session
+                                     .query(base.Synonym)
+                                     .filter(base.Synonym.ome_id == gene.id)
+                                     .filter(base.Synonym.synonym == value)
+                                     .filter(base.Synonym.type == 'gene')
+                                     .count() > 0)
+                    if not found_synonym:
+                        synonym = base.Synonym(**ome_synonym)
+                        session.add(synonym)
                         
         if 'note' in feature.qualifiers:
             for ref in feature.qualifiers['note']:

@@ -72,7 +72,7 @@ def dump_model(bigg_id):
     logging.info('Dumping reaction matrix')
     matrix_db = (session
                  .query(ReactionMatrix.stoichiometry, Reaction.bigg_id,
-                        Component.bigg_id, Compartment.bigg_id)
+                        Component.bigg_id, Component.name, Compartment.bigg_id)
                  # component, compartment
                  .join(CompartmentalizedComponent,
                        ReactionMatrix.compartmentalized_component_id == CompartmentalizedComponent.id)
@@ -89,10 +89,18 @@ def dump_model(bigg_id):
                  .filter(Component.type == 'metabolite')
                  .all())
 
-    for stoich, reaction_id, component_id, compartment_id in matrix_db:
+    for stoich, reaction_id, component_id, component_name, compartment_id in matrix_db:
         
-        r = model.reactions.get_by_id(reaction_id)
-        m = model.metabolites.get_by_id(component_id + '_' + compartment_id)
+        r = model.reactions.get_by_id(str(reaction_id))
+        try:
+            m = model.metabolites.get_by_id(str(component_id) + '_' + str(compartment_id))
+        except:
+            try:
+                m = model.metabolites.get_by_id(str(component_name) + '_' + str(compartment_id))
+            except:
+                logging.warn('Metabolite not found %s in compartment %s' %
+                         (component_id, compartment_id))
+                m = None
         if r is not None and m is not None:
             r.add_metabolites({ m: float(stoich) }) 
 
@@ -103,7 +111,14 @@ def dump_model(bigg_id):
                 .all())
     
     for gene_id,gene_name in gene_names:
-        model.genes.get_by_id(gene_id).name = str(gene_name)
+        try:
+            model.genes.get_by_id(gene_id).name = str(gene_name)
+        except:
+            try:
+                model.genes.get_by_id(gene_name).name = str(gene_id)
+            except:
+                logging.warn('Gene not found %s with name %s' %
+                            (gene_id, gene_name))
 
     session.commit()
     session.close()

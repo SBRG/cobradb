@@ -31,7 +31,7 @@ def load_and_normalize(model_filepath):
     if model_filepath.endswith('.xml'):
         model = cobra.io.read_sbml_model(model_filepath)
     elif model_filepath.endswith('.mat'):
-        model = cobra.io.read_matlab_model(model_filepath)
+        model = cobra.io.load_matlab_model(model_filepath)
     else:
        logging.warning('the %s file is not a valid filetype', model_filepath)
     # convert the ids
