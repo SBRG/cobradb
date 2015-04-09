@@ -98,7 +98,7 @@ def loadComponents(session, model_list):
                     except:
                         logging.warning('the external id is not in our list')
                     if external_id_string.lower() != "none":
-                        for external_id in [x.strip() for x in external_id_string.split(',')]:
+                        for external_id in [x.strip().replace(" ","") for x in external_id_string.split(',')]:
                             if (session
                                 .query(LinkOut)
                                 .filter(LinkOut.external_id == external_id)
@@ -106,11 +106,12 @@ def loadComponents(session, model_list):
                                 .filter(LinkOut.type == "metabolite")
                                 .filter(LinkOut.ome_id == metabolite_db.id)
                                 .count()) == 0:
-                                linkout = LinkOut(external_id = external_id, 
+                                if external_id != 'NA':
+                                    linkout = LinkOut(external_id = external_id, 
                                                     external_source = _key, 
                                                     type = "metabolite", 
                                                     ome_id = metabolite_db.id)
-                                session.add(linkout)
+                                    session.add(linkout)
                             
 def loadReactions(session, model_list):
     for model in model_list:

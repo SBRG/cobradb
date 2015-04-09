@@ -30,8 +30,9 @@ def loadModelGenes(session, model_list):
         synonyms_to_add = []
         genes_to_add = []
         # load the genes
+        i = 0
         for gene in model.genes:
-            
+
             # look for genes, matching on genes locus id
             gene_db = (session
                        .query(Gene)
@@ -43,7 +44,9 @@ def loadModelGenes(session, model_list):
             if gene_db is not None:
                 # check for model genes
                 if not queries.has_model_gene(session, model_db.id, gene_db.id):
-                    queries.add_model_gene(session, model_db.id, gene_db.id)
+                    queries.add_model_gene(session, model_db.id, gene_db.id, gene.id)
+                else:
+                    logging.warn('there is already a gene with this bigg id in this model');
                 continue
 
             # try matching on gene name
@@ -55,7 +58,9 @@ def loadModelGenes(session, model_list):
             if gene_db is not None:
                 # check for model genes
                 if not queries.has_model_gene(session, model_db.id, gene_db.id):
-                    queries.add_model_gene(session, model_db.id, gene_db.id)
+                    queries.add_model_gene(session, model_db.id, gene_db.id, gene.id)
+                else:
+                    logging.warn('there is already a gene with this bigg id in this model');
                 continue
                 
             # try matching on synonyms
@@ -68,7 +73,9 @@ def loadModelGenes(session, model_list):
             if gene_db is not None:
                 # check for model genes
                 if not queries.has_model_gene(session, model_db.id, gene_db.id):
-                    queries.add_model_gene(session, model_db.id, gene_db.id)
+                    queries.add_model_gene(session, model_db.id, gene_db.id, gene.id)
+                else:
+                    logging.warn('there is already a gene with this bigg id in this model');
                 continue
             
             # function to check for the alternative transcript match
@@ -100,7 +107,7 @@ def loadModelGenes(session, model_list):
                 ome_gene['mapped_to_genbank'] = True
                 gene_object = Gene(**ome_gene)
                 genes_to_add.append(gene_object)
-                
+
                 # make the model gene
                 #queries.add_model_gene(session, model_db.id, gene_object.id)
                 # remember to delete this later
@@ -144,9 +151,8 @@ def loadModelGenes(session, model_list):
             gene_object = Gene(**ome_gene)
             session.add(gene_object)
             session.commit() # commit, so that gene_object has a primary key id
-            
             # make the model gene
-            queries.add_model_gene(session, model_db.id, gene_object.id)
+            queries.add_model_gene(session, model_db.id, gene_object.id, gene.id)
                 
         for gene_id in genes_to_delete:
             gene_object = session.query(Gene).get(gene_id)
@@ -155,7 +161,7 @@ def loadModelGenes(session, model_list):
         for gene_object in genes_to_add:
             session.add(gene_object)
             session.commit()
-            queries.add_model_gene(session, model_db.id, gene_object.id)
+            queries.add_model_gene(session, model_db.id, gene_object.id, gene.id)
         session.commit()
         
         for syn_object_tuple in synonyms_to_add:
@@ -424,7 +430,7 @@ def loadModelCount(session, model_list):
             mc = ModelCount(model_id = model_id, gene_count = gene_count, metabolite_count = metabolite_count, reaction_count = reaction_count)
             session.add(mc)
 
-def loadOldIdtoSynonyms(session, old_ids):
+def loadOldIdtoSynonyms(session,model, old_ids):
     for mkey, mvalue in old_ids['metabolites'].iteritems():
         ome_synonym = {'type': 'metabolite'}
         m = (session
@@ -452,6 +458,11 @@ def loadOldIdtoSynonyms(session, old_ids):
                     .first()):
                 synonym = base.Synonym(**ome_synonym)
                 session.add(synonym)
+                session.commit()
+                model_id = session.query(Model.id).filter(Model.bigg_id == model.id).first()
+                oldId = base.OldIDModelSynonym(model_id = model_id, synonym_id = synonym.id)
+                session.add(oldId)
+                session.commit()
 
     ome_synonym = {}
     for rkey, rvalue in old_ids['reactions'].iteritems():
@@ -478,3 +489,45 @@ def loadOldIdtoSynonyms(session, old_ids):
                     .first()):
                 synonym = base.Synonym(**ome_synonym)
                 session.add(synonym)
+                model_id = session.query(Model.id).filter(Model.bigg_id == model.id).first()
+                oldId = base.OldIDModelSynonym(model_id = model_id, synonym_id = synonym.id)
+                session.add(oldId)
+                session.commit()
+                
+def parseGeneReactionRule(session, model_list):
+    for model in model_list:
+        for reaction in model.reactions:
+            reaction_db = (session
+                           .query(ModelReaction)
+                           .join(Reaction)
+                           .join(Model)
+                           .filter(Reaction.bigg_id == reaction.id)
+                           .filter(Model.bigg_id == model.id)
+                           .first())
+            genes_db = (session
+                    .query(Gene.bigg_id, ModelGene.old_bigg_id)
+                    .join(ModelGene)
+                    .join(GeneReactionMatrix)
+                    .filter(GeneReactionMatrix.model_reaction_id == reaction_db.id)
+                    .all())
+            grr = reaction_db.gene_reaction_rule
+            reaction_db.old_gene_reaction_rule = grr
+            for gene in genes_db:
+                if gene[1] is not None:
+                    
+                    index = grr.find(gene[1])
+                    if index != -1:
+                        
+                        stop_index = index
+                        temp = index
+                        while temp < len(grr):
+                            if grr[temp] == ' ' or grr[temp] == ')':
+                                stop_index = temp
+                                break
+                            temp += 1
+                        if stop_index != index:
+                            grr = grr.replace(grr[index:stop_index], gene[0])
+            reaction_db.gene_reaction_rule = grr
+            session.commit()
+                                
+    

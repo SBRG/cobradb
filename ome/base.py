@@ -42,16 +42,18 @@ class Genome(Base):
     id = Column(Integer, Sequence('wids'), primary_key=True)
     bioproject_id = Column(String(200))
     organism = Column(String(200))
+    taxon_id = Column(String(200), nullable= True)
 
     __table_args__ = (UniqueConstraint('bioproject_id'),{})
 
 
     def __repr__(self):
-        return "Genome (#%d) %s %s" % (self.id, self.bioproject_id, self.organism)
+        return "Genome (#%d) %s %s %s" % (self.id, self.bioproject_id, self.organism, self.taxon_id)
 
-    def __init__(self, bioproject_id, organism):
+    def __init__(self, bioproject_id, organism, taxon_id):
         self.bioproject_id = bioproject_id
         self.organism = organism
+        self.taxon_id = taxon_id
 
 
 class Chromosome(Base):
@@ -232,6 +234,14 @@ class LinkOut(Base):
     external_source = Column(String)
     ome_id = Column(Integer)
     type = Column(String)
+
+class OldIDModelSynonym(Base):
+    __tablename__="old_id_model_synonym"
+    id = Column(Integer, Sequence('wids'), primary_key=True) 
+    synonym_id = Column(Integer, ForeignKey('synonym.id', ondelete='CASCADE'), primary_key=True)
+    model_id = Column(Integer,
+                      ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), 
+                      nullable=False)
         
 class GenomeRegionMap(Base):
         __tablename__ = 'genome_region_map'

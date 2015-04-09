@@ -48,6 +48,7 @@ class ModelGene(Base):
     gene_id = Column(Integer, 
                      ForeignKey('gene.id', onupdate="CASCADE", ondelete="CASCADE"), 
                      nullable=False)
+    old_bigg_id = Column(String, nullable=True)
     __table_args__ = (UniqueConstraint('model_id', 'gene_id'),{})
     
 class ModelReaction(Base):
@@ -65,6 +66,7 @@ class ModelReaction(Base):
     lower_bound = Column(Numeric)
     objective_coefficient = Column(Numeric)
     gene_reaction_rule = Column(String)
+    old_gene_reaction_rule = Column(String)
 
     __table_args__ = (UniqueConstraint('reaction_id', 'model_id'),{})
 

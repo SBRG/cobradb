@@ -141,6 +141,7 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
     #set home directory
     self.home_directory = config.get("MISC", "home_directory")
     self.data_directory = config.get("MISC", "data_directory")
+    self.model_list = config.get("MISC", "model_list")
     # this one is optional
     try:
         self.model_dump_directory = config.get("MISC", "model_dump_directory")

@@ -380,7 +380,7 @@ def load_genome(genbank_file, session):
     if not genome:
         logging.debug('Adding new genome: %s' % bioproject_id)
         ome_genome = { 'bioproject_id': bioproject_id,
-                       'organism': gb_file.annotations['organism'] }
+                       'organism': gb_file.annotations['organism'],'taxon_id':'None' }
         genome = base.Genome(**ome_genome)
         session.add(genome)
         session.flush()
@@ -407,8 +407,13 @@ def load_genome(genbank_file, session):
 
     bigg_id_warnings = 0
     for i, feature in enumerate(gb_file.features):
+        taxon_id = None
         # only read in CDSs
         if feature.type != 'CDS':
+            if feature.type == 'source':
+                if 'db_xref' in feature.qualifiers:
+                    if 'taxon' == feature.qualifiers['db_xref'][0].split(':')[0]:
+                        genome.taxon_id = feature.qualifiers['db_xref'][0].split(':')[1]
             continue
 
         # bigg_id required
@@ -459,7 +464,7 @@ def load_genome(genbank_file, session):
             
             # record the function in info
             if 'function' in feature.qualifiers:
-                ome_gene['info'] = ome_gene['info'] + ',' + feature.qualifiers['function'][0]
+                ome_gene['info'] = ome_gene['info'] + ', ' + feature.qualifiers['function'][0]
 
             # finally, create the gene
             gene = Gene(**ome_gene)

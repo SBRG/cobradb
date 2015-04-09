@@ -31,8 +31,8 @@ def has_model_gene(session, model_id, gene_id):
             .filter(ModelGene.gene_id == gene_id)
             .count() > 0)
 
-def add_model_gene(session, model_id, gene_id):
-    new_object = ModelGene(model_id=model_id, gene_id=gene_id)
+def add_model_gene(session, model_id, gene_id, old_bigg_id = None):
+    new_object = ModelGene(model_id=model_id, gene_id=gene_id, old_bigg_id = old_bigg_id)
     session.add(new_object)
     # session.commit()            # TODO commit here? or later?
                 

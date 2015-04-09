@@ -713,7 +713,7 @@ FEATURES             Location/Qualifiers
                      /db_xref="EcoGene:EG11258"
                      /db_xref="GeneID:945513"
                      /GO_process="GO:0016052 - carbohydrate catabolic process"
-                     /gene="focA"
+                     /gene="    "
                      /product="formate channel"
                      /protein_id="NP_415424.1"
      CDS             1036963..1038507

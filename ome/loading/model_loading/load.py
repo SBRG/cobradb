@@ -69,7 +69,8 @@ def load_model(model_filepath, genome_id, model_timestamp, pmid, session,
     dependent.loadGeneReactionMatrix(session, [model])
     dependent.loadReactionMatrix(session, [model])
     dependent.loadModelCount(session, [model])
-    dependent.loadOldIdtoSynonyms(session, old_ids)
+    dependent.loadOldIdtoSynonyms(session, model, old_ids)
+    dependent.parseGeneReactionRule(session, [model])    
     session.commit()
     
     if dump_directory:
@@ -80,5 +81,5 @@ def load_model(model_filepath, genome_id, model_timestamp, pmid, session,
         except OSError:
             pass
         cobra.io.write_sbml_model(cobra_model, join(dump_directory, model_bigg_id + '.xml'))
-
+    
     return model_bigg_id
