@@ -29,6 +29,7 @@ parser.add_argument('--drop-all', help='Empty database and reload data', action=
 parser.add_argument('--drop-models', help='Empty model data', action='store_true')
 parser.add_argument('--skip-genomes', help='Skip genome loading', action='store_true')
 parser.add_argument('--skip-models', help='Skip model loading', action='store_true')
+parser.add_argument('--skip-datasets', help='Skip dataset loading', action='store_true')
 
 args = parser.parse_args()
 
@@ -123,7 +124,7 @@ if __name__ == "__main__":
         map_loading.load_maps_from_server(session, drop_maps=args.drop_models)
     session.close()
 
-    if MONGO_INSTALLED:
+    if MONGO_INSTALLED and not args.skip_datasets:
         genome_data = base.omics_database.genome_data
         genome_data.create_index([("data_set_id", ASCENDING),
                                   ("leftpos", ASCENDING)])
@@ -136,9 +137,9 @@ if __name__ == "__main__":
                       .filter(models.Model.bigg_id == 'iJO1366')
                       .one())
         # dataset_loading.load_raw_files(join(settings.data_directory, 'rnaseq_experiment', 'fastq', 'escher_pub'),
-        #                                group_name='escher_pub', normalize=False, raw=False)
-        dataset_loading.run_cuffquant(base, datasets, chromosome, group_name='escher_pub')
-        dataset_loading.run_cuffnorm(base, datasets, chromosome, group_name='escher_pub')
+        #                                group_name='escher_pub', normalize=False, raw=False, overwrite=True)
+        # dataset_loading.run_cuffquant(base, datasets, chromosome, group_name='escher_pub', overwrite=True)
+        # dataset_loading.run_cuffnorm(base, datasets, chromosome, group_name='escher_pub', overwrite=True)
         dataset_loading.load_cuffnorm(base, datasets, group_name='escher_pub')
         session.close()
 

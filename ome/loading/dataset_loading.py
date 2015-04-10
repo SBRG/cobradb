@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" Many parts of this code are derived from sequtil written by aebrahim
+"""Many parts of this code are derived from sequtil written by aebrahim.
 
 """
 
@@ -15,9 +15,11 @@ from itertools import combinations
 from scipy.stats import ttest_ind
 from numpy import zeros, roll, array, mean, genfromtxt, zeros_like, arange
 from sqlalchemy import func, or_, and_
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import pysam
 import simplejson as json
 import shutil
+import logging
 
 
 def count_coverage(samfile, flip=False, include_insert=False):
@@ -753,26 +755,26 @@ def run_cuffnorm(base, datasets, chromosome, group_name, gff_file=None, debug=Fa
     cuffnorm_cmd = [settings.cuffnorm, # executable
                     '-p', '%d' % 24,
                     '--library-type', 'fr-firststrand',
-                    '-L', '%s' % ','.join([exps[0][0] for exps in experiments]),
-                    gff_file,
-                    ' '.join([','.join([join(cxb_dir, exp_name, 'abundances.cxb') for exp_name in exps[0]])
-                              for exps in experiments])]
-
+                    '-L', ','.join([exps[0][0] for exps in experiments]),
+                    gff_file]
+    abundances_list = [','.join([join(cxb_dir, exp_name, 'abundances.cxb')
+                                 for exp_name in exps[0]])
+                       for exps in experiments]
+    cuffnorm_cmd += abundances_list
+                    
     if debug:
-        print cuffnorm_cmd
+        print ', '.join(cuffnorm_cmd)
         return
 
     if os.path.exists(out_path) and overwrite:
         shutil.rmtree(out_path)
         os.makedirs(out_path)
         os.chdir(out_path)
-        print cuffnorm_cmd
         subprocess.call(cuffnorm_cmd)
 
     elif not os.path.exists(out_path):
         os.makedirs(out_path)
         os.chdir(out_path)
-        print cuffnorm_cmd
         subprocess.call(cuffnorm_cmd)
 
 
@@ -1042,48 +1044,61 @@ def run_gem(base, datasets, genome, debug=False, overwrite=False, with_control=F
                                              ('NC_000913','.', chip_peak_analysis.name+'_gem', position-1, position+1, float(vals[6])*3.2, '+', '.','.'))
                         peaks_gff_file.write('%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n' %\
                                              ('NC_000913','.', chip_peak_analysis.name+'_gem', vals[1], vals[2], float(vals[6]), '+', '.','.'))
-            except: None
-
+            except: 
+                pass
 
     session.close()
 
 
 @timing
 def load_cuffnorm(base, datasets, group_name):
+    logging.info('Loading cuffnorm for %s' % group_name)
 
     session = base.Session()
 
     path = join(settings.data_directory, 'rnaseq_experiment', 'cuffnorm',
                 group_name, 'isoforms.fpkm_table')
     cuffnorm_output = open(path, 'r')
-    header = cuffnorm_output.readline().rstrip('\n').split('\t')
+    
+    def split_line(l):
+        return [y for y in l.rstrip('\n').split('\t')
+                if y != '']
 
-    exp_id_map = {}
+    header = split_line(cuffnorm_output.readline())
+
+    exp_ids = []
     for name in header[1:]:
-
         vals = name.split('_')
         if len(vals) > 7:
             exp_name = '_'.join(vals[0:5]+[str(int(vals[5])+int(vals[7]))]+[vals[6]])
         else:
             exp_name = '_'.join(vals[0:5]+[str(int(vals[5])+int(vals[6]))])
 
-        exp_id_map[name] = session.query(datasets.RNASeqExperiment).filter_by(name=exp_name, group_name=group_name).one().id
-
-
+        exp_ids.append(session
+                       .query(datasets.RNASeqExperiment.id)
+                       .filter_by(name=exp_name, group_name=group_name)
+                       .one()[0])
 
     for line in cuffnorm_output.readlines():
-        vals = line.split('\t')
+        vals = split_line(line)
 
-        try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
-        except: continue
+        gene_db = (session
+                   .query(components.Gene.id)
+                   .filter_by(bigg_id=vals[0])
+                   .first())
+        try:
+            gene_id = gene_db[0]
+        except TypeError:
+            logging.debug('Could not find gene %s' % vals[0])
+            continue
 
-        for i,val in enumerate(vals[1:]):
-
-            try: value = float(val)
-            except: continue
-
-            genome_data = datasets.GenomeData(dataset_id=exp_id_map[header[i+1]],
-                                              genome_region_id = gene.id,
+        for i, val in enumerate(vals[1:]):
+            try:
+                value = float(val)
+            except ValueError:
+                continue
+            genome_data = datasets.GenomeData(dataset_id=exp_ids[i],
+                                              genome_region_id=gene_id,
                                               value=value)
             session.add(genome_data)
 
@@ -1095,7 +1110,9 @@ def load_cuffnorm(base, datasets, group_name):
 
 @timing
 def load_cuffdiff(group_name):
-    cuffdiff_output = open(settings.data_directory+'/rnaseq_experiment/cuffdiff/'+group_name+'/gene_exp.diff','r')
+    p = join(settings.data_directory, 'rnaseq_experiment', 'cuffdiff',
+             group_name, 'gene_exp.diff')
+    cuffdiff_output = open(p, 'r')
     header = cuffdiff_output.readline()
     diff_exps = {}
 
@@ -1110,8 +1127,13 @@ def load_cuffdiff(group_name):
 
         if pvalue > .25: continue
 
-        try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
-        except: continue
+        try:
+            gene = (session
+                    .query(components.Gene)
+                    .filter_by(locus_id=vals[0])
+                    .one())
+        except (MultipleResultsFound, NoResultFound): 
+            continue
 
         if str(vals[4:6]) not in diff_exps.keys():
             x = vals[4].split('_')
@@ -1129,8 +1151,10 @@ def load_cuffdiff(group_name):
                     else: exp_name += x[i]+'/'+y[i]+'_'
                 exp_name = exp_name.rstrip('_')
 
-            diff_exp = session.get_or_create(datasets.DifferentialExpression, name=exp_name, replicate=1, norm_method='classic-fpkm',fdr=.05, group_name=group_name)
-
+            diff_exp = session.get_or_create(datasets.DifferentialExpression,
+                                             name=exp_name, replicate=1,
+                                             norm_method='classic-fpkm',
+                                             fdr=.05, group_name=group_name)
 
             exp1 = session.query(datasets.Analysis).filter_by(name=vals[4], group_name=group_name).one()
             exp2 = session.query(datasets.Analysis).filter_by(name=vals[5], group_name=group_name).one()
@@ -1138,17 +1162,16 @@ def load_cuffdiff(group_name):
             session.get_or_create(datasets.AnalysisComposition, analysis_id = diff_exp.id, dataset_id = exp2.id)
             diff_exps[str(vals[4:6])] = diff_exp.id
 
-
-
-        diff_exp_data = datasets.DiffExpData(dataset_id=diff_exps[str(vals[4:6])],\
-                                         genome_region_id = gene.id,\
-                                         value=value, pval=pvalue)
+        diff_exp_data = datasets.DiffExpData(dataset_id=diff_exps[str(vals[4:6])], 
+                                             genome_region_id=gene.id, value=value,
+                                             pval=pvalue)
         session.add(diff_exp_data)
+
+    cuffdiff_output.close()
 
     session.flush()
     session.commit()
     session.close()
-
 
 
 @timing
