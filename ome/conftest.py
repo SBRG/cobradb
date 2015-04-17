@@ -11,6 +11,17 @@ from os.path import join, realpath, dirname
 import cobra.io
 import logging
 
+
+@pytest.fixture(scope='function')
+def session(request):
+    """Make a session"""
+    def teardown():
+        base.Session.close_all()
+    request.addfinalizer(teardown)
+
+    return base.Session()
+
+
 @pytest.fixture(scope='session')
 def setup_logger():
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
@@ -25,7 +36,8 @@ def test_genbank():
 @pytest.fixture(scope='session')
 def test_model():
     return [{ 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model.xml')) },
-             { 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model_2.xml')) }]
+             { 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model_2.xml')) },
+             { 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model_3.xml')) }]
 
 @pytest.fixture(scope='session')
 def test_db_create(setup_logger):

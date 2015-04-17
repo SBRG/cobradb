@@ -18,21 +18,25 @@ class Gene(GenomeRegion):
     info = Column(String(300))
     name = Column(String)
     mapped_to_genbank = Column(Boolean)
+    alternative_transcript_of = Column(Integer,
+                                       ForeignKey('gene.id'),
+                                       nullable=True)
 
     __mapper_args__ = { 'polymorphic_identity': 'gene' }
 
     def __repr__(self):
-        return "Gene: (%s, %s) %d-%d (%s)"% \
-            (self.bigg_id, self.name, self.leftpos, self.rightpos,\
-                                 self.strand)
+        return '<ome Gene(id=%d, bigg_id=%s, name=%s)>' % (self.id, self.bigg_id,
+                                                         self.name)
 
     def __init__(self, bigg_id, leftpos, rightpos, strand, mapped_to_genbank,
-                 chromosome_id=None, info=None, name=None):
+                 chromosome_id=None, info=None, name=None,
+                 alternative_transcript_of=None):
 
         super(Gene, self).__init__(leftpos, rightpos, strand, chromosome_id, bigg_id)
         self.name = name
         self.info = info
         self.mapped_to_genbank = mapped_to_genbank
+        self.alternative_transcript_of = alternative_transcript_of
 
 
 class Motif(GenomeRegion):

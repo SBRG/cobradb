@@ -1,43 +1,43 @@
 """retrive local user settings"""
 
 from ConfigParser import SafeConfigParser, NoOptionError
-import os as __os
-from os.path import split as __split, join as __join, abspath as __abspath, \
-    isfile as __isfile
+import os as os
+from os.path import join, split, abspath, isfile 
 from sys import modules
 
 self = modules[__name__]
 
 # define various filepaths
-omelib_directory = __join(__split(__abspath(__file__))[0], "")
-ome_directory = __join(__abspath(__join(omelib_directory, "..")), "")
+omelib_directory = join(split(abspath(__file__))[0], "")
+ome_directory = join(abspath(join(omelib_directory, "..")), "")
 
 def which(program):
     """returns path to an executable if it is found in the path"""
-    fpath, fname = __split(program)
+    fpath, fname = split(program)
     if fpath:
-        if __isfile(program) and __os.access(program, __os.X_OK):
+        if isfile(program) and os.access(program, os.X_OK):
             return program
     else:
-        paths_to_search = __os.environ["PATH"].split(__os.pathsep)
+        paths_to_search = os.environ["PATH"].split(os.pathsep)
         paths_to_search.extend((omelib_directory, ome_directory))
         for path in paths_to_search:
-            exe_file = __join(path, program)
-            if __isfile(exe_file) and __os.access(exe_file, __os.X_OK):
+            exe_file = join(path, program)
+            if isfile(exe_file) and os.access(exe_file, os.X_OK):
                 return exe_file
-    if __os.name == "nt" and not program.endswith(".exe"):
+    if os.name == "nt" and not program.endswith(".exe"):
         return which(program + ".exe")
     return None
 
 def _escape_space(program):
     """escape spaces in for windows"""
-    if __os.name == "nt" and ' ' in program:
+    if os.name == "nt" and ' ' in program:
         return '"' + program + '"'
     else:
         return program
 
 
 config = SafeConfigParser()
+
 # set the default settings
 config.add_section("DATABASE")
 config.set("DATABASE", "postgres_host", "localhost:5432")
@@ -48,23 +48,9 @@ config.set("DATABASE", "postgres_test_database", "ome_test")
 
 config.add_section("MISC")
 config.set("MISC", "entrez_email", "SET_ENTREZ_EMAIL")
-try:
-    default_home = __os.environ["HOME"]
-except:
-    try:
-        default_home = __os.environ["USERPROFILE"]
-    except:
-        default_home = ""
+config.set("MISC", "reaction_preferences_file", "")
+config.set("MISC", "compartment_names_file", "")
 
-default_data_dir = __join(default_home, "ome_data", "")
-config.set("MISC", "home_directory", default_home)
-config.set("MISC", "data_directory", default_data_dir)
-
-if not __os.path.isdir(default_data_dir):
-    __os.system('mkdir %s' % (default_data_dir))
-    __os.system('cp -r %s* %s' % (omelib_directory+'data/', default_data_dir))
-
-del default_home, default_data_dir
 config.add_section("EXECUTABLES")
 
 # overwrite defaults settings with settings from the file
@@ -76,15 +62,15 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
     in_omelib: Whether or not the path given is a relative path from the omelib
         directory"""
     if in_omelib:
-        filepath = __join(omelib_directory, filepath)
+        filepath = join(omelib_directory, filepath)
     config.read(filepath)
 
     # attempt to intellegently determine more difficult settings
     if not config.has_option("DATABASE", "user"):
-        if "USERNAME" in __os.environ:  # windows
-            user = __os.environ["USERNAME"]
-        elif "USER" in __os.environ:  # unix
-            user = __os.environ["USER"]
+        if "USERNAME" in os.environ:  # windows
+            user = os.environ["USERNAME"]
+        elif "USER" in os.environ:  # unix
+            user = os.environ["USER"]
         config.set("DATABASE", "user", user)
     if not config.has_option("EXECUTABLES", "psql"):
         psql = which("psql91")
@@ -122,7 +108,7 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
     self.postgres_user = config.get("DATABASE", "postgres_user")
     self.postgres_password = config.get("DATABASE", "postgres_password")
     if len(self.postgres_password) > 0:
-        __os.environ["PGPASSWORD"] = self.postgres_password
+        os.environ["PGPASSWORD"] = self.postgres_password
     self.postgres_database = config.get("DATABASE", "postgres_database")
     self.postgres_host = config.get("DATABASE", "postgres_host")
     self.postgres_test_database = config.get("DATABASE", "postgres_test_database")
@@ -136,12 +122,19 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
     self.hostname, self.port = postgres_host.split(":")
     self.psql_full = "%s --host=%s --username=%s --port=%s " % \
         (self.psql, self.hostname, self.postgres_user, self.port)
-    self.entrez_email = config.get("MISC", "entrez_email")
-    if self.entrez_email == "SET_ENTREZ_EMAIL": self.entrez_email = None
-    #set home directory
-    self.home_directory = config.get("MISC", "home_directory")
-    self.data_directory = config.get("MISC", "data_directory")
-    self.model_list = config.get("MISC", "model_list")
+    self.entrez_email = config.get('MISC', 'entrez_email')
+    try:
+        self.data_directory = config.get('MISC', 'data_directory')
+    except NoOptionError:
+        raise Exception('data_directory was not supplied in settings.ini')
+    # set default here, after getting the data directory
+    if not config.has_option('MISC', 'model_genome_file'):
+        default_model_genome_file = join(self.data_directory, 'annotation',
+                                         'model-genome.txt')
+        config.set('MISC', 'model_genome_file', default_model_genome_file)
+    self.model_genome_file = config.get('MISC', 'model_genome_file')
+    self.compartment_names_file = config.get('MISC', 'compartment_names_file')
+    self.reaction_preferences_file = config.get('MISC', 'reaction_preferences_file')
     # this one is optional
     try:
         self.model_dump_directory = config.get("MISC", "model_dump_directory")

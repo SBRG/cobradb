@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from ome import base
 from ome.models import *
 from ome.loading.model_loading import parse
@@ -14,13 +16,11 @@ def load_maps_from_server(session, drop_maps=False):
         connection = base.engine.connect()
         trans = connection.begin()
         try:
-            connection.execute('DROP TABLE escher_map, escher_map_matrix CASCADE;')
+            connection.execute('TRUNCATE escher_map, escher_map_matrix CASCADE;')
             trans.commit()
         except:
             logging.warn('Could not drop Escher tables')
             trans.rollback()
-        logging.info('Creating tables')
-        base.Base.metadata.create_all()
 
     logging.info('Getting index')
     index = escher.plots.server_index()
@@ -36,11 +36,15 @@ def load_maps_from_server(session, drop_maps=False):
                 m['map_name'].split('.')[0] == model_bigg_id]
         for map_name, org in maps:
             map_json = escher.plots.map_json_for_name(map_name)
-            # map_url = (escher.urls.get_url('map_download', source='web', protocol='https') +
-            #            '/'.join([url_escape(x, plus=False) for x in [org, map_name + '.json']]))
             load_the_map(session, model_id, map_name, map_json)
             
 def load_the_map(session, model_id, map_name, map_json):
+    if sys.getsizeof(map_json) > 500000:
+        logging.info('Skipping Escher map %s because it is too large' % map_name)
+        return 1
+
+    warning_num = 5
+
     high_priority = ['central', 'glycolysis']
     priority = 5 if any([s in map_name for s in high_priority]) else 1
 
@@ -67,6 +71,7 @@ def load_the_map(session, model_id, map_name, map_json):
     map_object = json.loads(map_json)
             
     logging.info('Adding reactions')
+    reaction_warnings = 0
     for element_id, reaction in map_object[1]['reactions'].iteritems():
         # check for an existing mat row
         mat_db = (session
@@ -78,12 +83,22 @@ def load_the_map(session, model_id, map_name, map_json):
                   .first())
         if mat_db is None:
             # find the model reaction
-            model_reaction_id = (session
+            model_reaction_db = (session
                                  .query(ModelReaction.id)
                                  .join(Reaction)
                                  .filter(Reaction.bigg_id == reaction['bigg_id'])
                                  .filter(ModelReaction.model_id == model_id)
-                                 .first())[0]
+                                 .first())
+            if model_reaction_db is None:
+                if reaction_warnings <= warning_num:
+                    msg = ('Could not find reaction %s in model for map %s' % (reaction['bigg_id'],
+                                                                               map_name))
+                    if reaction_warnings == warning_num:
+                        msg += ' (Warnings limited to %d)' % warning_num
+                    logging.warn(msg)
+                    reaction_warnings += 1
+                continue
+            model_reaction_id = model_reaction_db[0]
             mat_db = EscherMapMatrix(escher_map_id=escher_map_db.id,
                                      ome_id=model_reaction_id, 
                                      escher_map_element_id=element_id,
@@ -91,6 +106,7 @@ def load_the_map(session, model_id, map_name, map_json):
             session.add(mat_db)
             
     logging.info('Adding metabolites')
+    comp_comp_warnings = 0
     for element_id, node in map_object[1]['nodes'].iteritems():
         if node['node_type'] != 'metabolite':
             continue
@@ -118,7 +134,7 @@ def load_the_map(session, model_id, map_name, map_json):
                   .first())
         if mat_db is None:
             # find the compartmentalized compartment
-            model_comp_comp_id = (session
+            model_comp_comp_db = (session
                                   .query(ModelCompartmentalizedComponent.id)
                                   .join(CompartmentalizedComponent,
                                         CompartmentalizedComponent.id == ModelCompartmentalizedComponent.compartmentalized_component_id)
@@ -130,13 +146,25 @@ def load_the_map(session, model_id, map_name, map_json):
                                   .filter(Compartment.bigg_id == comp_id)
                                   .filter(Metabolite.bigg_id == met_id)
                                   .filter(Model.id == model_id)
-                                  .first())[0]
+                                  .first())
+            if model_comp_comp_db is None:
+                if comp_comp_warnings <= warning_num:
+                    msg = ('Could not find compartmentalized component %s in model for map %s' %
+                           ('%s_%s' % (met_id, comp_id), map_name))
+                    if comp_comp_warnings == warning_num:
+                        msg += ' (Warnings limited to %d)' % warning_num
+                    logging.warn(msg)
+                    comp_comp_warnings += 1
+                continue
+            model_comp_comp_id = model_comp_comp_db[0]
             mat_db = EscherMapMatrix(escher_map_id=escher_map_db.id,
                                      ome_id=model_comp_comp_id,
                                      escher_map_element_id=element_id,
                                      type='model_compartmentalized_component')
             session.add(mat_db)
     session.commit()
+
+    return 0
 
 if __name__=="__main__":
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)

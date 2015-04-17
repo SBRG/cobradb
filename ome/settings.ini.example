@@ -1,0 +1,22 @@
+[DATABASE]
+postgres_host = localhost:5432
+postgres_database = bigg
+postgres_user = username
+postgres_password = pwd
+postgres_test_database = bigg_test
+user = username
+
+[MISC]
+data_directory = /path/to/ome_data/
+model_genome_file = /path/to/ome_data/model-genome.txt
+compartment_names_file = /path/to/ome_data/compartment-names.txt
+
+[EXECUTABLES]
+psql = /usr/local/bin/psql
+r = /usr/local/bin/R
+rscript = /usr/local/bin/Rscript
+primer3 = /usr/local/bin/primer3_core
+cufflinks = /usr/local/bin/cufflinks
+cuffnorm = /usr/local/bin/cuffnorm
+cuffquant = /usr/local/bin/cuffquant
+

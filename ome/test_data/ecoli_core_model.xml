@@ -652,6 +652,31 @@
           </listOfParameters>
         </kineticLaw>
       </reaction>
+      <reaction id="R_NTP1" name="Another ATP maintenance requirement" reversible="false">
+        <notes>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0650) or (b4161)</p><p>GENE_LIST: b0650 b4161</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
+        </notes>
+        <listOfReactants>
+          <speciesReference species="M_atp_c"/>
+          <speciesReference species="M_h2o_c"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="M_adp_c"/>
+          <speciesReference species="M_h_c"/>
+          <speciesReference species="M_pi_c"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> FLUX_VALUE </ci>
+          </math>
+          <listOfParameters>
+            <parameter id="LOWER_BOUND" value="3.15" units="mmol_per_gDW_per_hr"/>
+            <parameter id="UPPER_BOUND" value="1000" units="mmol_per_gDW_per_hr"/>
+            <parameter id="OBJECTIVE_COEFFICIENT" value="0"/>
+            <parameter id="FLUX_VALUE" value="504.195" units="mmol_per_gDW_per_hr"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
       <reaction id="R_ATPM" name="ATP maintenance requirement" reversible="false">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
@@ -1426,7 +1451,7 @@
       </reaction>
       <reaction id="R_FRD7" name="fumarate reductase" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904.12 and gene_with_period.22 and b4153 and b4154)</p><p>GENE_LIST: 904.12 gene_with_period.22 b4153 b4154</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904.12 and gene_with_period.22 and frdB and b4154)</p><p>GENE_LIST: 904.12 gene_with_period.22 frdB b4154</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_fum_c"/>
@@ -1450,7 +1475,7 @@
       </reaction>
       <reaction id="R_FRUpts2" name="Fructose transport via PEP:Pyr PTS (f6p generating)" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b1817 and b1818 and b1819 and b2415 and b2416)</p><p>GENE_LIST: b1817 b1818 b1819 b2415 b2416</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (frdB.1 and b1818 and b1819 and b2415 and b2416)</p><p>GENE_LIST: frdB.1 b1818 b1819 b2415 b2416</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_fru_e"/>
