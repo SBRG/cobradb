@@ -18,7 +18,7 @@ from sqlalchemy import func, or_, and_
 import pysam
 import simplejson as json
 import shutil
-
+import logging
 
 def count_coverage(samfile, flip=False, include_insert=False):
     """Counts coverage per base in a strand-specific manner.
@@ -35,7 +35,7 @@ def count_coverage(samfile, flip=False, include_insert=False):
         the counts.
 
     """
-
+    logging.debug("Counting coverage of samfile")
     all_counts = {}
     plus_strands = []
     minus_strands = []
@@ -102,7 +102,7 @@ def count_coverage_5prime(samfile, flip=False):
     RNA-seq, and false for ChIP-exo
 
     """
-
+    logging.debug("Counting coverage (5prime) of samfile")
     all_counts = {}
     plus_strands = []
     minus_strands = []
@@ -182,7 +182,7 @@ def write_samfile_to_gff(sam_filename, out_filename, flip=False, log2=False,
     track:
 
     """
-
+    print "writing %s samfile to %s gff"%(sam_filename, out_filename)
     samfile = pysam.Samfile(sam_filename)
     if five_prime:
         all_counts = count_coverage_5prime(samfile, flip=flip)
@@ -246,6 +246,8 @@ def load_samfile_to_db(sam_filepath, dataset_id, loading_cutoff=0, bulk_file_loa
 
     """
 
+    file_name = sam_filepath.split('/')[-1]
+    logging.debug("Loading %s Samfile to database"%file_name)
     samfile = pysam.Samfile(sam_filepath)
     if five_prime:
         all_counts = count_coverage_5prime(samfile, flip=flip)
@@ -289,6 +291,8 @@ def load_samfile_to_db(sam_filepath, dataset_id, loading_cutoff=0, bulk_file_loa
 
 @timing
 def load_raw_gff_to_db(experiment):
+
+    logging.debug("loading gff to database")
     filepath = join(settings.data_directory, 'chip_experiment', 'gff',
                     experiment.name+'.gff')
     assert filepath.endswith('.gff')
@@ -316,7 +320,7 @@ def load_raw_gff_to_db(experiment):
 def calculate_normalization_factors(experiment_type, group_name):
     if experiment_type not in ['rnaseq_experiment', 'chip_experiment']:
         return
-
+    logging.debug("Calculating norm factor for %s"%group_name)
     if group_name == 'default':
         directory_path = join(settings.data_directory, experiment_type, 'bam')
     else:
@@ -399,7 +403,7 @@ def load_raw_files(directory_path, group_name='default', normalize=True,
         experiment = create_name_based_experiment(session, file_prefix, group_name)
 
         experiments.append(experiment)
-
+    logging.info("Found %d experiments for loading" %len(set(experiments)))
     for experiment in set(experiments):
       if experiment.name in fastq_experiment_paths.keys():
           run_bowtie2(experiment, fastq_experiment_paths[experiment.name],
@@ -432,6 +436,9 @@ def load_raw_files(directory_path, group_name='default', normalize=True,
 
 
 def get_split_fastq_files(file_name, directory_path):
+    
+
+    logging.debug("Getting split fastq files for %s"%file_name)
     fastq_files = []
 
     file_prefix = file_name.split('.')[0]
@@ -470,6 +477,7 @@ def query_experiment_sets():
                                         ChIPExperiment.antibody, ChIPExperiment.protocol_type,\
                                         ChIPExperiment.target).all()
     ome.close()
+    logging.info("Grouped %d RNAseq experiments, %d array experiments, %d ChIP experiments"%(len(experiment_sets['RNAseq']), len(experiment_sets['array']), len(experiment_sets['ChIP'])))
     return experiment_sets
 
 
@@ -532,6 +540,8 @@ def load_experiment_sets(experiment_sets):
 
 def create_name_based_experiment(session, exp_name, group_name, lab='palsson',
                                  institution='UCSD'):
+
+    logging.debug("Creating name based experiment for %s" %exp_name)
     vals = exp_name.split('_')
 
     if len(vals) < 6: return  #required to have experiment-type_strain_carbon-source_nitrogen-source_electron-acceptor_replicate
@@ -590,7 +600,7 @@ def load_raw_experiment_data(experiment, loading_cutoff=5., bulk_file_load=True,
         file_path = join(settings.data_directory, experiment.type, 'bam',
                          experiment.group_name, experiment.name+'.bam')
 
-
+    logging.debug("Running load_raw_experiment_data on %s"%file_path)
     load_samfile_to_db(file_path, experiment.id, loading_cutoff=loading_cutoff,
                        bulk_file_load=bulk_file_load, five_prime=five_prime, flip=flip,
                        norm_factor=norm_factor)
@@ -627,6 +637,7 @@ def run_bowtie2(experiment, fastq_paths, overwrite=False, debug=False):
     if os.path.isfile(bam_file_prefix+'.bam') and overwrite:
         os.remove(bam_file_prefix+'.bam')
     elif os.path.isfile(bam_file_prefix+'.bam'):
+        logging.info("Bam-file found for %s, skipping Bowtie" %experiment.name)
         return
 
     # Check for proper bowtie2 index and if not build it
@@ -636,6 +647,7 @@ def run_bowtie2(experiment, fastq_paths, overwrite=False, debug=False):
     genbank_no_ext = join(genbank_dir, 'NC_000913.2')
     genbank_filepath = genbank_no_ext + '.1.bt2'
     if not os.path.isfile(genbank_filepath):
+        logging.info("Building bowtie index")
         call_str = ('bowtie2-build %s %s' %
                     (join(genbank_dir, 'NC_000913.2.fna'), genbank_no_ext))
         print call_str
@@ -658,11 +670,13 @@ def run_bowtie2(experiment, fastq_paths, overwrite=False, debug=False):
 
     #print fastq_paths
     if len(R1_list + R2_list) == 0: #unpaired
+        logging.debug("Running Bowtie(unpaired) on %s"%experiment.name)
         bowtie_string = ('bowtie2 -N %d -p %d -x %s -U %s | samtools view -bS - | samtools sort - %s' %
                          (1, 8, genbank_no_ext,
                           ','.join([join(fastq_dir_path, x) for x in fastq_paths]),
                           bam_file_prefix))
     else: #paired
+        logging.debug("Running Bowtie(paired) on %s"%experiment.name)
         bowtie_string =  ('bowtie2 -N %d -p %d -x %s -1 %s -2 %s | samtools view -bS - | samtools sort - %s' %
                           (1, 8, genbank_no_ext,
                            ','.join([join(fastq_dir_path, x) for x in R1_list]),
@@ -673,6 +687,7 @@ def run_bowtie2(experiment, fastq_paths, overwrite=False, debug=False):
       print bowtie_string
     else:
       print bowtie_string
+      print "Running bowtie"
       subprocess.call(bowtie_string, shell=True)
       # TODO use a better pipe system a la http://stackoverflow.com/questions/13332268/python-subprocess-command-with-pipe
 
@@ -712,6 +727,7 @@ def run_cuffquant(base, datasets, chromosome, group_name=None, overwrite=False,
             continue
 
         if os.path.exists(join(out_path, 'abundances.cxb')) and overwrite:
+            logging.debug("Cuffquant overwrite on %s"%exp_file)
             shutil.rmtree(out_path)
             os.makedirs(out_path)
             os.chdir(out_path)
@@ -725,6 +741,8 @@ def run_cuffquant(base, datasets, chromosome, group_name=None, overwrite=False,
             print cuffquant_cmd
             subprocess.call(cuffquant_cmd)
 
+        else:
+            logging.debug("cuffquant files found for %s, skipping cuffquant"%exp_file)
 
 @timing
 def run_cuffnorm(base, datasets, chromosome, group_name, gff_file=None, debug=False,
@@ -763,6 +781,7 @@ def run_cuffnorm(base, datasets, chromosome, group_name, gff_file=None, debug=Fa
         return
 
     if os.path.exists(out_path) and overwrite:
+        logging.debug("overwriting cuffnorm")
         shutil.rmtree(out_path)
         os.makedirs(out_path)
         os.chdir(out_path)
@@ -770,13 +789,18 @@ def run_cuffnorm(base, datasets, chromosome, group_name, gff_file=None, debug=Fa
         subprocess.call(cuffnorm_cmd)
 
     elif not os.path.exists(out_path):
+        logging.debug("running cuffnorm")
         os.makedirs(out_path)
         os.chdir(out_path)
         print cuffnorm_cmd
         subprocess.call(cuffnorm_cmd)
 
+    else:
+        logging.debug("cuffnorm found, skipping cuffnorm")
+
 
 def find_single_factor_pairwise_contrasts(dataset_list):
+    logging.debug("running find_single_factor_pairwise_contrasts")
     dataset_contrasts = []
     dataset_conditions = {}
     for dataset in dataset_list:
@@ -806,6 +830,8 @@ def find_single_factor_pairwise_contrasts(dataset_list):
 
 
 def generate_cuffdiff_contrasts(normalized_expression_objects, group_name):
+
+    logging.info("generate_cuffdiff_contrasts")
     contrasts = find_single_factor_pairwise_contrasts(normalized_expression_objects)
     with open(settings.data_directory+'/rnaseq_experiment/cuffdiff/'+group_name+'/contrasts.txt', 'wb') as contrast_file:
         contrast_file.write('condition_A\tcondition_B\n')
@@ -844,6 +870,7 @@ def run_cuffdiff(base, datasets, chromosome, group_name, gff_file=None, debug=Fa
         return
 
     if os.path.exists(out_path) and overwrite:
+        logging.debug("Overwriting cuffdiff")
         shutil.rmtree(out_path)
         os.makedirs(out_path)
         os.chdir(out_path)
@@ -851,16 +878,18 @@ def run_cuffdiff(base, datasets, chromosome, group_name, gff_file=None, debug=Fa
         subprocess.call(cuffdiff_string)
 
     elif not os.path.exists(out_path):
+        logging.debug("running cuffdiff")
         os.makedirs(out_path)
         os.chdir(out_path)
         generate_cuffdiff_contrasts(exp_objects, group_name)
         subprocess.call(cuffdiff_string)
 
-
+    else:
+        logging.debug("cuffdiff found, skipping cuffnorm")
 
 def calculate_differential_expression(base, datasets, experiment1, experiment2):
     """Calculate differential expression (fold change and q)"""
-
+    logging.debug('Calculating differential expressions')
     session = base.Session()
     platform = experiment1.children[0].platform
 
@@ -1052,12 +1081,11 @@ def run_gem(base, datasets, genome, debug=False, overwrite=False, with_control=F
 def load_cuffnorm(base, datasets, group_name):
 
     session = base.Session()
-
+    logging.debug('Loading cuffnorm table')
     path = join(settings.data_directory, 'rnaseq_experiment', 'cuffnorm',
                 group_name, 'isoforms.fpkm_table')
     cuffnorm_output = open(path, 'r')
     header = cuffnorm_output.readline().rstrip('\n').split('\t')
-
     exp_id_map = {}
     for name in header[1:]:
 
@@ -1098,7 +1126,7 @@ def load_cuffdiff(group_name):
     cuffdiff_output = open(settings.data_directory+'/rnaseq_experiment/cuffdiff/'+group_name+'/gene_exp.diff','r')
     header = cuffdiff_output.readline()
     diff_exps = {}
-
+    logging.debug('Loading cuffdiff')
     session = base.Session()
     for line in cuffdiff_output.readlines():
         vals = line.split('\t')
@@ -1155,6 +1183,7 @@ def load_cuffdiff(group_name):
 def load_gem(chip_peak_analyses, base, datasets, genome):
     gem_path = settings.data_directory+'/chip_peaks/gem/'
     session = base.Session()
+    logging.debug('Running load_gem')
     for chip_peak_analysis in chip_peak_analyses:
         if chip_peak_analysis.children[0].protocol_type == 'ChIPchip': continue
 
@@ -1218,6 +1247,7 @@ def load_extra_analyses(base, datasets, genome, analyses_folder, group_name=None
 
 @timing
 def load_gff_chip_peaks(chip_peak_analyses, base, datasets, genome, group_name):
+    logging.debug('Loading gff chip peaks to db')
     gff_path = settings.data_directory+'/chip_peaks/'+group_name
     session = base.Session()
     for chip_peak_analysis in chip_peak_analyses:
@@ -1244,6 +1274,7 @@ def load_gff_chip_peaks(chip_peak_analyses, base, datasets, genome, group_name):
 
 @timing
 def load_arraydata(file_path, datasets, group_name='ec2'):
+    logging.debug('loading array data')
     array_data_file = open(file_path)
 
     header = array_data_file.readline().rstrip('\n').split('\t')
@@ -1320,7 +1351,7 @@ def query_yes_no(question, default="yes"):
 @timing
 def make_genome_region_map(base, datasets, genome):
     session = base.Session()
-
+    logging.debug('making genome region map')
     base.GenomeRegionMap.__table__.drop()
     base.GenomeRegionMap.__table__.create()
 

@@ -15,7 +15,7 @@ import argparse
 import logging
 
 # configure the logger
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 try:
     from pymongo import ASCENDING
@@ -135,11 +135,11 @@ if __name__ == "__main__":
                       .join(models.Model, models.Model.genome_id == base.Genome.id)
                       .filter(models.Model.bigg_id == 'iJO1366')
                       .one())
-        # dataset_loading.load_raw_files(join(settings.data_directory, 'rnaseq_experiment', 'fastq', 'escher_pub'),
-        #                                group_name='escher_pub', normalize=False, raw=False)
-        dataset_loading.run_cuffquant(base, datasets, chromosome, group_name='escher_pub')
-        dataset_loading.run_cuffnorm(base, datasets, chromosome, group_name='escher_pub')
-        dataset_loading.load_cuffnorm(base, datasets, group_name='escher_pub')
+        dataset_loading.load_raw_files(join(settings.data_directory, 'rnaseq_experiment', 'fastq', 'crp'),
+                                       group_name='crp', normalize=False, raw=True)
+        dataset_loading.run_cuffquant(base, datasets, chromosome, group_name='crp')
+        dataset_loading.run_cuffnorm(base, datasets, chromosome, group_name='crp')
+        dataset_loading.load_cuffnorm(base, datasets, group_name='crp')
         session.close()
 
     base.Session.close_all()
