@@ -125,7 +125,7 @@ def add_gene_group(name, genes, chromosome):
         if isinstance(gene, basestring):
             gene = session.query(Gene).filter(and_(Gene.chromosome_id == chromosome.id,
                                                    or_(Gene.name == gene,
-                                                       Gene.locus_id == gene))).first()
+                                                       Gene.bigg_id == gene))).first()
 
         if gene: session.get_or_create(GeneGrouping, group_id=gene_group.id, gene_id=gene.id)
 

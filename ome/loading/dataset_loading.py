@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#/usr/bin/env python
 
 """ Many parts of this code are derived from sequtil written by aebrahim
 
@@ -19,7 +19,7 @@ import pysam
 import simplejson as json
 import shutil
 import logging
-
+import shlex
 def count_coverage(samfile, flip=False, include_insert=False):
     """Counts coverage per base in a strand-specific manner.
 
@@ -642,16 +642,18 @@ def run_bowtie2(experiment, fastq_paths, overwrite=False, debug=False):
 
     # Check for proper bowtie2 index and if not build it
     genbank_dir = join(settings.data_directory, 'annotation', 'genbank')
+    index_dir = join(settings.data_directory, 'annotation', 'aligner_indices')
     os.chdir(genbank_dir)
 
-    genbank_no_ext = join(genbank_dir, 'NC_000913.2')
-    genbank_filepath = genbank_no_ext + '.1.bt2'
-    if not os.path.isfile(genbank_filepath):
+    genbank_no_ext = join(index_dir, 'NC_000913.2')
+    index_filepath = genbank_no_ext + '.1.bt2'
+    if not os.path.isfile(index_filepath):
         logging.info("Building bowtie index")
-        call_str = ('bowtie2-build %s %s' %
+        call_str = shlex.split('bowtie2-build %s %s' %
                     (join(genbank_dir, 'NC_000913.2.fna'), genbank_no_ext))
         print call_str
         subprocess.call(call_str)
+        logging.debug('bowtie index built')
 
     R1_list = []
     R2_list = []
@@ -767,14 +769,23 @@ def run_cuffnorm(base, datasets, chromosome, group_name, gff_file=None, debug=Fa
                              datasets.RNASeqExperiment.sequencing_type)
                    .all())
     session.close()
+    experiments.sort()
+    #Added so that cuffnorm would keep the same order
 
-    cuffnorm_cmd = [settings.cuffnorm, # executable
-                    '-p', '%d' % 24,
-                    '--library-type', 'fr-firststrand',
-                    '-L', '%s' % ','.join([exps[0][0] for exps in experiments]),
-                    gff_file,
-                    ' '.join([','.join([join(cxb_dir, exp_name, 'abundances.cxb') for exp_name in exps[0]])
-                              for exps in experiments])]
+
+    #cuffnorm_cmd = [settings.cuffnorm, # executable
+    #                '-p', '%d' % 24,
+    #                '--library-type', 'fr-firststrand',
+    #                '-L', '%s' % ','.join([exps[0][0] for exps in experiments]),
+    #                gff_file,
+    #                ' '.join([','.join([join(cxb_dir, exp_name, 'abundances.cxb') for exp_name in exps[0]])
+    #                          for exps in experiments])]
+    #changed cuffnorm command here cos subprocess.call didn't work for previous command
+
+    cuffnorm_cmd = shlex.split('%s -p %d --library-type fr-firststrand -L %s %s %s' %
+                                  (settings.cuffnorm, 24, ','.join(['_'.join(exps[0][0].split('_')[:-1]) for exps in experiments]), 
+                                   gff_file, 
+                                  ' '.join([','.join([join(cxb_dir, exp_name, 'abundances.cxb') for exp_name in exps[0]]) for exps in experiments])))
 
     if debug:
         print cuffnorm_cmd
@@ -885,7 +896,7 @@ def run_cuffdiff(base, datasets, chromosome, group_name, gff_file=None, debug=Fa
         subprocess.call(cuffdiff_string)
 
     else:
-        logging.debug("cuffdiff found, skipping cuffnorm")
+        logging.debug("cuffdiff found, skipping cuffdiff")
 
 def calculate_differential_expression(base, datasets, experiment1, experiment2):
     """Calculate differential expression (fold change and q)"""
@@ -1090,11 +1101,14 @@ def load_cuffnorm(base, datasets, group_name):
     for name in header[1:]:
 
         vals = name.split('_')
-        if len(vals) > 7:
+       # if len(vals) > 7:
+        if len(vals) > 6:
+            #probably need to fix this
             exp_name = '_'.join(vals[0:5]+[str(int(vals[5])+int(vals[7]))]+[vals[6]])
         else:
-            exp_name = '_'.join(vals[0:5]+[str(int(vals[5])+int(vals[6]))])
-
+            exp_name = '_'.join(vals[0:5] + [str(int(vals[5])+1)])
+            #exp_name = '_'.join(vals[0:5]+[str(int(vals[5])+int(vals[6]))])
+        print exp_name
         exp_id_map[name] = session.query(datasets.RNASeqExperiment).filter_by(name=exp_name, group_name=group_name).one().id
 
 
@@ -1102,7 +1116,7 @@ def load_cuffnorm(base, datasets, group_name):
     for line in cuffnorm_output.readlines():
         vals = line.split('\t')
 
-        try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
+        try: gene = session.query(components.Gene).filter_by(bigg_id=vals[0]).one()
         except: continue
 
         for i,val in enumerate(vals[1:]):
