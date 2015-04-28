@@ -72,7 +72,6 @@ def loadComponents(session, model_list):
                 except:
                     continue
                 found[linkout] = vl
-            
             if metabolite_db is None:
 
                 # look for the formula

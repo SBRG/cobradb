@@ -435,7 +435,7 @@ def loadOldIdtoSynonyms(session,model, old_ids):
         ome_synonym = {'type': 'metabolite'}
         m = (session
              .query(Metabolite)
-             .filter(Metabolite.bigg_id == parse.split_compartment(mkey)[0])
+             .filter(Metabolite.bigg_id == parse.split_compartment(mkey.replace('(_sec_)m', '_sec_m').replace('[sec]', '_sec_').replace('(sec)', '_sec_'))[0])
              .first())
         if m is not None:
             ome_synonym['ome_id'] = m.id

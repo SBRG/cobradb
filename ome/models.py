@@ -143,6 +143,8 @@ class Comments(Base):
     id= Column(Integer, primary_key=True)
     email = Column(String)
     text = Column(String)
+    date_created = Column(DateTime)
+    type = Column(String)
 
 class ModelCount(Base):
     __tablename__='model_count'

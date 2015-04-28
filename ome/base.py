@@ -82,7 +82,7 @@ class GenomeRegion(Base):
     __tablename__ = 'genome_region'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     chromosome_id = Column(Integer, ForeignKey('chromosome.id'))
-    bigg_id = Column(String(20))
+    bigg_id = Column(String(40))
     leftpos = Column(Integer)
     rightpos = Column(Integer)
     strand = Column(String(1))

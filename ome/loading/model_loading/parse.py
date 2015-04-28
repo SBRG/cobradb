@@ -132,9 +132,11 @@ def id_for_new_id_style(old_id, is_metabolite=False, new_id_style='cobrapy'):
         new_id = join_parts(a, m.group(4))
 
     # deal with inconsistent notation of (sec) vs. [sec] in iJO1366 versions
-    new_id = new_id.replace('[sec]', '_sec_').replace('(sec)', '_sec_')
-
-    return new_id
+    new_id = new_id.replace('(_sec_)m', '_sec_m').replace('[sec]', '_sec_').replace('(sec)', '_sec_')
+    if new_id.startswith('_'):
+        return new_id[1:]
+    else:
+        return new_id
 
 def get_formulas_from_names(model):
     reg = re.compile(r'.*_([A-Za-z0-9]+)$')

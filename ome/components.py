@@ -251,6 +251,7 @@ class Metabolite(Component):
 
     def __init__(self, bigg_id, name, formula, charge=None, smiles=None):
         super(Metabolite, self).__init__(bigg_id, name)
+        self.charge = charge
         self.formula = formula
         self.smiles = smiles
 
