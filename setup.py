@@ -66,7 +66,7 @@ setup(
                       'simplejson>=3.6.5',
                       'psycopg2>=2.5.4',
                       'biopython>=1.65'], # could be optional
-    extras_require = {'all': ['pymongo>=2.7.2',
+    extras_require = {'all': ['pymongo >=2.7.2, <3.0',
                               'ipython>=2.3.1',
                               'pytest>=2.6.4']},
     package_data={'ome': ['data/*']})

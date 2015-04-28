@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from ome.base import NotFoundError
+
 import re
 import cobra
 import cobra.io
@@ -40,9 +42,6 @@ def load_and_normalize(model_filepath):
     # extract metabolite formulas from names (e.g. for iAF1260)
     model = get_formulas_from_names(model)
 
-    # turn off carbon sources
-    model = turn_off_carbon_sources(model)
-
     return model, old_ids
 
 def convert_ids(model, new_id_style):
@@ -50,28 +49,29 @@ def convert_ids(model, new_id_style):
 
     cobrapy: EX_lac__L_e
     simpheny: EX_lac-L(e)
+    
+    Returns a tuple with the new model and a dictionary of old ids set up like this:
+
+    {'reactions': {'new_id': 'old_id'},
+     'metabolites': {'new_id': 'old_id'},
+     'genes': {}}
 
     """
     # loop through the ids:
     metaboliteIdDict = {}
     reactionIdDict = {}
 
-    # this code comes from cobra.io.sbml
-    # legacy_ids add special characters to the names again
+    # fix metabolites
     for metabolite in model.metabolites:
-        new_id = fix_legacy_id(metabolite.id, use_hyphens=False)
+        new_id = id_for_new_id_style(fix_legacy_id(metabolite.id, use_hyphens=False),
+                                     is_metabolite=True, new_id_style=new_id_style)
         metaboliteIdDict[new_id] = metabolite.id
         metabolite.id = new_id
-        
     model.metabolites._generate_index()
-    for reaction in model.reactions:
-        new_id = fix_legacy_id(reaction.id, use_hyphens=False)
-        reactionIdDict[new_id] = reaction.id
-        reaction.id = new_id
-    model.reactions._generate_index()
-    # remove boundary metabolites (end in _b and only present in exchanges) . Be
-    # sure to loop through a static list of ids so the list does not get
-    # shorter as the metabolites are deleted
+
+    # remove boundary metabolites (end in _b and only present in exchanges). Be
+    # sure to loop through a static list of ids so the list does not get shorter
+    # as the metabolites are deleted
     for metabolite_id in [str(x) for x in model.metabolites]:
         metabolite = model.metabolites.get_by_id(metabolite_id)
         if not metabolite.id.endswith("_b"):
@@ -84,15 +84,11 @@ def convert_ids(model, new_id_style):
 
     # separate ids and compartments, and convert to the new_id_style
     for reaction in model.reactions:
-        new_id = id_for_new_id_style(reaction.id, new_id_style=new_id_style)
+        new_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False),
+                                     new_id_style=new_id_style)
         reactionIdDict[new_id] = reaction.id
         reaction.id = new_id
     model.reactions._generate_index()
-    for metabolite in model.metabolites:
-        new_id = id_for_new_id_style(metabolite.id, is_metabolite=True, new_id_style=new_id_style)
-        metaboliteIdDict[new_id] = metabolite.id
-        metabolite.id = new_id
-    model.metabolites._generate_index()
 
     old_ids = { 'metabolites': metaboliteIdDict,
                 'reactions': reactionIdDict,
@@ -136,6 +132,7 @@ def id_for_new_id_style(old_id, is_metabolite=False, new_id_style='cobrapy'):
 
     return new_id
 
+
 def get_formulas_from_names(model):
     reg = re.compile(r'.*_([A-Za-z0-9]+)$')
     for metabolite in model.metabolites:
@@ -147,12 +144,6 @@ def get_formulas_from_names(model):
             metabolite.formula = Formula(m.group(1))
     return model
 
-def turn_off_carbon_sources(model):
-    for reaction in model.reactions:
-        if 'EX_' not in str(reaction): continue
-        if carbons_for_exchange_reaction(reaction) > 0:
-            reaction.lower_bound = 0
-    return model
 
 def setup_model(model, substrate_reactions, aerobic=True, sur=10, max_our=10,
                 id_style='cobrapy', fix_iJO1366=False):
@@ -264,7 +255,7 @@ def split_compartment(component_id):
     """
     match = re.search(r'_[a-z][a-z0-9]?$', component_id)
     if match is None:
-        raise Exception("No compartment found for %s" % component_id)
+        raise NotFoundError("No compartment found for %s" % component_id)
     met = component_id[0:match.start()]
     compartment = component_id[match.start()+1:]
     return met, compartment

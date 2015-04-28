@@ -281,13 +281,13 @@ class Analysis(Dataset):
     __tablename__ = 'analysis'
 
     id = Column(Integer, ForeignKey('dataset.id', ondelete='CASCADE'), primary_key=True)
-    type = Column(String(40))
+    analysis_type = Column(String(40))
     children = relationship("Dataset", secondary="analysis_composition",\
                             primaryjoin = id == AnalysisComposition.analysis_id,\
                             backref="parent")
 
     __mapper_args__ = {'polymorphic_identity': 'analysis',
-                       'polymorphic_on': 'type'}
+                       'polymorphic_on': 'analysis_type'}
 
     def __init__(self, name, replicate=1, strain_id=None, environment_id=None, group_name=None):
         super(Analysis, self).__init__(name, replicate, strain_id, environment_id, group_name=group_name)

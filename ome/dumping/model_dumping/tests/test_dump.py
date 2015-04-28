@@ -29,18 +29,30 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger, tmpdir):
         
     model = dump_model(bigg_id)
     
-    assert len(model.reactions) == 95
+    assert len(model.reactions) == 96
     assert len(model.metabolites) == 72
-    assert len(model.genes) == 137
+    assert len(model.genes) == 140
     assert model.genes.get_by_id('b0114').name == 'aceE'
     assert model.genes.get_by_id('b3528').name == 'dctA'
     
     assert 'GAPD' in model.reactions
     assert model.reactions.get_by_id('GAPD').name == 'glyceraldehyde-3-phosphate dehydrogenase'
 
+    # make sure ATPM and NTP1 are represented
+    r1 = model.reactions.get_by_id('ATPM')
+    r2 = model.reactions.get_by_id('NTP1')
+    # either order is OK
+    r1 = model.reactions.get_by_id('NTP1')
+    r2 = model.reactions.get_by_id('ATPM')
+    assert r1.lower_bound == 3.15
+    assert r2.lower_bound == 8.39
+    assert r1.notes['original_bigg_id'] == 'NTP1'
+    assert r2.notes['original_bigg_id'] == 'ATPM'
+
     # test solve
     model.reactions.get_by_id('EX_glc_e').lower_bound = -10
-    assert model.optimize().f > 0
+    sol = model.optimize()
+    assert sol.f > 0.5 and sol.f < 1.0
 
     # temp sbml dump
     m_file = join(str(tmpdir), 'test_model.sbml')

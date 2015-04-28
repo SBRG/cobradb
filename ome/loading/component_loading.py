@@ -8,6 +8,9 @@ from warnings import warn
 from sqlalchemy import text, or_, and_, func
 import logging
 
+class BadGenomeError(Exception):
+    pass
+
 def getAttributes(file_name):
     file = open(settings.data_directory + '/annotation/MetaCyc/17.1/data/'+file_name,'r')
     atts = []
@@ -349,20 +352,45 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome,
     return tu
 
 
-@timing
-def load_genome(genbank_file, session):
+def get_bioproject_id(genbank_filepath, fast=False):
+    """Load the file and return the Bioproject ID and the loaded file.
+
+    Returns a tuples of (BioProject ID, SeqIO object).
+    
+    Arguments
+    ---------
+
+    genbank_filepath: The path to the genbank file.
+
+    fast: If True, then only look in the first 100 lines for a BioProject ID,
+    and return a tuple of (BioProject ID, None)
+
+    """
     # imports 
     from Bio import SeqIO
 
+    if fast:
+        # try to find the BioProject ID in the first 100 lines. Otherwise, use
+        # the full SeqIO.read
+        line_limit = 100
+        with open(genbank_filepath, 'r') as f:
+            for i, line in enumerate(f.readlines()):
+                s = line.split('BioProject: ')
+                if len(s) > 1:
+                    return s[1].strip(), None
+                if i > line_limit:
+                    break
+        logging.debug('Could not use get_bioproject_id in fast mode. Falling back.')
+
     # load the genbank file
-    logging.debug('Loading file: %s' % genbank_file)
+    logging.debug('Loading file: %s' % genbank_filepath)
     try:
-        gb_file = SeqIO.read(genbank_file, 'gb')
+        gb_file = SeqIO.read(genbank_filepath, 'gb')
     except IOError:
-        raise Exception("File '%s' not found" % genbank_file)
+        raise BadGenomeError("File '%s' not found" % genbank_filepath)
     except Exception as e:
-        raise Exception('biopython failed to parse %s with error "%s"' %
-                        (genbank_file, e.message))
+        raise BadGenomeError('BioPython failed to parse %s with error "%s"' %
+                             (genbank_filepath, e.message))
 
     bioproject_id = None
     for value in gb_file.dbxrefs[0].split():
@@ -370,7 +398,14 @@ def load_genome(genbank_file, session):
             bioproject_id = value.split(':')[1]
 
     if bioproject_id is None:
-        raise Exception('Invalid genbank file %s: Does not contain a BioProject ID' % genbank_file)
+        raise BadGenomeError('Invalid genbank file %s: Does not contain a BioProject ID' % genbank_filepath)
+
+    return bioproject_id, gb_file
+
+
+@timing
+def load_genome(genbank_filepath, session):
+    bioproject_id, gb_file = get_bioproject_id(genbank_filepath)
 
     genome = (session
               .query(base.Genome)
@@ -380,7 +415,7 @@ def load_genome(genbank_file, session):
     if not genome:
         logging.debug('Adding new genome: %s' % bioproject_id)
         ome_genome = { 'bioproject_id': bioproject_id,
-                       'organism': gb_file.annotations['organism'],'taxon_id':'None' }
+                       'organism': gb_file.annotations['organism'], 'taxon_id':'None' }
         genome = base.Genome(**ome_genome)
         session.add(genome)
         session.flush()
@@ -406,14 +441,18 @@ def load_genome(genbank_file, session):
                                in session.query(base.DataSource).all() }
 
     bigg_id_warnings = 0
+    duplicate_genes_warnings = 0
+    warning_num = 5
     for i, feature in enumerate(gb_file.features):
-        taxon_id = None
+        # get the source information
+        if feature.type == 'source':
+            if 'db_xref' in feature.qualifiers:
+                if 'taxon' == feature.qualifiers['db_xref'][0].split(':')[0]:
+                    genome.taxon_id = feature.qualifiers['db_xref'][0].split(':')[1]
+            continue
+
         # only read in CDSs
         if feature.type != 'CDS':
-            if feature.type == 'source':
-                if 'db_xref' in feature.qualifiers:
-                    if 'taxon' == feature.qualifiers['db_xref'][0].split(':')[0]:
-                        genome.taxon_id = feature.qualifiers['db_xref'][0].split(':')[1]
             continue
 
         # bigg_id required
@@ -427,7 +466,6 @@ def load_genome(genbank_file, session):
             gene_name = feature.qualifiers['gene'][0]
 
         if gene_name != '' and bigg_id is None:
-            warning_num = 5
             if bigg_id_warnings <= warning_num:
                 msg = 'No locus_tag for gene. Using Gene name as bigg_id: %s' % gene_name
                 if bigg_id_warnings == warning_num:
@@ -472,7 +510,17 @@ def load_genome(genbank_file, session):
             session.commit()
         else:
             gene = gene_db
-            logging.warn('Duplicate genes %s on chromosome %s' % (bigg_id, chromosome.id))
+            # warn about duplicate genes.
+            # 
+            # TODO The only downside to loading CDS's this way is that the
+            # leftpos and rightpos correspond to a CDS, not the whole gene. So
+            # these need to be fixed eventually.
+            if duplicate_genes_warnings <= warning_num:
+                msg = 'Duplicate genes %s on chromosome %s' % (bigg_id, chromosome.id)
+                if duplicate_genes_warnings == warning_num:
+                    msg += ' (Warnings limited to %d)' % warning_num
+                logging.warn(msg)
+                duplicate_genes_warnings += 1
 
         # get the protein
         if 'protein_id' in feature.qualifiers and len(feature.qualifiers['protein_id']) > 0:
@@ -495,7 +543,7 @@ def load_genome(genbank_file, session):
                     splitrefs = ref.split(':')
                     ome_synonym = { 'type': 'gene' }
                     ome_synonym['ome_id'] = gene.id
-                    ome_synonym['synonym'] = splitrefs[1]
+                    ome_synonym['synonym'] = splitrefs[1].strip()
 
                     try:
                         data_source_id = db_xref_data_source_id[splitrefs[0]]
@@ -510,7 +558,7 @@ def load_genome(genbank_file, session):
                     found_synonym = (session
                                      .query(base.Synonym)
                                      .filter(base.Synonym.ome_id == gene.id)
-                                     .filter(base.Synonym.synonym == splitrefs[1])
+                                     .filter(base.Synonym.synonym == splitrefs[1].strip())
                                      .filter(base.Synonym.type == 'gene')
                                      .count() > 0)
                     if not found_synonym:
@@ -525,12 +573,12 @@ def load_genome(genbank_file, session):
                 for value in syn:
                     ome_synonym = {'type': 'gene'}
                     ome_synonym['ome_id'] = gene.id
-                    ome_synonym['synonym'] = value
+                    ome_synonym['synonym'] = value.strip()
                     ome_synonym['synonym_data_source_id'] = None
                     found_synonym = (session
                                      .query(base.Synonym)
                                      .filter(base.Synonym.ome_id == gene.id)
-                                     .filter(base.Synonym.synonym == value)
+                                     .filter(base.Synonym.synonym == value.strip())
                                      .filter(base.Synonym.type == 'gene')
                                      .count() > 0)
                     if not found_synonym:
@@ -543,12 +591,12 @@ def load_genome(genbank_file, session):
                 for value in syn:
                     ome_synonym = {'type': 'gene'}
                     ome_synonym['ome_id'] = gene.id
-                    ome_synonym['synonym'] = value
+                    ome_synonym['synonym'] = value.strip()
                     ome_synonym['synonym_data_source_id'] = None
                     found_synonym = (session
                                      .query(base.Synonym)
                                      .filter(base.Synonym.ome_id == gene.id)
-                                     .filter(base.Synonym.synonym == value)
+                                     .filter(base.Synonym.synonym == value.strip())
                                      .filter(base.Synonym.type == 'gene')
                                      .count() > 0)
                     if not found_synonym:
@@ -563,12 +611,12 @@ def load_genome(genbank_file, session):
                     if value[0]== 'ORF_ID':
                         ome_synonym = {'type': 'gene'}
                         ome_synonym['ome_id'] = gene.id
-                        ome_synonym['synonym'] = value[1]
+                        ome_synonym['synonym'] = value[1].strip()
                         ome_synonym['synonym_data_source_id'] = None
                         found_synonym = (session
                                          .query(base.Synonym)
                                          .filter(base.Synonym.ome_id == gene.id)
-                                         .filter(base.Synonym.synonym == value[1])
+                                         .filter(base.Synonym.synonym == value[1].strip())
                                          .filter(base.Synonym.type == 'gene')
                                          .count() > 0)
                         if not found_synonym:

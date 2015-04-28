@@ -1,1 +1,1 @@
-from dump import dump_model, dump_universal_model
+from dump import dump_model
