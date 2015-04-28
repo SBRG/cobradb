@@ -1,8 +1,31 @@
-#! /usr/bin/python
+#! /usr/bin/env python
+
+# configure the logger before imports so other packages do not override this
+# setup
+import logging
+import time
+def configure_logger(log_file=None, level=logging.INFO, overwrite_log=True,
+                     format=logging.BASIC_FORMAT):
+    # console and file
+    if log_file is None:
+        logging.basicConfig(stream=sys.stdout, level=level, format=format)
+    else:
+        logging.basicConfig(filename=log_file, level=level, 
+                            filemode=('w' if overwrite_log else 'a'), 
+                            format=format) 
+        console = logging.StreamHandler()
+        console.setLevel(level)
+        console.setFormatter(logging.Formatter(format))
+        logging.getLogger("").addHandler(console)
+configure_logger('%s OME load_db.log' % time.strftime('%Y-%m-%d %H:%M:%S'),
+                 level=logging.INFO)
+
 
 from ome import base, settings, components, datasets, models, timing
+from ome.loading import AlreadyLoadedError
 from ome.loading import dataset_loading
 from ome.loading import component_loading
+from ome.loading.component_loading import BadGenomeError
 from ome.loading import model_loading
 from ome.loading import map_loading
 
@@ -12,21 +35,18 @@ import sys
 import os
 from os.path import join
 import argparse
-import logging
-
-# configure the logger
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 try:
     from pymongo import ASCENDING
     MONGO_INSTALLED = True
 except ImportError:
-    warn('pymongo not installed')
+    logging.warn('pymongo not installed')
     MONGO_INSTALLED = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--drop-all', help='Empty database and reload data', action='store_true')
-parser.add_argument('--drop-models', help='Empty model data', action='store_true')
+parser.add_argument('--drop-models', help='Empty model and map data', action='store_true')
+parser.add_argument('--drop-maps', help='Empty map data', action='store_true')
 parser.add_argument('--skip-genomes', help='Skip genome loading', action='store_true')
 parser.add_argument('--skip-models', help='Skip model loading', action='store_true')
 
@@ -73,18 +93,47 @@ if __name__ == "__main__":
     # make the session
     session = base.Session()
 
+    # get the models and genomes
+    model_dir = join(settings.data_directory, 'models')
+    model_genome_file = settings.model_genome_file
+    logging.info('Loading models and genomes using %s' % model_genome_file)
+    with open(model_genome_file, 'r') as f:
+        lines = f.readlines()
+    models_list = []; found_genomes = {}
+    for line in lines:
+        model_filename, bioproject_id, timestamp, pmid = line.split(',')
+        found_genomes[bioproject_id] = False
+        if model_filename.strip() != '':
+            models_list.append((model_filename, bioproject_id, timestamp, pmid))
+
     if not args.skip_genomes:
-        logging.info('Loading genomes')
+        logging.info('Finding matching GenBank files')
         genbank_dir = join(settings.data_directory, 'annotation', 'genbank')
-        dirs = os.listdir(genbank_dir)
-        n = len(dirs)
-        for i, genbank_file in enumerate(dirs):
+        # get the genbank files with matching bioproject ids
+        genome_files = []
+        for filename in os.listdir(genbank_dir):
+            logging.debug('Looking for BioProject ID in %s' % filename)
+            try:
+                bioproject_id, _ = component_loading.get_bioproject_id(join(genbank_dir, filename),
+                                                                       fast=True)
+            except BadGenomeError as e:
+                logging.warn(e.message)
+                continue
+            if bioproject_id in found_genomes:
+                found_genomes[bioproject_id] = True
+                genome_files.append(filename)
+        not_found = [k for k, v in found_genomes.iteritems() if v is False]
+        if len(not_found) > 0:
+            logging.warn('No genbank file for for %s' % not_found)
+                
+        logging.info('Loading genomes')
+        n = len(genome_files)
+        for i, genbank_file in enumerate(genome_files):
             logging.info('Loading genome from genbank file (%d of %d) %s' % (i + 1, n, genbank_file))
             try:
-                if genbank_file != '.DS_Store':
-                    component_loading.load_genome(join(genbank_dir, genbank_file), session)
+                component_loading.load_genome(join(genbank_dir, genbank_file), session)
             except Exception as e:
-                logging.error(str(e))
+                logging.exception(e)
 
         data_genomes = (session
                         .query(base.Genome)
@@ -101,27 +150,24 @@ if __name__ == "__main__":
     
     if not args.skip_models:
         logging.info("Loading models")
-        model_dir = join(settings.data_directory, 'models')
-        model_genome_file = join(settings.data_directory,
-                                 'annotation',
-                                 settings.model_list)
-        with open(model_genome_file, 'r') as f:
-            lines = f.readlines()
-            n = len(lines)
-            for i, line in enumerate(lines):
-                model_filename, genome_id, timestamp, pmid = line.rstrip('\n').split(',')
-                logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_filename))
-                #try:
-                model_loading.load_model(join(model_dir, model_filename), genome_id,
-                                             timestamp, pmid, session)
-                """except Exception as e:
-                    logging.error('Could not load model %s. %s' % (model_id, e))
-                    # raise
-                    """
+        n = len(models_list)
+        for i, (model_filename, genome_id, timestamp, pmid) in enumerate(models_list):
+            logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_filename))
+            try:
+                model_loading.load_model(join(model_dir, model_filename),
+                                            genome_id, timestamp, pmid,
+                                            session)
+            except AlreadyLoadedError as e:
+                logging.info(e.message)
+            except Exception as e:
+                logging.error('Could not load model %s.' % model_filename)
+                logging.exception(e)
+                    
     logging.info("Loading Escher maps")
-    map_loading.load_maps_from_server(session, drop_maps=args.drop_models)
+    map_loading.load_maps_from_server(session, drop_maps=(args.drop_models or
+                                                          args.drop_maps))
 
-    if MONGO_INSTALLED:
+    if MONGO_INSTALLED and base.omics_database is not None:
         genome_data = base.omics_database.genome_data
         genome_data.create_index([("data_set_id", ASCENDING),
                                   ("leftpos", ASCENDING)])

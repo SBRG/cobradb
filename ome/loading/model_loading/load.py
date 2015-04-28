@@ -3,7 +3,8 @@
 from ome import base, settings, components, timing
 from ome.models import Model
 import cobra.io
-from ome.loading.model_loading import independent, dependent, parse
+from ome.loading import AlreadyLoadedError
+from ome.loading.model_loading import loading_methods, parse
 from ome.dumping.model_dumping import dump_model
 import os
 from os.path import join
@@ -44,33 +45,53 @@ def load_model(model_filepath, genome_id, model_timestamp, pmid, session,
 
     # apply id normalization
     logging.debug('Parsing SBML')
-    model, old_ids = parse.load_and_normalize(model_filepath)
+    model, old_parsed_ids = parse.load_and_normalize(model_filepath)
     model_bigg_id = model.id
     
+    # check that the model doesn't already exist
+    if session.query(Model).filter_by(bigg_id=model_bigg_id).count() > 0:
+        raise AlreadyLoadedError('Model %s already loaded' % model_bigg_id)
+
     # check for a genome annotation for this model
     genome_db = session.query(base.Genome).filter_by(bioproject_id=genome_id).first()
     if genome_db is None:
         raise Exception('Genbank file %s for model %s not found in the database' %
                         (genome_id, model_bigg_id))
 
-    # check that the model doesn't already exist
-    if session.query(Model).filter_by(bigg_id=model_bigg_id).count() > 0:
-        raise Exception('Model %s already loaded' % model_bigg_id)
+    # Load the model objects. Remember: ORDER MATTERS! So don't mess around.
+    logging.debug('Loading objects for model {}'.format(model.id))
+    model_database_id = loading_methods.load_model(session, model, genome_db.id,
+                                                   model_timestamp, pmid)
 
-    # Load the model components. Remember: ORDER MATTERS! So don't mess around.
-    logging.debug('Loading independent objects')
-    independent.loadModel(session, model, genome_db.id, model_timestamp, pmid)
-    independent.loadComponents(session, [model])
-    independent.loadReactions(session, [model])
-    logging.debug('Loading dependent objects')
-    dependent.loadModelGenes(session, [model])
-    dependent.loadModelCompartmentalizedComponent(session, [model])
-    dependent.loadModelReaction(session, [model])
-    dependent.loadGeneReactionMatrix(session, [model])
-    dependent.loadReactionMatrix(session, [model])
-    dependent.loadModelCount(session, [model])
-    dependent.loadOldIdtoSynonyms(session, model, old_ids)
-    dependent.parseGeneReactionRule(session, [model])    
+    # metabolites/components and linkouts
+    # get compartment names
+    if os.path.exists(settings.compartment_names_file):
+        with open(settings.compartment_names_file, 'r') as f:
+            compartment_names = {}
+            for line in f.readlines():
+                sp = [x.strip() for x in line.split('\t')]
+                try:
+                    compartment_names[sp[0]] = sp[1]
+                except IndexError:
+                    continue
+    else:
+        logging.warn('No compartment names file')
+        compartment_names = {}
+    loading_methods.load_metabolites(session, model_database_id, model,
+                                     compartment_names,
+                                     old_parsed_ids['metabolites'])
+
+    # reactions
+    model_db_rxn_ids = loading_methods.load_reactions(session, model_database_id,
+                                                      model, old_parsed_ids['reactions'])
+
+    # genes
+    loading_methods.load_genes(session, model_database_id, model,
+                               model_db_rxn_ids)
+
+    # count model objects for the model summary web page
+    loading_methods.load_model_count(session, model_database_id)
+
     session.commit()
     
     if dump_directory:

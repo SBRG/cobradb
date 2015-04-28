@@ -408,7 +408,6 @@
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0351 or b1241)</p><p>GENE_LIST: b0351 b1241</p><p>SUBSYSTEM: Pyruvate Metabolism</p></html>
         </notes>
         <listOfReactants>
-          <speciesReference species="M_acald_c"/>
           <speciesReference species="M_coa_c"/>
           <speciesReference species="M_nad_c"/>
         </listOfReactants>
@@ -835,7 +834,7 @@
           </listOfParameters>
         </kineticLaw>
       </reaction>
-      <reaction id="R_ENO" name="enolase">
+      <reaction id="R_PDH" name="enolase">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: b2779</p><p>GENE_LIST: b2779</p><p>SUBSYSTEM: Glycolysis/Gluconeogenesis</p></html>
         </notes>
@@ -1420,7 +1419,6 @@
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b4151 and b4152 and b4153 and b4154)</p><p>GENE_LIST: b4151 b4152 b4153 b4154</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
         </notes>
         <listOfReactants>
-          <speciesReference species="M_fum_c"/>
           <speciesReference species="M_q8h2_c"/>
         </listOfReactants>
         <listOfProducts>
@@ -2079,7 +2077,7 @@
           </listOfParameters>
         </kineticLaw>
       </reaction>
-      <reaction id="R_PDH" name="pyruvate dehydrogenase" reversible="false">
+      <reaction id="R_PDH2" name="pyruvate dehydrogenase" reversible="false">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: ( b0114  and  b0115  and  b0116 )</p><p>GENE_LIST: b0114 b0115 b0116</p><p>SUBSYSTEM: Glycolysis/Gluconeogenesis</p></html>
         </notes>
@@ -2130,7 +2128,7 @@
           </listOfParameters>
         </kineticLaw>
       </reaction>
-      <reaction id="R_PFL" name="pyruvate formate lyase" reversible="false">
+      <reaction id="R_PFLtestest" name="pyruvate formate lyase" reversible="false">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (((b0902 and b0903) and b2579) or (b0902 and b0903) or (b0902 and b3114) or (b3951 and b3952))</p><p>GENE_LIST: b0902 b0903 b2579 b3114 b3951 b3952</p><p>SUBSYSTEM: Pyruvate Metabolism</p></html>
         </notes>

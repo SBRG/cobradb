@@ -835,8 +835,8 @@ def run_array_ttests(base, datasets, genome, group_name, debug=False, overwrite=
 @timing
 def run_gem(base, datasets, genome, debug=False, overwrite=False, with_control=False):
     default_parameters = {'mrc':20, 'smooth':3, 'nrf':'', 'outNP':''}
-    gem_path = settings.home_directory+'/libraries/gem'
-    bam_dir = settings.data_directory+'/chip_experiment/bam/'
+    gem_path = settings.data_directory + '/libraries/gem'
+    bam_dir = settings.data_directory + '/chip_experiment/bam/'
 
     session = base.Session()
 
