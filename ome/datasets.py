@@ -128,30 +128,29 @@ class Dataset(Base):
     name = Column(String(100))
     type = Column(String(40))
     replicate = Column(Integer)
+    group_name = Column(String(100))
 
     strain_id = Column(Integer, ForeignKey('strain.id', ondelete='CASCADE'))
     strain = relationship("Strain")
 
-    environment_id = Column(Integer, ForeignKey('environment.id', ondelete='CASCADE'))
+    environment_id = Column(Integer,
+                            ForeignKey('environment.id', ondelete='CASCADE'))
     environment = relationship("Environment")
 
-    data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
+    data_source_id = Column(Integer,
+                            ForeignKey('data_source.id', ondelete='CASCADE'))
     data_source = relationship("DataSource")
-
-    group_name = Column(String(100))
-
 
     __mapper_args__ = {'polymorphic_identity': 'dataset',
                        'polymorphic_on': type}
-
-    __table_args__ = (UniqueConstraint('name','replicate', 'group_name'),{})
+    __table_args__ = (UniqueConstraint('name','replicate', 'group_name'), {})
 
     def __repr__(self):
         return "Data Set (#%d):  %s" % \
             (self.id, self.name)
 
-
-    def __init__(self, name, replicate=1, strain_id=None, environment_id=None, data_source_id=None, group_name=None):
+    def __init__(self, name, replicate=1, strain_id=None, environment_id=None,
+                 data_source_id=None, group_name=None):
 
         session = Session()
         if strain_id is None:
@@ -161,9 +160,11 @@ class Dataset(Base):
             environment_id = session.get_or_create(Environment, name='generic').id
 
         if data_source_id is None:
-            data_source_id = session.get_or_create(DataSource, name='generic', lab='generic', institution='generic').id
+            data_source_id = (session
+                              .get_or_create(DataSource, name='generic',
+                                             lab='generic', institution='generic')
+                              .id)
         session.close()
-
 
         self.name = name
         self.replicate = replicate
@@ -197,17 +198,14 @@ class ArrayExperiment(Dataset):
 class RNASeqExperiment(Dataset):
     __tablename__ = 'rnaseq_experiment'
 
-    id = Column(Integer, ForeignKey('dataset.id', ondelete='CASCADE'), primary_key=True)
+    id = Column(Integer, ForeignKey('dataset.id', ondelete='CASCADE'),
+                primary_key=True)
 
     sequencing_type = Column(String(20))
     machine_id = Column(String(20))
 
     normalization_method = Column(String(100))
     normalization_factor = Column(Float)
-
-
-    #terrrible hack right here
-    #file_name = Column(String(100))
 
     __mapper_args__ = { 'polymorphic_identity': 'rnaseq_experiment' }
 
@@ -225,7 +223,6 @@ class RNASeqExperiment(Dataset):
 
         self.normalization_method = normalization_method
         self.normalization_factor = normalization_factor
-
 
 
 class ChIPExperiment(Dataset):
@@ -367,9 +364,11 @@ class DifferentialExpression(Analysis):
 class GenomeData(Base):
     __tablename__ = 'genome_data'
 
-    dataset_id = Column(Integer, ForeignKey('dataset.id', ondelete="CASCADE"), primary_key=True)
+    dataset_id = Column(Integer, ForeignKey('dataset.id', ondelete="CASCADE"),
+                        primary_key=True)
     dataset = relationship('Dataset')
-    genome_region_id = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
+    genome_region_id = Column(Integer, ForeignKey('genome_region.id'),
+                              primary_key=True)
     genome_region = relationship('GenomeRegion', backref='data')
     value = Column(Float)
     type = Column(String(20))
@@ -378,8 +377,9 @@ class GenomeData(Base):
 
     @hybrid_property
     def all_data(self):
-        return [x['value'] for x in query_genome_data([self.dataset_id], self.genome_region.leftpos, self.genome_region.rightpos)]
-
+        return [x['value'] for x in query_genome_data([self.dataset_id],
+                                                      self.genome_region.leftpos,
+                                                      self.genome_region.rightpos)]
 
     __mapper_args__ = {'polymorphic_identity': 'genome_data',
                        'polymorphic_on': type}
@@ -454,20 +454,25 @@ class ChIPPeakData(GenomeData):
         self.eventpos = eventpos
 
 
-
 class RegulatoryNetwork(Base):
     __tablename__ = 'regulatory_network'
 
-    reg_gene_id = Column(Integer, ForeignKey('genome_region.id', ondelete="CASCADE"), primary_key=True)
-    regd_gene_id = Column(Integer, ForeignKey('genome_region.id', ondelete="CASCADE"), primary_key=True)
+    reg_gene_id = Column(Integer,
+                         ForeignKey('genome_region.id', ondelete="CASCADE"),
+                         primary_key=True)
+    regd_gene_id = Column(Integer,
+                          ForeignKey('genome_region.id', ondelete="CASCADE"),
+                          primary_key=True)
     direction = Column(String(3))
     evidence = Column(String(40))
 
     reg_gene = relationship('GenomeRegion',
-                             primaryjoin = reg_gene_id == GenomeRegion.id, backref='regulates')
+                            primaryjoin=(reg_gene_id == GenomeRegion.id),
+                            backref='regulates')
 
     regd_gene = relationship('GenomeRegion',
-                              primaryjoin = regd_gene_id == GenomeRegion.id, backref='regulation')
+                             primaryjoin=(regd_gene_id == GenomeRegion.id),
+                             backref='regulation')
 
     __table_args__ = (UniqueConstraint('reg_gene_id','regd_gene_id'),{})
 
@@ -484,10 +489,8 @@ class RegulatoryNetwork(Base):
         self.evidence = evidence
 
 
-
 ome = Session()
-from ome.components import Gene,TU,TUGenes
-
+from ome.components import Gene, TU, TUGenes
 
 grouped = ome.query(func.distinct(ChIPPeakData.dataset_id).label('dataset_id'),\
                     func.max(ChIPPeakData.value).label('value'),\
@@ -495,8 +498,6 @@ grouped = ome.query(func.distinct(ChIPPeakData.dataset_id).label('dataset_id'),\
                     GenomeRegion.strand.label('strand')).\
                     join(GenomeRegion).\
                     group_by(ChIPPeakData.dataset_id, ChIPPeakData.grouped_eventpos, GenomeRegion.strand).subquery()
-
-
 
 
 gene_expression_data = ome.query(
@@ -773,7 +774,8 @@ class DifferentialGeneExpressionData(Base):
 					  								  self.value, self.pval)
 
 
-def query_genome_data(dataset_ids,leftpos=0,rightpos=1000,strand=['+','-'],value=0):
+def query_genome_data(dataset_ids, leftpos=0, rightpos=1000, strand=['+', '-'],
+                      value=0):
     genome_data = omics_database.genome_data
     return genome_data.find({"$and":
                             [{"leftpos" : {"$gte": leftpos}},
@@ -781,7 +783,6 @@ def query_genome_data(dataset_ids,leftpos=0,rightpos=1000,strand=['+','-'],value
                              {"strand": {"$in" : strand }},
                              {"dataset_id": {"$in" : dataset_ids}}
                          ]})
-
 
 def query_reaction_data():
     return
