@@ -770,7 +770,7 @@ def run_cuffnorm(base, datasets, chromosome, group_name, gff_file=None, debug=Fa
                    .all())
     session.close()
     experiments.sort()
-    #Added so that cuffnorm would keep the same order
+    #Added so that cuffnorm would keep the files in order
 
 
     #cuffnorm_cmd = [settings.cuffnorm, # executable
@@ -1090,14 +1090,19 @@ def run_gem(base, datasets, genome, debug=False, overwrite=False, with_control=F
 
 @timing
 def load_cuffnorm(base, datasets, group_name):
-
+    logging.info('Loading cuffnorm for %s' % group_name)
     session = base.Session()
-    logging.debug('Loading cuffnorm table')
     path = join(settings.data_directory, 'rnaseq_experiment', 'cuffnorm',
                 group_name, 'isoforms.fpkm_table')
     cuffnorm_output = open(path, 'r')
-    header = cuffnorm_output.readline().rstrip('\n').split('\t')
-    exp_id_map = {}
+
+    def split_line(l):
+        return [y for y in l.rstrip('\n').split('\t')
+                if y != '']
+
+    header = split_line(cuffnorm_output.readline())
+    #header = cuffnorm_output.readline().rstrip('\n').split('\t')
+    exp_ids = []
     for name in header[1:]:
 
         vals = name.split('_')
@@ -1109,23 +1114,36 @@ def load_cuffnorm(base, datasets, group_name):
             exp_name = '_'.join(vals[0:5] + [str(int(vals[5])+1)])
             #exp_name = '_'.join(vals[0:5]+[str(int(vals[5])+int(vals[6]))])
         print exp_name
-        exp_id_map[name] = session.query(datasets.RNASeqExperiment).filter_by(name=exp_name, group_name=group_name).one().id
+        exp_ids.append(session
+                       .query(datasets.RNASeqExperiment.id)
+                       .filter_by(name=exp_name, group_name=group_name)
+                       .one()[0])
 
 
 
     for line in cuffnorm_output.readlines():
-        vals = line.split('\t')
+        vals = split_line(line)
 
-        try: gene = session.query(components.Gene).filter_by(bigg_id=vals[0]).one()
-        except: continue
+        gene_db = (session
+                   .query(components.Gene.id)
+                   .filter_by(bigg_id=vals[0])
+                   .first())
+
+        try:
+            gene_id = gene_db[0]
+        except TypeError:
+            logging.debug('Could not find gene %s' % vals[0])
+            continue
 
         for i,val in enumerate(vals[1:]):
 
-            try: value = float(val)
-            except: continue
+            try: 
+                value = float(val)
+            except ValueError: 
+                continue
 
-            genome_data = datasets.GenomeData(dataset_id=exp_id_map[header[i+1]],
-                                              genome_region_id = gene.id,
+            genome_data = datasets.GenomeData(dataset_id=exp_ids[i],
+                                              genome_region_id = gene_id,
                                               value=value)
             session.add(genome_data)
 
@@ -1152,7 +1170,7 @@ def load_cuffdiff(group_name):
 
         if pvalue > .25: continue
 
-        try: gene = session.query(components.Gene).filter_by(locus_id=vals[0]).one()
+        try: gene = session.query(components.Gene).filter_by(bigg_id=vals[0]).one()
         except: continue
 
         if str(vals[4:6]) not in diff_exps.keys():
