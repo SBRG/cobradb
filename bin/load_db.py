@@ -15,7 +15,7 @@ import argparse
 import logging
 
 # configure the logger
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 try:
     from pymongo import ASCENDING
@@ -136,11 +136,23 @@ if __name__ == "__main__":
                       .join(models.Model, models.Model.genome_id == base.Genome.id)
                       .filter(models.Model.bigg_id == 'iJO1366')
                       .one())
-        # dataset_loading.load_raw_files(join(settings.data_directory, 'rnaseq_experiment', 'fastq', 'escher_pub'),
-        #                                group_name='escher_pub', normalize=False, raw=False, overwrite=True)
-        # dataset_loading.run_cuffquant(base, datasets, chromosome, group_name='escher_pub', overwrite=True)
-        # dataset_loading.run_cuffnorm(base, datasets, chromosome, group_name='escher_pub', overwrite=True)
-        dataset_loading.load_cuffnorm(base, datasets, group_name='escher_pub')
+        dataset_loading.load_raw_files(join(settings.data_directory,'rnaseq_experiment', 'fastq',  'crp'),
+                                       group_name='crp', normalize=False, raw=False)
+        dataset_loading.run_cuffquant(base, datasets, chromosome, group_name='crp')
+        dataset_loading.run_cuffnorm(base, datasets, chromosome, group_name='crp')
+        dataset_loading.load_cuffnorm(base, datasets, group_name='crp')
+#        dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_asv2.txt', group_name='asv2')
+#        dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_ec2.txt', group_name='ec2')
+
+#        dataset_loading.run_array_ttests(base, datasets, genome, group_name='asv2')
+#        dataset_loading.run_array_ttests(base, datasets, genome, group_name='ec2')
+
+#        for chromosome in genome.chromosomes:
+#            component_loading.load_metacyc_proteins(base, components, chromosome)
+#            component_loading.load_metacyc_bindsites(base, components, chromosome)
+#            component_loading.load_metacyc_transcription_units(base, components, chromosome)
+
+
         session.close()
 
     base.Session.close_all()
@@ -197,4 +209,10 @@ if __name__ == "__main__":
         dataset_loading.run_array_ttests(base, datasets, genome, group_name='ec2')
 
         dataset_loading.make_genome_region_map(base, datasets, genome)
+
+
+        genome_data = base.omics_database.genome_data
+
+        genome_data.create_index([("data_set_id",ASCENDING), ("leftpos", ASCENDING)])
+
         """
