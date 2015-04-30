@@ -943,12 +943,12 @@ def calculate_differential_expression(base, datasets, experiment1, experiment2):
 
 
 @timing
-def run_array_ttests(base, datasets, genome, group_name, debug=False, overwrite=False):
+def run_array_ttests(base, datasets, group_name, genome=None, debug=False, overwrite=False):
     session = base.Session()
     exp_objects = session.query(datasets.NormalizedExpression).filter(datasets.NormalizedExpression.group_name == group_name).\
-                                   join(datasets.AnalysisComposition, datasets.NormalizedExpression.id == data.AnalysisComposition.analysis_id).\
-                                   join(datasets.ArrayExperiment, data.ArrayExperiment.id == datasets.AnalysisComposition.dataset_id).all()
-
+                                   join(datasets.AnalysisComposition, datasets.NormalizedExpression.id == datasets.AnalysisComposition.analysis_id).\
+                                   join(datasets.ArrayExperiment, datasets.ArrayExperiment.id == datasets.AnalysisComposition.dataset_id).all()
+    print exp_objects 
     contrasts = find_single_factor_pairwise_contrasts(exp_objects)
 
     for experiment1,experiment2 in contrasts:
@@ -1103,8 +1103,6 @@ def load_cuffnorm(base, datasets, group_name):
 
     header = split_line(cuffnorm_output.readline())
     #header = cuffnorm_output.readline().rstrip('\n').split('\t')
-    exp_ids = []
-    for name in header[1:]:
 
     exp_ids = []
     for name in header[1:]:
@@ -1309,7 +1307,7 @@ def load_gff_chip_peaks(chip_peak_analyses, base, datasets, genome, group_name):
 
 
 @timing
-def load_arraydata(file_path, datasets, group_name='ec2'):
+def load_arraydata(file_path, group_name='ec2'):
     logging.debug('loading array data')
     array_data_file = open(file_path)
 
@@ -1317,21 +1315,25 @@ def load_arraydata(file_path, datasets, group_name='ec2'):
 
     session = base.Session()
 
-    exp_id_map = {}
+    exp_id_map = []
     for i,name in enumerate(header[2:]):
 
         try:
-            exp_id_map[i] = session.query(datasets.ArrayExperiment).filter(datasets.ArrayExperiment.group_name == group_name).\
-                                    filter(func.lower(datasets.ArrayExperiment.name) == str(name[:-4]+'_'+group_name).lower()).one().id
-        except: print name
+            exp_id_map.append(session.query(datasets.ArrayExperiment).filter(datasets.ArrayExperiment.group_name == group_name).\
+                                    filter(func.lower(datasets.ArrayExperiment.name) == str(name[:-4]+'_'+group_name).lower()).one().id)
+        except:
+            prefix = name.split('.')[0] + '_' + group_name
+            exp = create_name_based_experiment(session, prefix, group_name)
+            exp_id_map.append(exp.id)
 
     for line in array_data_file.readlines():
         vals = line.split('\t')
 
-
-        try: gene = session.query(components.Gene).filter(or_(components.Gene.name == vals[0],\
-                                                              components.Gene.locus_id == vals[0])).one()
-        except: continue
+        try:
+            gene = session.query(components.Gene).filter(or_(components.Gene.name == vals[0],components.Gene.bigg_id == vals[0])).one()
+        except: 
+            logging.debug('Cannot find gene %s, skipping' %vals[0])
+            continue
 
 
         for i,val in enumerate(vals[2:]):
@@ -1341,7 +1343,7 @@ def load_arraydata(file_path, datasets, group_name='ec2'):
                 exp_id_map[i]
             except: continue
 
-            array_data = data.GenomeData(dataset_id = exp_id_map[i],
+            array_data = datasets.GenomeData(dataset_id = exp_id_map[i],
                                          genome_region_id = gene.id,
                                          value=value)
             session.add(array_data)

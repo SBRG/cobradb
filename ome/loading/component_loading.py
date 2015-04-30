@@ -549,6 +549,13 @@ def load_genome(genbank_file, session):
 def load_motifs(base, components):
     motifs = open(settings.data_directory + '/annotation/ec_annotation_from_metacyc_2010July19_wpseudo.gff','r')
 
+#(metacyc_genes, metacyc_promoters, metacyc_proteins, metacyc_ligands, metacyc_protein_cplxs, metacyc_tus) = get_metacyc_data()
+#bad hack here, remove later. 
+def load_metacyc_data(base, components, genome):
+    #(metacyc_genes, metacyc_promoters, metacyc_proteins, metacyc_ligands, metacyc_protein_cplxs, metacyc_tus) = get_metacyc_data()
+    load_metacyc_proteins(base, components, genome, metacyc_proteins)
+    load_metacyc_bindsite(base, components, chromosome)
+    load_metacyc_transcription_units(base, components, chromosome, metacyc_tus, metacyc_genes, metacyc_promoters)
 
 @timing
 def load_metacyc_proteins(base, components, genome, metacyc_proteins):

@@ -56,6 +56,7 @@ if __name__ == "__main__":
         try:
             base.omics_database.genome_data.drop()
         except: 
+            logging.debug('Could not drop omics_database')
             pass
     
     logging.info("Building the database models")
@@ -87,7 +88,8 @@ if __name__ == "__main__":
             except Exception as e:
                 logging.error(str(e))
 
-
+        #Should load_genome already write chromosome annotation gff automatically?
+        #>>>Here till...
         data_genomes = (session
                         .query(base.Genome)
                         .filter(base.Genome.bioproject_id.in_(['PRJNA57779']))
@@ -100,7 +102,7 @@ if __name__ == "__main__":
             for chromosome in genome.chromosomes:
                 component_loading.write_chromosome_annotation_gff(base, components,
                                                                   chromosome)
-    
+        #>>> here.
     if not args.skip_models:
         logging.info("Loading models")
         model_dir = join(settings.data_directory, 'models')
@@ -136,22 +138,22 @@ if __name__ == "__main__":
                       .join(models.Model, models.Model.genome_id == base.Genome.id)
                       .filter(models.Model.bigg_id == 'iJO1366')
                       .one())
-        dataset_loading.load_raw_files(join(settings.data_directory,'rnaseq_experiment', 'fastq',  'crp'),
-                                       group_name='crp', normalize=False, raw=False)
-        dataset_loading.run_cuffquant(base, datasets, chromosome, group_name='crp')
-        dataset_loading.run_cuffnorm(base, datasets, chromosome, group_name='crp')
-        dataset_loading.load_cuffnorm(base, datasets, group_name='crp')
-#        dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_asv2.txt', group_name='asv2')
-#        dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_ec2.txt', group_name='ec2')
+        #dataset_loading.load_raw_files(join(settings.data_directory,'rnaseq_experiment', 'fastq',  'crp'),
+        #                               group_name='crp', normalize=False, raw=False)
+        #dataset_loading.run_cuffquant(base, datasets, chromosome, group_name='crp')
+        #dataset_loading.run_cuffnorm(base, datasets, chromosome, group_name='crp')
+        #dataset_loading.load_cuffnorm(base, datasets, group_name='crp')
+        #dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_asv2.txt', group_name='asv2')
+        #dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_ec2.txt', group_name='ec2')
 
-#        dataset_loading.run_array_ttests(base, datasets, genome, group_name='asv2')
-#        dataset_loading.run_array_ttests(base, datasets, genome, group_name='ec2')
+        #dataset_loading.run_array_ttests(base, datasets, group_name='asv2')
+        #dataset_loading.run_array_ttests(base, datasets, group_name='ec2')
 
 #        for chromosome in genome.chromosomes:
-#            component_loading.load_metacyc_proteins(base, components, chromosome)
-#            component_loading.load_metacyc_bindsites(base, components, chromosome)
-#            component_loading.load_metacyc_transcription_units(base, components, chromosome)
-
+        #component_loading.load_metacyc_proteins(base, components, chromosome, metacyc_proteins)
+        #component_loading.load_metacyc_bindsites(base, components, chromosome)
+        #component_loading.load_metacyc_transcription_units(base, components, chromosome, metacyc_tus, metacyc_genes, metacyc_promoters)
+        component_loading.load_metacyc_data(base, components, chromosome)
 
         session.close()
 
