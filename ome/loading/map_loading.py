@@ -39,7 +39,7 @@ def load_maps_from_server(session, drop_maps=False):
             load_the_map(session, model_id, map_name, map_json)
             
 def load_the_map(session, model_id, map_name, map_json):
-    if sys.getsizeof(map_json) > 500000:
+    if sys.getsizeof(map_json) > 1e6:
         logging.info('Skipping Escher map %s because it is too large' % map_name)
         return 1
 

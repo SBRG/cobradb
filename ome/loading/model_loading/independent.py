@@ -83,6 +83,9 @@ def loadComponents(session, model_list):
                 metabolite_db = Metabolite(bigg_id=met_id,
                                               name=component.name,
                                               formula=str(_formula))
+            else:
+                if metabolite_db.formula =='' or metabolite_db.formula == None:
+                    metabolite_db.formula = str(_formula)
                 session.add(metabolite_db)
                 session.commit()
     
