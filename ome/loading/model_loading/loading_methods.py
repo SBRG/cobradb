@@ -200,6 +200,9 @@ def load_metabolites(session, model_id, model, compartment_names,
                                        formula=_formula)
             session.add(metabolite_db)
             session.commit()
+            
+        if metabolite_db.formula =='' or metabolite_db.formula == None:
+            metabolite_db.formula = str(_formula)
 
         # load the linkouts for the universal metabolite
         _load_metabolite_linkouts(session, metabolite, metabolite_db.id)
