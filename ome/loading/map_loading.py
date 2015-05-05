@@ -39,14 +39,16 @@ def load_maps_from_server(session, drop_maps=False):
             load_the_map(session, model_id, map_name, map_json)
             
 def load_the_map(session, model_id, map_name, map_json):
-    if sys.getsizeof(map_json) > 1e6:
-        logging.info('Skipping Escher map %s because it is too large' % map_name)
+    size = sys.getsizeof(map_json)
+    if size > 1e6:
+        logging.info('Skipping Escher map {} because it is too large ({:.2e} bytes)'
+                     .format(map_name, size))
         return 1
 
     warning_num = 5
 
     high_priority = ['central', 'glycolysis']
-    priority = 5 if any([s in map_name for s in high_priority]) else 1
+    priority = (5 if any([s in map_name.lower() for s in high_priority]) else 1)
 
     escher_map_db = (session
                      .query(EscherMap)

@@ -37,6 +37,9 @@ M_lipidA_core_e_p
         new = id_for_new_id_style(case, is_metabolite=True)
         met, compartment = split_compartment(new)
 
+    # strip leading underscores 
+    assert id_for_new_id_style('_13dpg') == '13dpg'
+
 
 def test_hash_reaction(test_model):
     # there are no conflicts in model 2

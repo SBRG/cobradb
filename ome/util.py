@@ -10,12 +10,16 @@ def increment_id(id, increment_name=''):
 
 
 def check_pseudoreaction(reaction_id):
-    patterns = [r'^ATPM$', r'^EX_.*', r'^DM.*', r'.*biomass.*']
+    patterns = [
+        r'^ATPM$', r'^ATPM\(NGAM\)$',
+        r'^EX_.*',
+        r'^DM.*',
+        r'(?i).*biomass.*' # case insensitive
+    ]
     for pattern in patterns:
         if re.match(pattern, reaction_id):
             return True
     return False
-
 
 
 # from ome import base, settings

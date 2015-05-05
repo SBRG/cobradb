@@ -7,9 +7,11 @@ postgres_test_database = bigg_test
 user = username
 
 [MISC]
-data_directory = /path/to/ome_data/
-model_genome_file = /path/to/ome_data/model-genome.txt
-compartment_names_file = /path/to/ome_data/compartment-names.txt
+data_directory = ~/path/to/ome_data/
+model_genome = ~/path/to/ome_data/model-genome.txt
+compartment_names = ~/path/to/ome_data/compartment-names.txt
+reaction_id_prefs = ~/path/to/ome_data/reaction-id-prefs.txt
+reaction_hash_prefs = ~/path/to/ome_data/reaction-hash-prefs.txt
 
 [EXECUTABLES]
 psql = /usr/local/bin/psql

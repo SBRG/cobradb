@@ -11,8 +11,10 @@ def test_increment_id():
 
 def test_check_pseudoreaction():
     assert check_pseudoreaction('ATPM') is True
+    assert check_pseudoreaction('ATPM(NGAM)') is True
     assert check_pseudoreaction('ATPM1') is False
     assert check_pseudoreaction('EX_glc_e') is True
     assert check_pseudoreaction('aEX_glc_e') is False
     assert check_pseudoreaction('biomass_objective') is True
+    assert check_pseudoreaction('BiomassEcoli') is True
     assert check_pseudoreaction('DM_8') is True

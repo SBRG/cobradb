@@ -2,7 +2,7 @@
 
 from ConfigParser import SafeConfigParser, NoOptionError
 import os as os
-from os.path import join, split, abspath, isfile 
+from os.path import join, split, abspath, isfile , expanduser
 from sys import modules
 
 self = modules[__name__]
@@ -46,10 +46,7 @@ config.set("DATABASE", "postgres_user", "dbuser")
 config.set("DATABASE", "postgres_password", "")
 config.set("DATABASE", "postgres_test_database", "ome_test")
 
-config.add_section("MISC")
-config.set("MISC", "entrez_email", "SET_ENTREZ_EMAIL")
-config.set("MISC", "reaction_preferences_file", "")
-config.set("MISC", "compartment_names_file", "")
+config.add_section("DATA")
 
 config.add_section("EXECUTABLES")
 
@@ -100,10 +97,6 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
             cufflinks = "./cufflinks"
         config.set("EXECUTABLES", "cufflinks", cufflinks)
 
-    # write the options back to the file
-    with open(filepath, "w") as outfile:
-        config.write(outfile)
-
     # save options as variables
     self.postgres_user = config.get("DATABASE", "postgres_user")
     self.postgres_password = config.get("DATABASE", "postgres_password")
@@ -122,25 +115,21 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
     self.hostname, self.port = postgres_host.split(":")
     self.psql_full = "%s --host=%s --username=%s --port=%s " % \
         (self.psql, self.hostname, self.postgres_user, self.port)
-    self.entrez_email = config.get('MISC', 'entrez_email')
     try:
-        self.data_directory = config.get('MISC', 'data_directory')
+        self.data_directory = expanduser(config.get('DATA', 'data_directory'))
     except NoOptionError:
         raise Exception('data_directory was not supplied in settings.ini')
     # set default here, after getting the data directory
-    if not config.has_option('MISC', 'model_genome_file'):
-        default_model_genome_file = join(self.data_directory, 'annotation',
-                                         'model-genome.txt')
-        config.set('MISC', 'model_genome_file', default_model_genome_file)
-    self.model_genome_file = config.get('MISC', 'model_genome_file')
-    self.compartment_names_file = config.get('MISC', 'compartment_names_file')
-    self.reaction_preferences_file = config.get('MISC', 'reaction_preferences_file')
-    # this one is optional
     try:
-        self.model_dump_directory = config.get("MISC", "model_dump_directory")
+        self.model_genome = expanduser(config.get('DATA', 'model_genome'))
     except NoOptionError:
-        self.model_dump_directory = None
-
+        raise Exception('model_genome path was not supplied in settings.ini')
+    # these are optional
+    for data_pref in ['compartment_names', 'reaction_id_prefs', 'reaction_hash_prefs', 'model_dump_directory']:
+        try:
+            setattr(self, data_pref, expanduser(config.get('DATA', data_pref)))
+        except NoOptionError:
+            setattr(self, data_pref, None)
 
 load_settings_from_file()
 

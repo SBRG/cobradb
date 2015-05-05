@@ -407,18 +407,23 @@ def get_bioproject_id(genbank_filepath, fast=False):
 def load_genome(genbank_filepath, session):
     bioproject_id, gb_file = get_bioproject_id(genbank_filepath)
 
+    organism = gb_file.annotations['organism']
     genome = (session
               .query(base.Genome)
               .filter(base.Genome.bioproject_id == bioproject_id)
+              .filter(base.Genome.organism == organism)
               .first())
 
     if not genome:
         logging.debug('Adding new genome: %s' % bioproject_id)
         ome_genome = { 'bioproject_id': bioproject_id,
-                       'organism': gb_file.annotations['organism'], 'taxon_id':'None' }
+                       'organism': organism,
+                       'taxon_id':'None' }
         genome = base.Genome(**ome_genome)
         session.add(genome)
         session.flush()
+    else:
+        logging.debug('Genome already loaded for bioproject_id %s' % bioproject_id)
     
     chromosome = (session
                   .query(base.Chromosome)
@@ -457,7 +462,7 @@ def load_genome(genbank_filepath, session):
 
         # bigg_id required
         bigg_id = None
-        gene_name = ''
+        gene_name = None
 
         if 'locus_tag' in feature.qualifiers:
             bigg_id = feature.qualifiers['locus_tag'][0]
@@ -465,7 +470,7 @@ def load_genome(genbank_filepath, session):
         if 'gene' in feature.qualifiers:
             gene_name = feature.qualifiers['gene'][0]
 
-        if gene_name != '' and bigg_id is None:
+        if gene_name is not None and bigg_id is None:
             if bigg_id_warnings <= warning_num:
                 msg = 'No locus_tag for gene. Using Gene name as bigg_id: %s' % gene_name
                 if bigg_id_warnings == warning_num:
@@ -473,7 +478,7 @@ def load_genome(genbank_filepath, session):
                 logging.warn(msg)
                 bigg_id_warnings += 1
             bigg_id = gene_name
-            gene_name = ''
+            gene_name = None
         elif bigg_id is None:
             logging.error(('No locus_tag or gene name for gene %d in chromosome '
                            '%s' % (i, chromosome.genbank_id)))

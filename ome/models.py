@@ -23,7 +23,7 @@ class Model(Base):
     )
 
     def __repr__(self):
-        return "Model (#%d) %s %s" % (self.id, self.bigg_id, self.first_created)
+        return '<ome Model(id={self.id}, bigg_id={self.bigg_id})>'.format(self=self)
 
 
 class ModelGene(Base):
