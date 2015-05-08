@@ -2,7 +2,7 @@ import re
 
 
 def increment_id(id, increment_name=''):
-    match = re.match(r'(.*)_%s([0-9])$' % increment_name, id)
+    match = re.match(r'(.*)_%s([0-9]+)$' % increment_name, id)
     if match:
         return '%s_%s%d' % (match.group(1), increment_name, int(match.group(2)) + 1)
     else:

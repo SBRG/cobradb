@@ -408,6 +408,7 @@
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0351 or b1241)</p><p>GENE_LIST: b0351 b1241</p><p>SUBSYSTEM: Pyruvate Metabolism</p></html>
         </notes>
         <listOfReactants>
+          <!-- <speciesReference species="M_acald_c"/> -->
           <speciesReference species="M_coa_c"/>
           <speciesReference species="M_nad_c"/>
         </listOfReactants>

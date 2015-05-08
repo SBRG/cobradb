@@ -20,6 +20,8 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     # preferences
     settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
     settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
+    settings.model_dump_directory = None
+    settings.model_published_directory = None
 
     timestamp = '2014-9-16 14:26:22'
     pmid = '25575024'
@@ -43,7 +45,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     assert session.query(Model).count() == 3
     assert session.query(Genome).count() == 2
     assert session.query(Chromosome).count() == 2
-    assert session.query(Reaction).count() == 99
+    assert session.query(Reaction).count() == 98
     assert session.query(ModelReaction).count() == 286
     assert session.query(CompartmentalizedComponent).count() == 72
     assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3
@@ -113,10 +115,9 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
             .filter(Reaction.bigg_id == 'FRD7')
             .first()).gene_reaction_rule == '(904.12 and gene_with_period.22 and b4153 and b4154)'
 
-    # (2 ny-n) All three models have different ACALD reactions, which should
-    # receive increment BiGG IDs. The reaction-hash-prefs file should force the
-    # second model to have ACALD, and increment the first model, and give the
-    # third model ACALD a totally different name (ACALD_manual).
+    # (2 ny-n) Model 1 has a different ACALD from models 2 and 5. The
+    # reaction-hash-prefs file should force the second and third models to have
+    # ACALD, and increment the first model.
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
@@ -135,8 +136,8 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
-            .filter(Reaction.bigg_id == 'ACALD_manual')
-            .count() == 1)
+            .filter(Reaction.bigg_id == 'ACALD_2')
+            .count() == 0)
     # (3a ny-n) Matches existing reaction. PFL was renamed in model 2.
     assert (session
             .query(ModelReaction)
@@ -157,7 +158,8 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
             .count() == 3)
 
     # pseudoreactions. ATPM should be prefered to ATPM(NGAM) based on
-    # reaction-id-prefs file.
+    # reaction-id-prefs file. Thus, ATPM should be present 3 times, once with
+    # the ATPM(NGAM) synonym, and never as ATPM_1.
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
@@ -175,9 +177,22 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+            .filter(Reaction.bigg_id == 'ATPM_1')
+            .filter(Reaction.pseudoreaction == True)
+            .count() == 0)
+    # NTP1 should not be a pseudoreaction, and should not get incremented
+    assert (session
+            .query(ModelReaction)
+            .join(Reaction, Reaction.id == ModelReaction.reaction_id)
             .filter(Reaction.bigg_id == 'NTP1')
             .filter(Reaction.pseudoreaction == False)
             .count() == 1)
+    assert (session
+            .query(ModelReaction)
+            .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+            .filter(Reaction.bigg_id == 'NTP1_1')
+            .filter(Reaction.pseudoreaction == False)
+            .count() == 0)
     assert (session
             .query(OldIDSynonym)
             .join(Synonym, OldIDSynonym.synonym_id == Synonym.id)

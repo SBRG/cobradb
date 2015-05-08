@@ -406,7 +406,7 @@
         </notes>
         <listOfReactants>
           <!-- <speciesReference species="M_acald_c"/> -->
-          <!-- <speciesReference species="M_coa_c"/> -->
+          <speciesReference species="M_coa_c"/>
           <speciesReference species="M_nad_c"/>
         </listOfReactants>
         <listOfProducts>

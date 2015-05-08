@@ -21,7 +21,8 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger, tmpdir):
 
     # load the model
     bigg_id = load_model(test_model[0]['path'], test_genbank[0]['genome_id'],
-               timestamp, pmid, session, dump_directory=str(tmpdir))
+                         timestamp, pmid, session, dump_directory=str(tmpdir),
+                         published_directory=str(tmpdir))
     assert exists(join(str(tmpdir), bigg_id+'.xml'))
     
     with pytest.raises(Exception):
@@ -38,16 +39,16 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger, tmpdir):
     assert 'GAPD' in model.reactions
     assert model.reactions.get_by_id('GAPD').name == 'glyceraldehyde-3-phosphate dehydrogenase'
 
-    # make sure ATPM and NTP1 are represented
-    r1 = model.reactions.get_by_id('ATPM')
+    # make sure ATPM(NGAM) and NTP1 are represented
+    r1 = model.reactions.get_by_id('ATPM(NGAM)')
     r2 = model.reactions.get_by_id('NTP1')
     # either order is OK
     r1 = model.reactions.get_by_id('NTP1')
-    r2 = model.reactions.get_by_id('ATPM')
+    r2 = model.reactions.get_by_id('ATPM(NGAM)')
     assert r1.lower_bound == 3.15
     assert r2.lower_bound == 8.39
     assert r1.notes['original_bigg_id'] == 'NTP1'
-    assert r2.notes['original_bigg_id'] == 'ATPM'
+    assert r2.notes['original_bigg_id'] == 'ATPM(NGAM)'
 
     # test solve
     model.reactions.get_by_id('EX_glc_e').lower_bound = -10

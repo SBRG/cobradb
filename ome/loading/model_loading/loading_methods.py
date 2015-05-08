@@ -34,7 +34,8 @@ def _get_data_source(session, name):
     return data_source_db.id
 
 
-def load_model(session, model, genome_db_id, first_created, pmid):
+def load_model(session, model, genome_db_id, first_created, pmid,
+               published_filename):
     """Load the model.
 
     Arguments:
@@ -57,7 +58,8 @@ def load_model(session, model, genome_db_id, first_created, pmid):
 
     """
     model_db = Model(bigg_id=model.id, first_created=first_created,
-                     genome_id=genome_db_id, description=model.description)
+                     genome_id=genome_db_id, description=model.description,
+                     published_filename=published_filename)
     session.add(model_db)
     if pmid is not None:
         publication_db = (session
@@ -402,11 +404,6 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                 return row[1]
         return None
 
-    def _update_model_db_rxn_ids(ids, previous_new, new_new):
-        for old, new in ids.iteritems():
-            if new == previous_new:
-                ids[old] = new_new
-
     model_db_rxn_ids = {}
     for reaction in model.reactions:
         # get the reaction
@@ -450,21 +447,25 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
         preferred_id = _check_hash_prefs(reaction_hash)
         # (0) If there is a preferred ID, make that the new ID, and increment any old IDs
         if preferred_id is not None:
-            # if existing reactions match the preferred reaction find a new,
-            # incremented id for the existing match
-            preferred_id_db = session.query(Reaction).filter(Reaction.bigg_id == preferred_id).first()
-            if preferred_id_db is not None:
-                new_id = _find_new_incremented_id(session, preferred_id)
-                logging.warn('Incrementing database reaction {} to {} and prefering {} (from model {}) based on hash preferences'
-                            .format(preferred_id, new_id, preferred_id, model.id))
-                _update_model_db_rxn_ids(model_db_rxn_ids, preferred_id, new_id)
-                preferred_id_db.bigg_id = new_id
-                session.commit()
+            # if the reaction already matches, just continue
+            if hash_db is not None and hash_db.bigg_id == preferred_id:
+                reaction_db = hash_db
+            # otherwise, make the new reaction
+            else:
+                # if existing reactions match the preferred reaction find a new,
+                # incremented id for the existing match
+                preferred_id_db = session.query(Reaction).filter(Reaction.bigg_id == preferred_id).first()
+                if preferred_id_db is not None:
+                    new_id = _find_new_incremented_id(session, preferred_id)
+                    logging.warn('Incrementing database reaction {} to {} and prefering {} (from model {}) based on hash preferences'
+                                .format(preferred_id, new_id, preferred_id, model.id))
+                    preferred_id_db.bigg_id = new_id
+                    session.commit()
 
-            # make a new reaction for the preferred_id
-            reaction_db = _new_reaction(session, reaction, preferred_id,
-                                        reaction_hash, model_db_id, model,
-                                        is_pseudoreaction)
+                # make a new reaction for the preferred_id
+                reaction_db = _new_reaction(session, reaction, preferred_id,
+                                            reaction_hash, model_db_id, model,
+                                            is_pseudoreaction)
 
         # (1) no bigg_id matches, no stoichiometry match or pseudoreaction, then
         # make a new reaction
@@ -494,8 +495,6 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                 if is_preferred:
                     logging.warn('Switching database reaction {} to bigg_id {} based on reaction hash and id_prefs file'
                                 .format(hash_db.bigg_id, reaction.id, model.id))
-                    _update_model_db_rxn_ids(model_db_rxn_ids, hash_db.bigg_id,
-                                             reaction.id)
                     hash_db.bigg_id = reaction.id
                     session.commit()
                 reaction_db = hash_db
@@ -670,7 +669,7 @@ def _replace_gene_str(rule, old_gene, new_gene):
     return re.sub(r'\b'+old_gene+r'\b', new_gene, rule)
 
 
-def load_genes(session, model_db_id, model, old_reaction_ids):
+def load_genes(session, model_db_id, model, model_db_rxn_ids):
     """Load the genes for this model.
 
     Arguments:
@@ -682,7 +681,7 @@ def load_genes(session, model_db_id, model, old_reaction_ids):
 
     model: The COBRApy model.
     
-    old_reaction_ids: A dictionary with keys for reactions in the model and
+    model_db_rxn_ids: A dictionary with keys for reactions in the model and
     values for the associated bigg_id in the database.
 
     """
@@ -704,14 +703,13 @@ def load_genes(session, model_db_id, model, old_reaction_ids):
         # the model
         model_reaction_db = (session
                              .query(ModelReaction)
-                             .join(OldIDSynonym, OldIDSynonym.ome_id == ModelReaction.id)
-                             .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
-                             .filter(Synonym.synonym == reaction.id)
+                             .join(Reaction)
                              .filter(ModelReaction.model_id == model_db_id)
+                             .filter(Reaction.bigg_id == model_db_rxn_ids[reaction.id])
                              .all())
         if model_reaction_db is None:
             logging.error('Could not find ModelReaction of {} (originally {}) in model {}. Cannot load GeneReactionMatrix entries'
-                          .format(old_reaction_ids[reaction.id], reaction.id, model.id))
+                          .format(model_db_rxn_ids[reaction.id], reaction.id, model.id))
             continue
         for gene in reaction.genes:
             for mr in model_reaction_db:

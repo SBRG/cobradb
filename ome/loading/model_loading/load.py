@@ -2,13 +2,15 @@
 
 from ome import base, settings, components, timing
 from ome.models import Model
-import cobra.io
 from ome.loading import AlreadyLoadedError
 from ome.loading.model_loading import loading_methods, parse
 from ome.dumping.model_dumping import dump_model
+
+import cobra.io
 import os
-from os.path import join
+from os.path import join, basename
 import logging
+import shutil
 
 def get_model_list():
     """Get the models that are available, as SBML, in ome_data/models"""
@@ -26,8 +28,9 @@ def check_for_model(name):
     return None
 
 @timing
-def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session, 
-               dump_directory=settings.model_dump_directory):
+def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
+               dump_directory=settings.model_dump_directory,
+               published_directory=settings.model_published_directory):
     """Load a model into the database. Returns the bigg_id for the new model.
 
     Arguments
@@ -78,8 +81,10 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
 
     # Load the model objects. Remember: ORDER MATTERS! So don't mess around.
     logging.debug('Loading objects for model {}'.format(model.id))
+    published_filename = os.path.basename(model_filepath)
     model_database_id = loading_methods.load_model(session, model, genome_id,
-                                                   model_timestamp, pmid)
+                                                   model_timestamp, pmid,
+                                                   published_filename)
 
     # metabolites/components and linkouts
     # get compartment names
@@ -113,12 +118,30 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
     session.commit()
     
     if dump_directory:
+        # dump database models
+        logging.info('Dumping {}'.format(basename(model_bigg_id)))
         cobra_model = dump_model(model_bigg_id)
         # make folder if it doesn't exist
         try:
             os.makedirs(dump_directory)
         except OSError:
             pass
+        import ipdb; ipdb.set_trace()
         cobra.io.write_sbml_model(cobra_model, join(dump_directory, model_bigg_id + '.xml'))
+        cobra.io.save_json_model(cobra_model, join(dump_directory, model_bigg_id + '.json'))
+
+    if published_directory:
+        # make folder if it doesn't exist
+        try:
+            os.makedirs(published_directory)
+        except OSError:
+            pass
+        # copy published model
+        try:
+            logging.info('Copying {} to static directory'
+                         .format(basename(model_filepath)))
+            shutil.copy(model_filepath, published_directory)
+        except OSError:
+            print('Could not copy published model {}'.format(model_filepath))
     
     return model_bigg_id
