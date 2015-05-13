@@ -40,16 +40,17 @@ class Genome(Base):
     __tablename__ = 'genome'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    bioproject_id = Column(String(200))
-    organism = Column(String(200))
+    bioproject_id = Column(String(200), nullable=False)
+    organism = Column(String(200), nullable=False)
     taxon_id = Column(String(200), nullable=True)
 
     __table_args__ = (
-        UniqueConstraint('bioproject_id'),
+        UniqueConstraint('bioproject_id', 'organism'),
     )
 
     def __repr__(self):
-        return "Genome (#%d) %s %s %s" % (self.id, self.bioproject_id, self.organism, self.taxon_id)
+        return ('<ome Genome(id={self.id}, bioproject_id={self.bioproject_id}, '
+                'organism={self.organism}, taxon_id={self.taxon_id})>').format(self=self)
 
     def __init__(self, bioproject_id, organism, taxon_id):
         self.bioproject_id = bioproject_id
@@ -84,27 +85,31 @@ class GenomeRegion(Base):
     id = Column(Integer, Sequence('wids'), primary_key=True)
     chromosome_id = Column(Integer, ForeignKey('chromosome.id'))
     bigg_id = Column(String, nullable=False)
-    leftpos = Column(Integer)
-    rightpos = Column(Integer)
-    strand = Column(String(1))
+    leftpos = Column(Integer, nullable=True)
+    rightpos = Column(Integer, nullable=True)
+    strand = Column(String(1), nullable=True)
     type = Column(String(20))
-    __table_args__ = (UniqueConstraint('bigg_id', 'chromosome_id'), {})
 
-    __mapper_args__ = {'polymorphic_identity': 'genome_region',
-                       'polymorphic_on': type
-                      }
+    __table_args__ = (
+        UniqueConstraint('bigg_id', 'chromosome_id'),
+    )
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'genome_region',
+        'polymorphic_on': type
+    }
 
     def __repr__(self):
-        return "GenomeRegion: %d-%d (%s)" % \
-                (self.leftpos, self.rightpos, self.strand)
+        return ('<ome GenomeRegion(id={self.id}, leftpos={self.leftpos}, rightpos={self.rightpos})>'
+                .format(self.leftpos, self.rightpos, self.strand))
 
-
-    def __init__(self, leftpos, rightpos, strand, chromosome_id, bigg_id):
+    def __init__(self, bigg_id, chromosome_id, leftpos=None, rightpos=None,
+                 strand=None):
+        self.bigg_id = bigg_id
+        self.chromosome_id = chromosome_id
         self.leftpos = leftpos
         self.rightpos = rightpos
         self.strand = strand
-        self.chromosome_id = chromosome_id
-        self.bigg_id = bigg_id
 
         
 class Component(Base):
@@ -206,20 +211,30 @@ class Synonym(Base):
 
 
 class Publication(Base):
-    __tablename__="publication"
+    __tablename__ = "publication"
     id = Column(Integer, Sequence('wids'), primary_key=True)
     pmid = Column(Integer)
     
-    __table_arges__=(UniqueConstraint('pmid'),{})
+    __table_args__=(
+        UniqueConstraint('pmid'),
+    )
     
     def __init_(self, pmid):
         self.pmid = pmid
 
+
 class PublicationModel(Base):
-    __tablename__="publication_model"
-    model_id = Column(Integer, ForeignKey('model.id', ondelete='CASCADE'), primary_key=True)
-    publication_id = Column(Integer, ForeignKey('publication.id', ondelete='CASCADE'), primary_key=True)
-    __table_args__ = (UniqueConstraint('model_id', 'publication_id'),{})
+    __tablename__ = "publication_model"
+    model_id = Column(Integer,
+                      ForeignKey('model.id', ondelete='CASCADE'),
+                      primary_key=True)
+    publication_id = Column(Integer,
+                            ForeignKey('publication.id', ondelete='CASCADE'),
+                            primary_key=True)
+
+    __table_args__ = (
+        UniqueConstraint('model_id', 'publication_id'),
+    )
     
     def __init__(self, model_id, publication_id):
         self.model_id = model_id

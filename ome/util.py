@@ -2,7 +2,7 @@ import re
 
 
 def increment_id(id, increment_name=''):
-    match = re.match(r'(.*)_%s([0-9])$' % increment_name, id)
+    match = re.match(r'(.*)_%s([0-9]+)$' % increment_name, id)
     if match:
         return '%s_%s%d' % (match.group(1), increment_name, int(match.group(2)) + 1)
     else:
@@ -10,12 +10,16 @@ def increment_id(id, increment_name=''):
 
 
 def check_pseudoreaction(reaction_id):
-    patterns = [r'^ATPM$', r'^EX_.*', r'^DM.*', r'.*biomass.*']
+    patterns = [
+        r'^ATPM$', r'^ATPM\(NGAM\)$',
+        r'^EX_.*',
+        r'^DM.*',
+        r'(?i).*biomass.*' # case insensitive
+    ]
     for pattern in patterns:
         if re.match(pattern, reaction_id):
             return True
     return False
-
 
 
 # from ome import base, settings

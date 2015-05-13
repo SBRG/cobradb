@@ -8,6 +8,6 @@ import pytest
 def test_load_the_map(test_db):
     session = base.Session()
     
-    assert load_the_map(None, None, None, 'x'*500000) == 1
+    assert load_the_map(None, None, None, 'x'*1000000) == 1
     with pytest.raises(Exception):
         load_the_map(None, None, None, 'x'*400000)

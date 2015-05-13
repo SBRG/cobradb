@@ -4,14 +4,16 @@ from ome import base
 from ome.base import NotFoundError
 from ome.models import *
 from ome.components import *
-from ome.loading.model_loading import queries, parse
+from ome.loading.model_loading import parse
 from ome.util import increment_id, check_pseudoreaction
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy import func
 import re
 import logging
 from collections import defaultdict
 import os
+from itertools import ifilter
 
 
 def _fix_name(name):
@@ -32,7 +34,8 @@ def _get_data_source(session, name):
     return data_source_db.id
 
 
-def load_model(session, model, genome_db_id, first_created, pmid):
+def load_model(session, model, genome_db_id, first_created, pmid,
+               published_filename):
     """Load the model.
 
     Arguments:
@@ -42,11 +45,11 @@ def load_model(session, model, genome_db_id, first_created, pmid):
 
     model: A COBRApy model.
 
-    genome_db_id: The database ID of the genome.
+    genome_db_id: The database ID of the genome. Can be None.
 
     first_created: A first-created time.
 
-    pmid: The PMID for the publication of the model.
+    pmid: The PMID for the publication of the model. Can be None.
 
     Returns:
     -------
@@ -54,21 +57,28 @@ def load_model(session, model, genome_db_id, first_created, pmid):
     The database ID of the new model row.
 
     """
-    modelObject = Model(bigg_id=model.id, first_created=first_created,
-                        genome_id=genome_db_id, description=model.description)
-    session.add(modelObject)
-    if session.query(base.Publication).filter(base.Publication.pmid == pmid).count() == 0: 
-        p = base.Publication(pmid = pmid)
-        session.add(p)
-        publication = session.query(base.Publication).filter(base.Publication.pmid == pmid).first()
-        pm = base.PublicationModel(publication_id= publication.id, model_id = modelObject.id)
-        session.add(pm)
-    else:
-        publication = session.query(base.Publication).filter(base.Publication.pmid == pmid).first()
-        pm = base.PublicationModel(publication_id= publication.id, model_id = modelObject.id)
-        session.add(pm)
+    model_db = Model(bigg_id=model.id, first_created=first_created,
+                     genome_id=genome_db_id, description=model.description,
+                     published_filename=published_filename)
+    session.add(model_db)
+    if pmid is not None:
+        publication_db = (session
+                          .query(base.Publication)
+                          .filter(base.Publication.pmid == pmid)
+                          .first())
+        if publication_db is None:
+            publication_db = base.Publication(pmid = pmid)
+            session.add(publication_db)
+            session.commit()
+        publication_model_db = (session
+                                .query(base.PublicationModel)
+                                .filter(base.PublicationModel.publication_id == publication_db.id)
+                                .filter(base.PublicationModel.model_id == model_db.id))
+        if publication_model_db is None:
+            publication_model_db = base.PublicationModel(model_db.id, publication_db.id)
+            session.add(publication_model_db)
     session.commit()
-    return modelObject.id
+    return model_db.id
 
 
 def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id):
@@ -111,7 +121,8 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
         external_source = external_source.upper()
         v = v[0]
         if not external_source in linkouts:
-            logging.warning('The linkout type {} is not in our list'.format(k))
+            logging.warning('The linkout type {} is not in our list'
+                            .format(external_source))
             continue
         if '&apos' in v:
             ids = [parse_linkout_str(x) for x in v.split(',')]
@@ -173,21 +184,22 @@ def load_metabolites(session, model_id, model, compartment_names,
                          .filter(Metabolite.bigg_id == component_bigg_id)
                          .first())
 
+        # Look for the formula in these places
+        formula_fns = [lambda m: getattr(m, 'formula', None), # support cobra v0.3 and 0.4
+                       lambda m: m.notes.get('FORMULA', None),
+                       lambda m: m.notes.get('FORMULA1', None)]
+        # Cast to string, but not for None
+        strip_str_or_none = lambda v: str(v).strip() if v is not None else None
+        # Ignore the empty string
+        ignore_empty_str = lambda s: s if s != '' else None
+        # Use a generator for lazy evaluation
+        values = (ignore_empty_str(strip_str_or_none(formula_fn(metabolite)))
+                  for formula_fn in formula_fns)
+        # Get the first non-null result. Otherwise _formula = None.
+        _formula = next(ifilter(None, values), None)
+
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
-            # look for the formula
-            _formula = str(metabolite.formula)
-            if _formula is None or _formula.strip() == '':
-                try:
-                    _formula = metabolite.notes['FORMULA']
-                except KeyError:
-                    try:
-                        _formula = metabolite.notes['FORMULA1']
-                    except KeyError:
-                        _formula = ''
-                        logging.warn('No formula for metabolite {} in model {}. TODO Solution: Add formulas from other models.'
-                                     .format(metabolite.id, model.id))
-
             # check for missing info
             if metabolite.name.strip() == '':
                 metabolite.name = ''
@@ -200,9 +212,9 @@ def load_metabolites(session, model_id, model, compartment_names,
                                        formula=_formula)
             session.add(metabolite_db)
             session.commit()
-            
-        if metabolite_db.formula =='' or metabolite_db.formula == None:
-            metabolite_db.formula = str(_formula)
+
+        elif metabolite_db.formula is None:
+            metabolite_db.formula = _formula
 
         # load the linkouts for the universal metabolite
         _load_metabolite_linkouts(session, metabolite, metabolite_db.id)
@@ -359,27 +371,38 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
     # only grab this once
     data_source_id = _get_data_source(session, 'old_id')
 
-    # get reaction preferences
-    if os.path.exists(settings.reaction_preferences_file):
-        with open(settings.reaction_preferences_file, 'r') as f:
-            preferences = [[x.strip() for x in line.split('\t')]
+    # get reaction id_prefs
+    if os.path.exists(settings.reaction_id_prefs):
+        with open(settings.reaction_id_prefs, 'r') as f:
+            id_prefs = [[x.strip() for x in line.split('\t')]
                         for line in f.readlines()]
     else:
-        preferences = []
-    def _check_preferences(an_id, versus_id):
-        for row in preferences:
+        id_prefs = []
+    def _check_id_prefs(an_id, versus_id):
+        """Return True if an_id is preferred over versus_id."""
+        for row in id_prefs:
             try:
                 idx1 = row.index(an_id)
                 idx2 = row.index(versus_id)
             except ValueError:
                 continue
+
             return idx1 < idx2
         return False
 
-    def _update_model_db_rxn_ids(ids, previous_new, new_new):
-        for old, new in ids.iteritems():
-            if new == previous_new:
-                ids[old] = new_new
+    # get reaction hash_prefs
+    if os.path.exists(settings.reaction_hash_prefs):
+        with open(settings.reaction_hash_prefs, 'r') as f:
+            hash_prefs = [[x.strip() for x in line.split('\t')]
+                          for line in f.readlines()]
+    else:
+        hash_prefs = []
+    def _check_hash_prefs(a_hash):
+        """Return the preferred BiGG ID for a_hash, or None."""
+        for row in hash_prefs:
+            if row[0] == a_hash:
+                return row[1]
+        return None
 
     model_db_rxn_ids = {}
     for reaction in model.reactions:
@@ -394,11 +417,11 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
         
         # calculate the hash
         reaction_hash = parse.hash_reaction(reaction)
-        hash_query = (session
-                      .query(Reaction)
-                      .filter(Reaction.reaction_hash == reaction_hash)
-                      .filter(Reaction.pseudoreaction == is_pseudoreaction))
-        hash_db = hash_query.first()
+        hash_db = (session
+                   .query(Reaction)
+                   .filter(Reaction.reaction_hash == reaction_hash)
+                   .filter(Reaction.pseudoreaction == is_pseudoreaction)
+                   .first())
 
         # bigg_id match  hash match b==h  pseudoreaction  example                   function  
         #  n               n               n            first GAPD                _new_reaction (1)
@@ -413,21 +436,48 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
         #  y               y         y     y            second EX_glc_e           reaction = bigg_reaction (3b)
         # NOTE: only check pseudoreaction hash against other pseudoreactions
 
+        def _find_new_incremented_id(session, original_id):
+            """Look for a reaction bigg_id that is not already taken."""
+            new_id = increment_id(original_id)
+            while True:
+                if session.query(Reaction).filter(Reaction.bigg_id == new_id).first() is None:
+                    return new_id
+                new_id = increment_id(new_id)
+        
+        preferred_id = _check_hash_prefs(reaction_hash)
+        # (0) If there is a preferred ID, make that the new ID, and increment any old IDs
+        if preferred_id is not None:
+            # if the reaction already matches, just continue
+            if hash_db is not None and hash_db.bigg_id == preferred_id:
+                reaction_db = hash_db
+            # otherwise, make the new reaction
+            else:
+                # if existing reactions match the preferred reaction find a new,
+                # incremented id for the existing match
+                preferred_id_db = session.query(Reaction).filter(Reaction.bigg_id == preferred_id).first()
+                if preferred_id_db is not None:
+                    new_id = _find_new_incremented_id(session, preferred_id)
+                    logging.warn('Incrementing database reaction {} to {} and prefering {} (from model {}) based on hash preferences'
+                                .format(preferred_id, new_id, preferred_id, model.id))
+                    preferred_id_db.bigg_id = new_id
+                    session.commit()
+
+                # make a new reaction for the preferred_id
+                reaction_db = _new_reaction(session, reaction, preferred_id,
+                                            reaction_hash, model_db_id, model,
+                                            is_pseudoreaction)
+
         # (1) no bigg_id matches, no stoichiometry match or pseudoreaction, then
         # make a new reaction
-        if reaction_db is None and hash_db is None:
+        elif reaction_db is None and hash_db is None:
             reaction_db = _new_reaction(session, reaction, reaction.id,
                                         reaction_hash, model_db_id, model,
                                         is_pseudoreaction)
 
         # (2) bigg_id matches, but not the hash, then increment the BIGG_ID
         elif reaction_db is not None and hash_db is None:
-            new_id = increment_id(reaction.id)
             # loop until we find a non-matching find non-matching ID
-            while True:
-                if session.query(Reaction).filter(Reaction.bigg_id == new_id).first() is None:
-                    break
-                new_id = increment_id(new_id)
+            new_id = _find_new_incremented_id(session, reaction.id)
             logging.warn('Incrementing bigg_id {} to {} (from model {}) based on conflicting reaction hash'
                         .format(reaction.id, new_id, model.id))
             reaction_db = _new_reaction(session, reaction, new_id,
@@ -441,15 +491,12 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
 
             # (3a)
             if reaction_db is None or reaction_db.id != hash_db.id:
-                is_preferred = _check_preferences(reaction.id, hash_db.bigg_id)
+                is_preferred = _check_id_prefs(reaction.id, hash_db.bigg_id)
                 if is_preferred:
-                    logging.warn('Switching database reaction {} to bigg_id {} based on reaction hash and preferences file'
+                    logging.warn('Switching database reaction {} to bigg_id {} based on reaction hash and id_prefs file'
                                 .format(hash_db.bigg_id, reaction.id, model.id))
-                    _update_model_db_rxn_ids(model_db_rxn_ids, hash_db.bigg_id,
-                                             reaction.id)
-                    hash_query.update({'bigg_id': reaction.id})
+                    hash_db.bigg_id = reaction.id
                     session.commit()
-                    hash_db = hash_query.first()
                 reaction_db = hash_db
             # (3b) BIGG ID matches a reaction with the same hash, then just continue
             else:
@@ -533,7 +580,7 @@ def _by_bigg_id(session, gene_id, chromosome_ids):
     # look for a matching model gene
     gene_db = (session
                .query(Gene)
-               .filter(Gene.bigg_id == gene_id)
+               .filter(func.lower(Gene.bigg_id) == func.lower(gene_id))
                .filter(Gene.chromosome_id.in_(chromosome_ids))
                .all())
     return gene_db, False
@@ -542,18 +589,18 @@ def _by_bigg_id(session, gene_id, chromosome_ids):
 def _by_name(session, gene_id, chromosome_ids):
     gene_db = (session
                .query(Gene)
-               .filter(Gene.name == gene_id)
+               .filter(func.lower(Gene.name) == func.lower(gene_id))
                .filter(Gene.chromosome_id.in_(chromosome_ids))
                .all())
     return gene_db, False
 
-def _by_synonym(session, gene_id, chromosome_ids):
 
+def _by_synonym(session, gene_id, chromosome_ids):
     gene_db = (session
                .query(Gene)
                .join(Synonym, Synonym.ome_id == Gene.id)
                .filter(Gene.chromosome_id.in_(chromosome_ids))
-               .filter(Synonym.synonym == gene_id)
+               .filter(func.lower(Synonym.synonym) == func.lower(gene_id))
                .all())
     return gene_db, False
 
@@ -568,7 +615,7 @@ def _by_alternative_transcript(session, gene_id, chromosome_ids):
         gene_db = (session
                    .query(Gene)
                    .filter(Gene.chromosome_id.in_(chromosome_ids))
-                   .filter(Gene.bigg_id == check.group(1))
+                   .filter(func.lower(Gene.bigg_id) == func.lower(check.group(1)))
                    .filter(Gene.alternative_transcript_of.is_(None))
                    .all())
     return gene_db, True
@@ -584,7 +631,7 @@ def _by_alternative_transcript_name(session, gene_id, chromosome_ids):
         gene_db = (session
                    .query(Gene)
                    .filter(Gene.chromosome_id.in_(chromosome_ids))
-                   .filter(Gene.name == check.group(1))
+                   .filter(func.lower(Gene.name) == func.lower(check.group(1)))
                    .filter(Gene.alternative_transcript_of.is_(None))
                    .all())
     return gene_db, True
@@ -601,17 +648,28 @@ def _by_alternative_transcript_synonym(session, gene_id, chromosome_ids):
                    .query(Gene)
                    .join(Synonym, Synonym.ome_id == Gene.id)
                    .filter(Gene.chromosome_id.in_(chromosome_ids))
-                   .filter(Synonym.synonym == check.group(1))
+                   .filter(func.lower(Synonym.synonym) == func.lower(check.group(1)))
                    .filter(Gene.alternative_transcript_of.is_(None))
                    .all())
     return gene_db, True
+
+
+def _by_bigg_id_no_underscore(session, gene_id, chromosome_ids):
+    """Matches for T maritima genes"""
+    # look for a matching model gene
+    gene_db = (session
+               .query(Gene)
+               .filter(func.lower(Gene.bigg_id) == func.lower(gene_id.replace('_', '')))
+               .filter(Gene.chromosome_id.in_(chromosome_ids))
+               .all())
+    return gene_db, False
 
 
 def _replace_gene_str(rule, old_gene, new_gene):
     return re.sub(r'\b'+old_gene+r'\b', new_gene, rule)
 
 
-def load_genes(session, model_db_id, model, old_reaction_ids):
+def load_genes(session, model_db_id, model, model_db_rxn_ids):
     """Load the genes for this model.
 
     Arguments:
@@ -623,7 +681,7 @@ def load_genes(session, model_db_id, model, old_reaction_ids):
 
     model: The COBRApy model.
     
-    old_reaction_ids: A dictionary with keys for reactions in the model and
+    model_db_rxn_ids: A dictionary with keys for reactions in the model and
     values for the associated bigg_id in the database.
 
     """
@@ -636,8 +694,7 @@ def load_genes(session, model_db_id, model, old_reaction_ids):
                        .filter(Chromosome.genome_id == model_db.genome_id)
                        .all())
     if len(chromosome_ids) == 0:
-        logging.warn('No chromosomes for model %s' % model_db_id)
-        return
+        logging.warn('No chromosomes for model %s' % model_db.bigg_id)
 
     # keep track of the gene-reaction associations
     gene_bigg_id_to_model_reaction_db_ids = defaultdict(set)
@@ -646,14 +703,13 @@ def load_genes(session, model_db_id, model, old_reaction_ids):
         # the model
         model_reaction_db = (session
                              .query(ModelReaction)
-                             .join(OldIDSynonym, OldIDSynonym.ome_id == ModelReaction.id)
-                             .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
-                             .filter(Synonym.synonym == reaction.id)
+                             .join(Reaction)
                              .filter(ModelReaction.model_id == model_db_id)
+                             .filter(Reaction.bigg_id == model_db_rxn_ids[reaction.id])
                              .all())
         if model_reaction_db is None:
             logging.error('Could not find ModelReaction of {} (originally {}) in model {}. Cannot load GeneReactionMatrix entries'
-                          .format(old_reaction_ids[reaction.id], reaction.id, model.id))
+                          .format(model_db_rxn_ids[reaction.id], reaction.id, model.id))
             continue
         for gene in reaction.genes:
             for mr in model_reaction_db:
@@ -661,19 +717,25 @@ def load_genes(session, model_db_id, model, old_reaction_ids):
 
     # load the genes
     for gene in model.genes:
-        # find a matching gene
-        fns = [_by_bigg_id, _by_name, _by_synonym, _by_alternative_transcript,
-               _by_alternative_transcript_name, _by_alternative_transcript_synonym]
-        gene_db, is_alternative_transcript = _match_gene_by_fns(fns, session,
-                                                                gene.id,
-                                                                chromosome_ids)
+        if len(chromosome_ids) == 0:
+            gene_db = None; is_alternative_transcript = False
+        else:
+            # find a matching gene
+            fns = [_by_bigg_id, _by_name, _by_synonym, _by_alternative_transcript,
+                _by_alternative_transcript_name, _by_alternative_transcript_synonym,
+                _by_bigg_id_no_underscore]
+            gene_db, is_alternative_transcript = _match_gene_by_fns(fns, session,
+                                                                    gene.id,
+                                                                    chromosome_ids)
+
         if not gene_db:
             # add 
-            logging.warn('Gene not in genbank file: {} from model {}' 
-                         .format(gene.id, model.id))
+            if len(chromosome_ids) > 0:
+                logging.warn('Gene not in genbank file: {} from model {}' 
+                            .format(gene.id, model.id))
             ome_gene = {}
             ome_gene['bigg_id'] = gene.id
-            ome_gene['name'] = gene.name
+            ome_gene['name'] = (gene.name if gene.name.strip() != gene.id.strip() else None)
             ome_gene['leftpos'] = None
             ome_gene['rightpos'] = None
             ome_gene['chromosome_id'] = None

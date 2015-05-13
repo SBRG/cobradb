@@ -40,6 +40,15 @@ def test_model():
              { 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model_3.xml')) }]
 
 @pytest.fixture(scope='session')
+def test_prefs():
+    return {'reaction_id_prefs': realpath(join(dirname(__file__),
+                                               'test_data',
+                                               'reaction-id-prefs.txt')),
+            'reaction_hash_prefs': realpath(join(dirname(__file__),
+                                                 'test_data',
+                                                 'reaction-hash-prefs.txt')) }
+
+@pytest.fixture(scope='session')
 def test_db_create(setup_logger):
     user = settings.postgres_user
     test_db = settings.postgres_test_database

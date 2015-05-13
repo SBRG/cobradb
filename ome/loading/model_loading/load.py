@@ -2,13 +2,15 @@
 
 from ome import base, settings, components, timing
 from ome.models import Model
-import cobra.io
 from ome.loading import AlreadyLoadedError
 from ome.loading.model_loading import loading_methods, parse
 from ome.dumping.model_dumping import dump_model
+
+import cobra.io
 import os
-from os.path import join
+from os.path import join, basename
 import logging
+import shutil
 
 def get_model_list():
     """Get the models that are available, as SBML, in ome_data/models"""
@@ -26,8 +28,9 @@ def check_for_model(name):
     return None
 
 @timing
-def load_model(model_filepath, genome_id, model_timestamp, pmid, session, 
-               dump_directory=settings.model_dump_directory):
+def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
+               dump_directory=settings.model_dump_directory,
+               published_directory=settings.model_published_directory):
     """Load a model into the database. Returns the bigg_id for the new model.
 
     Arguments
@@ -35,7 +38,7 @@ def load_model(model_filepath, genome_id, model_timestamp, pmid, session,
 
     model_filepath: the path to the file where model is stored.
 
-    genome_id: id for the loaded genome annotation.
+    bioproject_id: id for the loaded genome annotation.
 
     model_timestamp: a timestamp for the model.
 
@@ -53,20 +56,40 @@ def load_model(model_filepath, genome_id, model_timestamp, pmid, session,
         raise AlreadyLoadedError('Model %s already loaded' % model_bigg_id)
 
     # check for a genome annotation for this model
-    genome_db = session.query(base.Genome).filter_by(bioproject_id=genome_id).first()
-    if genome_db is None:
-        raise Exception('Genbank file %s for model %s not found in the database' %
-                        (genome_id, model_bigg_id))
+    if bioproject_id is not None:
+        genome_db = session.query(base.Genome).filter_by(bioproject_id=bioproject_id).first()
+        if bioproject_id == 'PRJNA224116':
+            logging.warn('THIS IS A TERRIBLE SOLUTION. SEE https://github.com/SBRG/BIGG2/issues/68')
+            if model_bigg_id == 'iHN637':
+                organism = 'Clostridium ljungdahlii DSM 13528'
+            elif model_bigg_id == 'iSB619':
+                organism = 'Staphylococcus aureus subsp. aureus N315'
+            else:
+                raise Exception('My terrible fix broke for model {}'.format(model_bigg_id))
+            genome_db = (session
+                        .query(base.Genome)
+                        .filter(base.Genome.bioproject_id == bioproject_id)
+                        .filter(base.Genome.organism == organism)
+                        .first())
+        if genome_db is None:
+            raise Exception('Genbank file %s for model %s not found in the database' %
+                            (bioproject_id, model_bigg_id))
+        genome_id = genome_db.id
+    else:
+        logging.info('No BioProject ID provided for model {}'.format(model_bigg_id))
+        genome_id = None
 
     # Load the model objects. Remember: ORDER MATTERS! So don't mess around.
     logging.debug('Loading objects for model {}'.format(model.id))
-    model_database_id = loading_methods.load_model(session, model, genome_db.id,
-                                                   model_timestamp, pmid)
+    published_filename = os.path.basename(model_filepath)
+    model_database_id = loading_methods.load_model(session, model, genome_id,
+                                                   model_timestamp, pmid,
+                                                   published_filename)
 
     # metabolites/components and linkouts
     # get compartment names
-    if os.path.exists(settings.compartment_names_file):
-        with open(settings.compartment_names_file, 'r') as f:
+    if os.path.exists(settings.compartment_names):
+        with open(settings.compartment_names, 'r') as f:
             compartment_names = {}
             for line in f.readlines():
                 sp = [x.strip() for x in line.split('\t')]
@@ -95,12 +118,30 @@ def load_model(model_filepath, genome_id, model_timestamp, pmid, session,
     session.commit()
     
     if dump_directory:
+        # dump database models
+        logging.info('Dumping {}'.format(basename(model_bigg_id)))
         cobra_model = dump_model(model_bigg_id)
         # make folder if it doesn't exist
         try:
             os.makedirs(dump_directory)
         except OSError:
             pass
+        import ipdb; ipdb.set_trace()
         cobra.io.write_sbml_model(cobra_model, join(dump_directory, model_bigg_id + '.xml'))
+        cobra.io.save_json_model(cobra_model, join(dump_directory, model_bigg_id + '.json'))
+
+    if published_directory:
+        # make folder if it doesn't exist
+        try:
+            os.makedirs(published_directory)
+        except OSError:
+            pass
+        # copy published model
+        try:
+            logging.info('Copying {} to static directory'
+                         .format(basename(model_filepath)))
+            shutil.copy(model_filepath, published_directory)
+        except OSError:
+            print('Could not copy published model {}'.format(model_filepath))
     
     return model_bigg_id

@@ -28,11 +28,12 @@ class Gene(GenomeRegion):
         return '<ome Gene(id=%d, bigg_id=%s, name=%s)>' % (self.id, self.bigg_id,
                                                          self.name)
 
-    def __init__(self, bigg_id, leftpos, rightpos, strand, mapped_to_genbank,
-                 chromosome_id=None, info=None, name=None,
-                 alternative_transcript_of=None):
+    def __init__(self, bigg_id, leftpos=None, rightpos=None,
+                 mapped_to_genbank=False, strand=None, chromosome_id=None,
+                 info=None, name=None, alternative_transcript_of=None):
 
-        super(Gene, self).__init__(leftpos, rightpos, strand, chromosome_id, bigg_id)
+        super(Gene, self).__init__(bigg_id=bigg_id, chromosome_id=chromosome_id,
+                                   leftpos=leftpos, rightpos=rightpos, strand=strand)
         self.name = name
         self.info = info
         self.mapped_to_genbank = mapped_to_genbank
@@ -53,8 +54,10 @@ class Motif(GenomeRegion):
             (self.bound_component.name, self.leftpos, self.rightpos,\
                                  self.strand, self.pval)
 
-    def __init__(self, leftpos, rightpos, strand, pval, info=None):
-        super(Motif, self).__init__(leftpos, rightpos, strand, chromosome_id)
+    def __init__(self, bigg_id, leftpos, rightpos, strand, pval=None, info=None):
+        super(Motif, self).__init__(bigg_id=bigg_id, leftpos=leftpos,
+                                    rightpos=rightpos, strand=strand,
+                                    chromosome_id=chromosome_id)
         self.pval = pval
         self.info = info
 
@@ -249,9 +252,9 @@ class Metabolite(Component):
                 ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"),
                 primary_key=True)
 
-    formula = Column(String)
-    smiles = Column(String(200))
-    charge = Column(Integer)
+    formula = Column(String, nullable=True)
+    smiles = Column(String(200), nullable=True)
+    charge = Column(Integer, nullable=True)
 
     def __init__(self, bigg_id, name, formula, charge=None, smiles=None):
         super(Metabolite, self).__init__(bigg_id, name)

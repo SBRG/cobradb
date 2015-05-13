@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
-  <model id="Ecoli_core_model" name="Ecoli_core_model">
+  <model id="Ecoli_core_model_3" name="Ecoli_core_model">
     <notes>
       <html xmlns="http://www.w3.org/1999/xhtml"><p>COBRA_Toolbox</p></html>
     </notes>
@@ -18,21 +18,9 @@
       <compartment id="C_e" name="Extracellular"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="M__13dpg_c" name="3-Phospho-D-glyceroyl-phosphate" compartment="C_c">
+      <species id="M_13dpg_c" name="3-Phospho-D-glyceroyl-phosphate" compartment="C_c">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml">
-            <p>FORMULA: C3H4O10P2</p>
-            <p>metacyc: DPG</p>
-            <p>brenda: [&apos;BG18032&apos;, &apos;BG87317&apos;]</p>
-            <p>chebi: [&apos;16001&apos;, &apos;1658&apos;, &apos;20189&apos;, &apos;57604&apos;, &apos;11881&apos;]</p>
-            <p>upa: UPC00236</p>
-            <p>CHARGE: -4</p>
-            <p>KEGGID: C00236</p>
-            <p>hmdb: HMDB01270</p>
-            <p>biopath: 1,3-Diphospho-D-glycerate</p>
-            <p>reactome: 29800</p>
-            <p>seed: cpd00203</p>
-            </html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: C3H4O10P2</p></html>
         </notes>
       </species>
       <species id="M_2pg_c" name="D-Glycerate-2-phosphate" compartment="C_c">
@@ -112,6 +100,7 @@
       </species>
       <species id="M_atp_c" name="ATP" compartment="C_c">
         <notes>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: C10H12N5O13P3</p></html>
         </notes>
       </species>
       <species id="M_cit_c" name="Citrate" compartment="C_c">
@@ -416,7 +405,7 @@
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0351 or b1241)</p><p>GENE_LIST: b0351 b1241</p><p>SUBSYSTEM: Pyruvate Metabolism</p></html>
         </notes>
         <listOfReactants>
-          <speciesReference species="M_acald_c"/>
+          <!-- <speciesReference species="M_acald_c"/> -->
           <speciesReference species="M_coa_c"/>
           <speciesReference species="M_nad_c"/>
         </listOfReactants>
@@ -651,32 +640,7 @@
           </listOfParameters>
         </kineticLaw>
       </reaction>
-      <reaction id="R_NTP1" name="Another ATP maintenance requirement" reversible="false">
-        <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0650) or (b4161)</p><p>GENE_LIST: b0650 b4161</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
-        </notes>
-        <listOfReactants>
-          <speciesReference species="M_atp_c"/>
-          <speciesReference species="M_h2o_c"/>
-        </listOfReactants>
-        <listOfProducts>
-          <speciesReference species="M_adp_c"/>
-          <speciesReference species="M_h_c"/>
-          <speciesReference species="M_pi_c"/>
-        </listOfProducts>
-        <kineticLaw>
-          <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <ci> FLUX_VALUE </ci>
-          </math>
-          <listOfParameters>
-            <parameter id="LOWER_BOUND" value="3.15" units="mmol_per_gDW_per_hr"/>
-            <parameter id="UPPER_BOUND" value="1000" units="mmol_per_gDW_per_hr"/>
-            <parameter id="OBJECTIVE_COEFFICIENT" value="0"/>
-            <parameter id="FLUX_VALUE" value="504.195" units="mmol_per_gDW_per_hr"/>
-          </listOfParameters>
-        </kineticLaw>
-      </reaction>
-      <reaction id="R_ATPM(NGAM)" name="ATP maintenance requirement" reversible="false">
+      <reaction id="R_ATPM" name="ATP maintenance requirement" reversible="false">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
         </notes>
@@ -1404,7 +1368,7 @@
       </reaction>
       <reaction id="R_FORt2" name="formate transport via proton symport (uptake only)" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904.1 or b2492)</p><p>GENE_LIST: 904.1 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0904 or b2492)</p><p>GENE_LIST: b0904 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_for_e"/>
@@ -1428,7 +1392,7 @@
       </reaction>
       <reaction id="R_FORti" name="formate transport via diffusion" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904.1 or b2492)</p><p>GENE_LIST: 904.1 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0904 or b2492)</p><p>GENE_LIST: b0904 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_for_c"/>
@@ -1450,7 +1414,7 @@
       </reaction>
       <reaction id="R_FRD7" name="fumarate reductase" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904.12 and gene_with_period.22 and frdB and b4154)</p><p>GENE_LIST: 904.12 gene_with_period.22 frdB b4154</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b4151 and b4152 and b4153 and b4154)</p><p>GENE_LIST: b4151 b4152 b4153 b4154</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_fum_c"/>
@@ -1474,7 +1438,7 @@
       </reaction>
       <reaction id="R_FRUpts2" name="Fructose transport via PEP:Pyr PTS (f6p generating)" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (frdB.1 and b1818 and b1819 and b2415 and b2416)</p><p>GENE_LIST: frdB.1 b1818 b1819 b2415 b2416</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b1817 and b1818 and b1819 and b2415 and b2416)</p><p>GENE_LIST: b1817 b1818 b1819 b2415 b2416</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_fru_e"/>
@@ -1578,7 +1542,7 @@
           <speciesReference species="M_pi_c"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="M__13dpg_c"/>
+          <speciesReference species="M_13dpg_c"/>
           <speciesReference species="M_h_c"/>
           <speciesReference species="M_nadh_c"/>
         </listOfProducts>
@@ -2218,7 +2182,7 @@
           <speciesReference species="M_atp_c"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="M__13dpg_c"/>
+          <speciesReference species="M_13dpg_c"/>
           <speciesReference species="M_adp_c"/>
         </listOfProducts>
         <kineticLaw>

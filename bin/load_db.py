@@ -95,16 +95,29 @@ if __name__ == "__main__":
 
     # get the models and genomes
     model_dir = join(settings.data_directory, 'models')
-    model_genome_file = settings.model_genome_file
-    logging.info('Loading models and genomes using %s' % model_genome_file)
-    with open(model_genome_file, 'r') as f:
+    model_genome_path = settings.model_genome
+    logging.info('Loading models and genomes using %s' % model_genome_path)
+    with open(model_genome_path, 'r') as f:
         lines = f.readlines()
     models_list = []; found_genomes = {}
     for line in lines:
-        model_filename, bioproject_id, timestamp, pmid = line.split(',')
-        found_genomes[bioproject_id] = False
+        if line.strip() == '':
+            continue
+        val = (x.strip() for x in line.split(','))
+        val_nones = [(x if x.strip() != '' else None) for x in val]
+        if len(val_nones) == 3:
+            model_filename, bioproject_id, timestamp = val_nones
+            pmid = None
+        elif len(val_nones) == 4:
+            model_filename, bioproject_id, timestamp, pmid = val_nones
+        else:
+            logging.error('Bad line in model-genome CSV file {!s}'.format(line))
+            continue
+        if bioproject_id is not None:
+            found_genomes[bioproject_id] = False
         if model_filename.strip() != '':
             models_list.append((model_filename, bioproject_id, timestamp, pmid))
+
 
     if not args.skip_genomes:
         logging.info('Finding matching GenBank files')
@@ -125,7 +138,7 @@ if __name__ == "__main__":
         not_found = [k for k, v in found_genomes.iteritems() if v is False]
         if len(not_found) > 0:
             logging.warn('No genbank file for for %s' % not_found)
-                
+
         logging.info('Loading genomes')
         n = len(genome_files)
         for i, genbank_file in enumerate(genome_files):
@@ -135,14 +148,13 @@ if __name__ == "__main__":
             except Exception as e:
                 logging.exception(e)
 
+        # chromosome gffs
         data_genomes = (session
                         .query(base.Genome)
                         .filter(base.Genome.bioproject_id.in_(['PRJNA57779']))
                         .all())
-
         raw_flag = False
         normalize_flag = False
-
         for genome in data_genomes:
             for chromosome in genome.chromosomes:
                 component_loading.write_chromosome_annotation_gff(base, components,
@@ -151,12 +163,11 @@ if __name__ == "__main__":
     if not args.skip_models:
         logging.info("Loading models")
         n = len(models_list)
-        for i, (model_filename, genome_id, timestamp, pmid) in enumerate(models_list):
+        for i, (model_filename, bioproject_id, timestamp, pmid) in enumerate(models_list):
             logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_filename))
             try:
                 model_loading.load_model(join(model_dir, model_filename),
-                                            genome_id, timestamp, pmid,
-                                            session)
+                                         bioproject_id, timestamp, pmid, session)
             except AlreadyLoadedError as e:
                 logging.info(e.message)
             except Exception as e:
@@ -174,58 +185,3 @@ if __name__ == "__main__":
 
     session.close()
     base.Session.close_all()
-
-"""
-        dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/crp', group_name='crp', normalize=normalize_flag, raw=raw_flag)
-        dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam/yome', group_name='yome', normalize=normalize_flag, raw=raw_flag)
-
-        dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/gff', group_name='trn', normalize=False, raw=raw_flag)
-
-        dataset_loading.load_raw_files(settings.data_directory+'/rnaseq_experiment/fastq/crp', group_name='crp', normalize=False, raw=False)
-        dataset_loading.load_raw_files(settings.data_directory+'/rnaseq_experiment/fastq/yome', group_name='yome', normalize=False, raw=False)
-        #dataset_loading.load_raw_files(settings.data_directory+'/rnaseq_experiment/bam', normalize=True)
-        #dataset_loading.load_raw_files(settings.data_directory+'/chip_experiment/bam', normalize=False)
-        dataset_loading.load_raw_files(settings.data_directory+'/microarray/asv2', group_name='asv2', raw=False)
-        dataset_loading.load_raw_files(settings.data_directory+'/microarray/ec2', group_name='ec2', raw=False)
-
-
-        experiment_sets = dataset_loading.query_experiment_sets()
-        dataset_loading.load_experiment_sets(experiment_sets)
-
-
-        for chromosome in genome.chromosomes:
-            component_loading.load_metacyc_proteins(base, components, chromosome)
-            component_loading.load_metacyc_bindsites(base, components, chromosome)
-            component_loading.load_metacyc_transcription_units(base, components, chromosome)
-
-        old_gff_file = settings.data_directory+'/annotation/NC_000913.2_old.gff'
-
-        #dataset_loading.run_cuffquant(base, datasets, genome, group_name='crp')
-        #dataset_loading.run_cuffnorm(base, datasets, genome, group_name='crp', gff_file=old_gff_file, overwrite=True)
-        #dataset_loading.run_cuffnorm(base, datasets, genome, group_name='yome', overwrite=True)
-        #dataset_loading.run_cuffdiff(base, datasets, genome, group_name='crp', gff_file=old_gff_file, overwrite=True)
-        #dataset_loading.run_cuffdiff(base, datasets, genome, group_name='yome', overwrite=True)
-        #dataset_loading.run_gem(base, datasets, genome, debug=True)
-
-
-        dataset_loading.load_gem(session.query(ChIPPeakAnalysis).all(), base, datasets, genome)
-        dataset_loading.load_gff_chip_peaks(session.query(ChIPPeakAnalysis).all(), base, datasets, genome, group_name='gff-BK')
-
-        dataset_loading.load_extra_analyses(base, datasets, genome, settings.data_directory+'/ChIP_peaks/gps-curated-HL28Aug14', group_name='gps-curated-HL28Aug14')
-        dataset_loading.load_gff_chip_peaks(session.query(ChIPPeakAnalysis).all(), base, datasets, genome, group_name='gps-curated-HL28Aug14')
-
-        component_loading.load_kegg_pathways(base, components)
-
-        dataset_loading.load_cuffnorm(base, datasets, group_name='crp')
-        dataset_loading.load_cuffnorm(base, datasets, group_name='yome')
-        dataset_loading.load_cuffdiff(group_name='crp')
-        dataset_loading.load_cuffdiff(group_name='yome')
-
-        dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_asv2.txt', group_name='asv2')
-        dataset_loading.load_arraydata(settings.data_directory+'/microarray/formatted_ec2.txt', group_name='ec2')
-
-        dataset_loading.run_array_ttests(base, datasets, genome, group_name='asv2')
-        dataset_loading.run_array_ttests(base, datasets, genome, group_name='ec2')
-
-        dataset_loading.make_genome_region_map(base, datasets, genome)
-        """

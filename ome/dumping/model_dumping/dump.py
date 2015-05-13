@@ -34,7 +34,7 @@ def dump_model(bigg_id):
     model = cobra.core.Model(str(bigg_id))
 
     # reactions
-    logging.info('Dumping reactions')
+    logging.debug('Dumping reactions')
     reactions_db = (session
                     .query(Reaction, ModelReaction, Synonym)
                     .join(ModelReaction, ModelReaction.reaction_id == Reaction.id)
@@ -89,7 +89,7 @@ def dump_model(bigg_id):
     model.add_reactions(reactions) 
 
     # metabolites
-    logging.info('Dumping metabolites')
+    logging.debug('Dumping metabolites')
     metabolites_db = (session
                       .query(Component.bigg_id, Compartment.bigg_id)
                       .join(CompartmentalizedComponent,
@@ -109,7 +109,7 @@ def dump_model(bigg_id):
     model.add_metabolites(metabolites) 
 
     # reaction matrix
-    logging.info('Dumping reaction matrix')
+    logging.debug('Dumping reaction matrix')
     matrix_db = (session
                  .query(ReactionMatrix.stoichiometry, Reaction.bigg_id,
                         Component.bigg_id, Compartment.bigg_id)
@@ -183,7 +183,7 @@ def dump_model(bigg_id):
 #     model = cobra.core.Model('Universal model')
 
 #     # reaction matrix
-#     logging.info('Dumping reaction matrix')
+#     logging.debug('Dumping reaction matrix')
 #     matrix_db = (session
 #                  .query(ReactionMatrix.stoichiometry, Reaction, ModelReaction,
 #                         Model.bigg_id, Component, Compartment.bigg_id)

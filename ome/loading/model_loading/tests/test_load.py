@@ -6,14 +6,22 @@ from ome.loading import AlreadyLoadedError
 from ome import base
 from ome.models import *
 from ome.components import *
+from ome import settings
 
 from sqlalchemy.orm import aliased
 from sqlalchemy import func
 import pytest
 import os
+from os.path import join
 
-def test_load_model(test_genbank, test_model, test_db, setup_logger):
+def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger):
     session = base.Session()
+
+    # preferences
+    settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
+    settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
+    settings.model_dump_directory = None
+    settings.model_published_directory = None
 
     timestamp = '2014-9-16 14:26:22'
     pmid = '25575024'
@@ -37,12 +45,12 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
     assert session.query(Model).count() == 3
     assert session.query(Genome).count() == 2
     assert session.query(Chromosome).count() == 2
-    assert session.query(Reaction).count() == 99
+    assert session.query(Reaction).count() == 98
     assert session.query(ModelReaction).count() == 286
     assert session.query(CompartmentalizedComponent).count() == 72
     assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3
     assert session.query(Metabolite).count() == 54
-    assert session.query(Gene).count() == 282 # b4151 and b4152 are in genome1 but not in model1
+    assert session.query(Gene).count() == 281 # b4151 and b4152 are in genome1 but not in model1
     assert session.query(ModelGene).count() == 414
     
     # test linkouts
@@ -93,9 +101,9 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
     assert session.query(Gene).filter(Gene.bigg_id == 'b0904').count() == 2
     assert session.query(Gene).filter(Gene.bigg_id == 'frdB').count() == 0
     assert session.query(Gene).filter(Gene.bigg_id == 'frdB.1').count() == 1
-    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904.1').count() == 2
-    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904.12').count() == 2
-    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == 'gene_with_period.22').count() == 2
+    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904.1').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904.12').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == 'gene_with_period.22').count() == 1
     
     assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.1').first().id).count() == 8
     assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.12').first().id).count() == 8
@@ -107,24 +115,29 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
             .filter(Reaction.bigg_id == 'FRD7')
             .first()).gene_reaction_rule == '(904.12 and gene_with_period.22 and b4153 and b4154)'
 
-    # (2 ny-n) All three models have different ACALD reactions, which should receive
-    # increment BiGG IDs
+    # (2 ny-n) Model 1 has a different ACALD from models 2 and 5. The
+    # reaction-hash-prefs file should force the second and third models to have
+    # ACALD, and increment the first model.
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
-            .filter(Reaction.bigg_id == 'ACALD')
+            .join(Model)
+            .filter(Reaction.bigg_id == 'ACALD_1')
             .filter(Reaction.pseudoreaction == False)
+            .filter(Model.bigg_id == 'Ecoli_core_model')
             .count() == 1)
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
-            .filter(Reaction.bigg_id == 'ACALD_1')
+            .join(Model)
+            .filter(Reaction.bigg_id == 'ACALD')
+            .filter(Model.bigg_id == 'Ecoli_core_model_2')
             .count() == 1)
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
             .filter(Reaction.bigg_id == 'ACALD_2')
-            .count() == 1)
+            .count() == 0)
     # (3a ny-n) Matches existing reaction. PFL was renamed in model 2.
     assert (session
             .query(ModelReaction)
@@ -144,7 +157,9 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
             .filter(Reaction.bigg_id == 'PDH')
             .count() == 3)
 
-    # pseudoreactions
+    # pseudoreactions. ATPM should be prefered to ATPM(NGAM) based on
+    # reaction-id-prefs file. Thus, ATPM should be present 3 times, once with
+    # the ATPM(NGAM) synonym, and never as ATPM_1.
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
@@ -152,11 +167,32 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
             .filter(Reaction.pseudoreaction == True)
             .count() == 3)
     assert (session
+            .query(OldIDSynonym)
+            .join(Synonym, OldIDSynonym.synonym_id == Synonym.id)
+            .filter(Synonym.synonym == 'ATPM(NGAM)')
+            .join(ModelReaction, ModelReaction.id == OldIDSynonym.ome_id)
+            .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+            .filter(Reaction.bigg_id == 'ATPM')
+            .count() == 1) 
+    assert (session
+            .query(ModelReaction)
+            .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+            .filter(Reaction.bigg_id == 'ATPM_1')
+            .filter(Reaction.pseudoreaction == True)
+            .count() == 0)
+    # NTP1 should not be a pseudoreaction, and should not get incremented
+    assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
             .filter(Reaction.bigg_id == 'NTP1')
             .filter(Reaction.pseudoreaction == False)
             .count() == 1)
+    assert (session
+            .query(ModelReaction)
+            .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+            .filter(Reaction.bigg_id == 'NTP1_1')
+            .filter(Reaction.pseudoreaction == False)
+            .count() == 0)
     assert (session
             .query(OldIDSynonym)
             .join(Synonym, OldIDSynonym.synonym_id == Synonym.id)
@@ -211,6 +247,12 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
             .filter(Metabolite.bigg_id == 'gln__L')
             .count() == 3)
 
+    # remove leading underscores (_13dpg in Model 1)
+    assert (session
+            .query(Metabolite)
+            .filter(Metabolite.bigg_id == '_13dpg')
+            .first()) is None
+
     # linkouts
     assert (session
             .query(LinkOut)
@@ -230,6 +272,12 @@ def test_load_model(test_genbank, test_model, test_db, setup_logger):
             .filter(Metabolite.bigg_id == '13dpg')
             .filter(LinkOut.external_source == 'CHEBI')
             .count()) == 5
+
+    # formulas added in second model
+    assert (session
+            .query(Metabolite)
+            .filter(Metabolite.bigg_id == 'atp')
+            .first()).formula == 'C10H12N5O13P3'
     
     # test reaction attributes
     r_db =  (session.query(ModelReaction)
