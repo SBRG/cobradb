@@ -22,7 +22,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
 
     timestamp = '2014-9-16 14:26:22'
-    pmid = '25575024'
+    pmid = 'pmid:25575024'
     # can't load the model without the genome
     with pytest.raises(Exception):
         for x in range(2):

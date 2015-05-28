@@ -34,7 +34,7 @@ def _get_data_source(session, name):
     return data_source_db.id
 
 
-def load_model(session, model, genome_db_id, first_created, pmid,
+def load_model(session, model, genome_db_id, first_created, pub_ref,
                published_filename):
     """Load the model.
 
@@ -49,7 +49,13 @@ def load_model(session, model, genome_db_id, first_created, pmid,
 
     first_created: A first-created time.
 
-    pmid: The PMID for the publication of the model. Can be None.
+    pub_ref: a publication PMID or doi for the model, as a string like this:
+
+        doi:10.1128/ecosalplus.10.2.1
+    
+        pmid:21988831
+    
+        Can be None
 
     Returns:
     -------
@@ -61,22 +67,31 @@ def load_model(session, model, genome_db_id, first_created, pmid,
                      genome_id=genome_db_id, description=model.description,
                      published_filename=published_filename)
     session.add(model_db)
-    if pmid is not None:
-        publication_db = (session
-                          .query(base.Publication)
-                          .filter(base.Publication.pmid == pmid)
-                          .first())
-        if publication_db is None:
-            publication_db = base.Publication(pmid = pmid)
-            session.add(publication_db)
-            session.commit()
-        publication_model_db = (session
-                                .query(base.PublicationModel)
-                                .filter(base.PublicationModel.publication_id == publication_db.id)
-                                .filter(base.PublicationModel.model_id == model_db.id))
-        if publication_model_db is None:
-            publication_model_db = base.PublicationModel(model_db.id, publication_db.id)
-            session.add(publication_model_db)
+    if pub_ref is not None:
+        try:
+            ref_type, ref_id = pub_ref.split(':')
+        except ValueError:
+            logging.warn('Bad publication reference {}'.format(pub_ref))
+        else:
+            publication_db = (session
+                              .query(base.Publication)
+                              .filter(base.Publication.reference_type==ref_type)
+                              .filter(base.Publication.reference_id==ref_id)
+                              .first())
+            if publication_db is None:
+                publication_db = base.Publication(reference_type=ref_type,
+                                                  reference_id=ref_id)
+                session.add(publication_db)
+                session.commit()
+            publication_model_db = (session
+                                    .query(base.PublicationModel)
+                                    .filter(base.PublicationModel.publication_id == publication_db.id)
+                                    .filter(base.PublicationModel.model_id == model_db.id)
+                                    .first())
+            if publication_model_db is None:
+                publication_model_db = base.PublicationModel(model_id=model_db.id,
+                                                             publication_id=publication_db.id)
+                session.add(publication_model_db)
     session.commit()
     return model_db.id
 

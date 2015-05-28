@@ -213,15 +213,13 @@ class Synonym(Base):
 class Publication(Base):
     __tablename__ = "publication"
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    pmid = Column(Integer)
+    reference_type = Column(Enum('pmid', 'doi', name='reference_type'))
+    reference_id = Column(String)
     
     __table_args__=(
-        UniqueConstraint('pmid'),
+        UniqueConstraint('reference_type', 'reference_id'),
     )
     
-    def __init_(self, pmid):
-        self.pmid = pmid
-
 
 class PublicationModel(Base):
     __tablename__ = "publication_model"
@@ -236,10 +234,6 @@ class PublicationModel(Base):
         UniqueConstraint('model_id', 'publication_id'),
     )
     
-    def __init__(self, model_id, publication_id):
-        self.model_id = model_id
-        self.publication_id = publication_id
-        
 
 class LinkOut(Base):
     __tablename__="link_out"

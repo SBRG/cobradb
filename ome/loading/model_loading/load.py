@@ -29,7 +29,7 @@ def check_for_model(name):
     return None
 
 @timing
-def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
+def load_model(model_filepath, bioproject_id, model_timestamp, pub_ref, session,
                dump_directory=settings.model_dump_directory,
                published_directory=settings.model_published_directory):
     """Load a model into the database. Returns the bigg_id for the new model.
@@ -43,7 +43,11 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
 
     model_timestamp: a timestamp for the model.
 
-    pmid: a publication PMID for the model.
+    pub_ref: a publication PMID or doi for the model, as a string like this:
+
+        doi:10.1128/ecosalplus.10.2.1
+    
+        pmid:21988831
 
     """
 
@@ -84,7 +88,7 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
     logging.debug('Loading objects for model {}'.format(model.id))
     published_filename = os.path.basename(model_filepath)
     model_database_id = loading_methods.load_model(session, model, genome_id,
-                                                   model_timestamp, pmid,
+                                                   model_timestamp, pub_ref,
                                                    published_filename)
 
     # metabolites/components and linkouts

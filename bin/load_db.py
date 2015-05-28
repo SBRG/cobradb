@@ -107,16 +107,16 @@ if __name__ == "__main__":
         val_nones = [(x if x.strip() != '' else None) for x in val]
         if len(val_nones) == 3:
             model_filename, bioproject_id, timestamp = val_nones
-            pmid = None
+            pub_ref = None
         elif len(val_nones) == 4:
-            model_filename, bioproject_id, timestamp, pmid = val_nones
+            model_filename, bioproject_id, timestamp, pub_ref = val_nones
         else:
             logging.error('Bad line in model-genome CSV file {!s}'.format(line))
             continue
         if bioproject_id is not None:
             found_genomes[bioproject_id] = False
         if model_filename.strip() != '':
-            models_list.append((model_filename, bioproject_id, timestamp, pmid))
+            models_list.append((model_filename, bioproject_id, timestamp, pub_ref))
 
 
     if not args.skip_genomes:
@@ -163,11 +163,11 @@ if __name__ == "__main__":
     if not args.skip_models:
         logging.info("Loading models")
         n = len(models_list)
-        for i, (model_filename, bioproject_id, timestamp, pmid) in enumerate(models_list):
+        for i, (model_filename, bioproject_id, timestamp, pub_ref) in enumerate(models_list):
             logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_filename))
             try:
                 model_loading.load_model(join(model_dir, model_filename),
-                                         bioproject_id, timestamp, pmid, session)
+                                         bioproject_id, timestamp, pub_ref, session)
             except AlreadyLoadedError as e:
                 logging.info(e.message)
             except Exception as e:
