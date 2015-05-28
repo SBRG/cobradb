@@ -8,9 +8,10 @@ from ome.dumping.model_dumping import dump_model
 
 import cobra.io
 import os
-from os.path import join, basename
+from os.path import join, basename, abspath, dirname 
 import logging
 import shutil
+import subprocess
 
 def get_model_list():
     """Get the models that are available, as SBML, in ome_data/models"""
@@ -126,7 +127,6 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
             os.makedirs(dump_directory)
         except OSError:
             pass
-        import ipdb; ipdb.set_trace()
         cobra.io.write_sbml_model(cobra_model, join(dump_directory, model_bigg_id + '.xml'))
         cobra.io.save_json_model(cobra_model, join(dump_directory, model_bigg_id + '.json'))
 
@@ -145,3 +145,32 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
             print('Could not copy published model {}'.format(model_filepath))
     
     return model_bigg_id
+
+
+def run_model_polisher(dump_directory, polished_directory):
+    try:
+        os.makedirs(polished_directory)
+    except OSError:
+        pass
+
+    model_polisher_path = abspath(join(dirname(__file__), '..', '..', '..',
+                                       'bin', 'ModelPolisher-0.2.jar'))
+    logging.info('Running model polisher with {}'.format(model_polisher_path))
+
+    command = [settings.java,
+               '-jar',
+               '-Xms8G',
+               '-Xmx8G',
+               '-Duser.language=en',
+               model_polisher_path,
+               '--user=%s' % settings.postgres_user,
+               '--host=%s' % settings.postgres_host,
+               '--dbname=%s' % settings.postgres_database,
+               '--input=%s' % dump_directory,
+               '--output=%s' % polished_directory,
+               '--compress-output=true',
+               '--omit-generic-terms=false',
+               '--log-level=INFO',
+               '--log-file=model_polisher.log']
+    print ' '.join(command)
+    subprocess.call(command)

@@ -17,11 +17,9 @@ from os.path import join
 def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger):
     session = base.Session()
 
-    # preferences
+    # preferences. TODO these would be better as arguments to load_model
     settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
     settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
-    settings.model_dump_directory = None
-    settings.model_published_directory = None
 
     timestamp = '2014-9-16 14:26:22'
     pmid = '25575024'
@@ -29,17 +27,20 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     with pytest.raises(Exception):
         for x in range(2):
             load_model(test_model[x], test_genbank[x]['genome_id'], timestamp,
-                       pmid, session)
+                       pmid, session, dump_directory=None,
+                       published_directory=None)
     
     for x in range(2):
         # load the test genomes
         load_genome(test_genbank[x]['path'], session)
         # load the models
         load_model(test_model[x]['path'], test_genbank[x]['genome_id'],
-                   timestamp, pmid, session)
+                   timestamp, pmid, session, dump_directory=None,
+                   published_directory=None)
+        
     # load the third model
-    load_model(test_model[2]['path'], test_genbank[0]['genome_id'],
-                timestamp, pmid, session)
+    load_model(test_model[2]['path'], test_genbank[0]['genome_id'], timestamp,
+               pmid, session, dump_directory=None, published_directory=None)
     
     # test the model
     assert session.query(Model).count() == 3
@@ -291,4 +292,5 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     # can't load the same model twice
     with pytest.raises(AlreadyLoadedError):
         load_model(test_model[0]['path'], test_genbank[0]['genome_id'],
-                   timestamp, pmid, session)
+                   timestamp, pmid, session, dump_directory=None,
+                   published_directory=None)

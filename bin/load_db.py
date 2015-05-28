@@ -173,6 +173,14 @@ if __name__ == "__main__":
             except Exception as e:
                 logging.error('Could not load model %s.' % model_filename)
                 logging.exception(e)
+
+        # run model polisher
+        if settings.model_dump_directory and settings.model_polished_directory:
+            model_loading.run_model_polisher(settings.model_dump_directory,
+                                             settings.model_polished_directory)
+        elif settings.model_polished_directory:
+            logging.warn(('Cannot using settings.model_polished_directory unless '
+                          'settings.model_dump_directory is set'))
                     
     logging.info("Loading Escher maps")
     map_loading.load_maps_from_server(session, drop_maps=(args.drop_models or

@@ -10,11 +10,11 @@ def test_convert_ids(test_model):
     model_in.reactions.get_by_id('DADA').add_metabolites({
         Metabolite('dad_DASH_2_c'): -1
     })
-    returned, old_ids = convert_ids(model_in, 'cobrapy')
+    returned, old_ids = convert_ids(model_in)
 
-    assert 'dad__2_c' in returned.metabolites
-    assert 'dad__2_c' in [x.id for x in returned.reactions.get_by_id('DADA').metabolites]
-    assert ('dad__2_c', 'dad_DASH_2_c') in old_ids['metabolites'].items()
+    assert 'dad_2_c' in returned.metabolites
+    assert 'dad_2_c' in [x.id for x in returned.reactions.get_by_id('DADA').metabolites]
+    assert ('dad_2_c', 'dad_DASH_2_c') in old_ids['metabolites'].items()
     assert ('EX_gln__L_e', 'EX_gln_L_e') in old_ids['reactions'].items()
 
 
@@ -38,7 +38,17 @@ M_lipidA_core_e_p
         met, compartment = split_compartment(new)
 
     # strip leading underscores 
-    assert id_for_new_id_style('_13dpg') == '13dpg'
+    assert id_for_new_id_style('_13dpg_c') == '13dpg_c'
+
+    # 2 character compartment
+    assert id_for_new_id_style('abc(c1)') == 'abc_c1'
+
+    # remove internal __
+    assert id_for_new_id_style('26dap__Z_c') == '26dap_Z_c'
+    assert id_for_new_id_style('26dap_Z_c') == '26dap_Z_c'
+    # except with [LDSRM]
+    assert id_for_new_id_style('26dap__M_c') == '26dap__M_c'
+    assert id_for_new_id_style('26dap__M_c') == '26dap__M_c'
 
 
 def test_hash_reaction(test_model):
