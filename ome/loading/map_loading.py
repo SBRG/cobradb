@@ -29,11 +29,15 @@ def load_maps_from_server(session, drop_maps=False):
                      .query(Model.bigg_id, Model.id)
                      .all())
     matching_models = [x for x in loaded_models
-                       if x[0] in [m['model_name'] for m in index['models']]]
+                       if x[0] in [m['model_name'] for m in index['models']]
+                          # TODO remove: trick for matching E coli core to e_coli_core
+                          or x[0] == 'e_coli_core' and 'E coli core' in [m['model_name'] for m in index['models']]]
                        
     for model_bigg_id, model_id in matching_models:
         maps = [(m['map_name'], m['organism']) for m in index['maps'] if
-                m['map_name'].split('.')[0] == model_bigg_id]
+                m['map_name'].split('.')[0] == model_bigg_id or
+                # TODO remove: trick for matching E coli core to e_coli_core
+                m['map_name'].split('.')[0] == 'E coli core' and model_bigg_id == 'e_coli_core']
         for map_name, org in maps:
             map_json = escher.plots.map_json_for_name(map_name)
             load_the_map(session, model_id, map_name, map_json)

@@ -5,6 +5,8 @@ from cobra.io import read_sbml_model
 
 def test_convert_ids(test_model):
     model_in = read_sbml_model(test_model[0]['path'])
+    model_in.id = 'A bad id'
+    model_in.description = 'throw away'
 
     model_in.add_reaction(Reaction('DADA'))
     model_in.reactions.get_by_id('DADA').add_metabolites({
@@ -12,6 +14,8 @@ def test_convert_ids(test_model):
     })
     returned, old_ids = convert_ids(model_in)
 
+    assert returned.id == 'A_bad_id'
+    assert returned.description == 'A_bad_id'
     assert 'dad_2_c' in returned.metabolites
     assert 'dad_2_c' in [x.id for x in returned.reactions.get_by_id('DADA').metabolites]
     assert ('dad_2_c', 'dad_DASH_2_c') in old_ids['metabolites'].items()
@@ -39,6 +43,7 @@ M_lipidA_core_e_p
 
     # strip leading underscores 
     assert id_for_new_id_style('_13dpg_c') == '13dpg_c'
+    assert id_for_new_id_style('__13dpg_c') == '13dpg_c'
 
     # 2 character compartment
     assert id_for_new_id_style('abc(c1)') == 'abc_c1'
@@ -49,6 +54,10 @@ M_lipidA_core_e_p
     # except with [LDSRM]
     assert id_for_new_id_style('26dap__M_c') == '26dap__M_c'
     assert id_for_new_id_style('26dap__M_c') == '26dap__M_c'
+
+    # other characters
+    assert id_for_new_id_style('ATPM(NGAM)') == 'ATPM_NGAM'
+    assert id_for_new_id_style('a()[]c*&^%b') == 'a_c_b'
 
 
 def test_hash_reaction(test_model):

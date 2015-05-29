@@ -86,6 +86,11 @@ def convert_ids(model):
         reaction.id = new_id
     model.reactions._generate_index()
 
+    # fix the model id
+    bigg_id = re.sub(r'[^a-zA-Z0-9_]', '_', model.id)
+    model.id = bigg_id
+    model.description = bigg_id
+
     old_ids = { 'metabolites': metaboliteIdDict,
                 'reactions': reactionIdDict,
                 'genes': {} }
@@ -96,6 +101,7 @@ reg_compartment = re.compile(r'(.*?)[_\(\[]([a-z][a-z0-9]?)[_\)\]]?$')
 reg_chirality = re.compile(r'(.*?)_?_([LDSRM])$')
 def id_for_new_id_style(old_id, is_metabolite=False):
     """ Get the new style id"""
+    new_id = old_id
 
     def _join_parts(the_id, the_compartment):
         if the_compartment:
@@ -103,14 +109,23 @@ def id_for_new_id_style(old_id, is_metabolite=False):
         return the_id
 
     def _remove_d_underscore(s):
-        return s.replace('__', '_')
+        """Removed repeated, leading, and trailing underscores."""
+        s = re.sub(r'_+', '_', s)
+        s = re.sub(r'^_+', '', s)
+        s = re.sub(r'_+$', '', s)
+        return s
 
-    # separate the base id, the chirality ('_L') and the compartment ('_c')
-    old_id = old_id.replace('-', '__')
-    compartment_match = reg_compartment.match(old_id)
+    # remove parentheses and brackets, for SBML & BiGG spec compatibility
+    new_id = re.sub(r'[^a-zA-Z0-9_]', '_', new_id)
+    
+    # strip leading and trailing underscores
+    # new_id = re.sub(r'^_+', '', new_id)
+    # new_id = re.sub(r'_+$', '', new_id)
+
+    compartment_match = reg_compartment.match(new_id)
     if compartment_match is None:
         # still remove double underscores
-        new_id = _remove_d_underscore(old_id)
+        new_id = _remove_d_underscore(new_id)
     else:
         base, compartment = compartment_match.groups()
         chirality_match = reg_chirality.match(base)
@@ -120,24 +135,22 @@ def id_for_new_id_style(old_id, is_metabolite=False):
             new_base = '%s__%s' % (_remove_d_underscore(chirality_match.group(1)),
                                    chirality_match.group(2))
             new_id = _join_parts(new_base, compartment)
-            
-    # deal with inconsistent notation of (sec) vs. [sec] in iJO1366 versions
-    new_id = new_id.replace('(_sec_)m', '_sec_m').replace('[sec]', '_sec_').replace('(sec)', '_sec_')
-    if new_id.startswith('_'):
-        return new_id[1:]
-    else:
-        return new_id
+    
+    return new_id
 
 
 def get_formulas_from_names(model):
     reg = re.compile(r'.*_([A-Za-z0-9]+)$')
+    # support cobra 0.3 and 0.4
     for metabolite in model.metabolites:
-        if (metabolite.formula is not None
-            and metabolite.formula.formula!=''
-            and metabolite.formula.formula is not None): continue
+        if (metabolite.formula is not None and str(metabolite.formula) != '' and getattr(metabolite, 'formula', None) is not None):
+            continue
         m = reg.match(metabolite.name)
         if m:
-            metabolite.formula = Formula(m.group(1))
+            try:
+                metabolite.formula = Formula(m.group(1))
+            except TypeError:
+                metabolite.formula = str(m.group(1))
     return model
 
 
