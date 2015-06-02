@@ -8,9 +8,10 @@ from ome.dumping.model_dumping import dump_model
 
 import cobra.io
 import os
-from os.path import join, basename
+from os.path import join, basename, abspath, dirname 
 import logging
 import shutil
+import subprocess
 
 def get_model_list():
     """Get the models that are available, as SBML, in ome_data/models"""
@@ -28,9 +29,10 @@ def check_for_model(name):
     return None
 
 @timing
-def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
+def load_model(model_filepath, bioproject_id, model_timestamp, pub_ref, session,
                dump_directory=settings.model_dump_directory,
-               published_directory=settings.model_published_directory):
+               published_directory=settings.model_published_directory,
+               polished_directory=settings.model_polished_directory):
     """Load a model into the database. Returns the bigg_id for the new model.
 
     Arguments
@@ -42,7 +44,11 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
 
     model_timestamp: a timestamp for the model.
 
-    pmid: a publication PMID for the model.
+    pub_ref: a publication PMID or doi for the model, as a string like this:
+
+        doi:10.1128/ecosalplus.10.2.1
+    
+        pmid:21988831
 
     """
 
@@ -83,7 +89,7 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
     logging.debug('Loading objects for model {}'.format(model.id))
     published_filename = os.path.basename(model_filepath)
     model_database_id = loading_methods.load_model(session, model, genome_id,
-                                                   model_timestamp, pmid,
+                                                   model_timestamp, pub_ref,
                                                    published_filename)
 
     # metabolites/components and linkouts
@@ -117,18 +123,34 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
 
     session.commit()
     
-    if dump_directory:
+    if dump_directory or polished_directory:
         # dump database models
         logging.info('Dumping {}'.format(basename(model_bigg_id)))
         cobra_model = dump_model(model_bigg_id)
-        # make folder if it doesn't exist
-        try:
-            os.makedirs(dump_directory)
-        except OSError:
-            pass
-        import ipdb; ipdb.set_trace()
-        cobra.io.write_sbml_model(cobra_model, join(dump_directory, model_bigg_id + '.xml'))
-        cobra.io.save_json_model(cobra_model, join(dump_directory, model_bigg_id + '.json'))
+        if dump_directory:
+            # make folder if it doesn't exist
+            try:
+                os.makedirs(dump_directory)
+            except OSError:
+                pass
+            # write SBML compatibility and JSON
+            cobra.io.write_sbml_model(cobra_model, join(dump_directory, model_bigg_id + '.xml'),
+                                      use_fbc_package=False)
+            cobra.io.save_json_model(cobra_model, join(dump_directory, model_bigg_id + '.json'))
+
+        if polished_directory:
+            unpolished_dir = join(polished_directory, 'unpolished_fbc2')
+            try:
+                os.makedirs(unpolished_dir)
+            except OSError:
+                pass
+            # try the newest SBML exporter
+            try:
+                from cobra.io.sbml3 import write_sbml_model as write_sbml_model3
+            except ImportError:
+                logging.warn('COBRApy version does not support SBML3 and FBC2')
+            else:
+                write_sbml_model3(cobra_model, join(unpolished_dir, model_bigg_id + '.xml'))
 
     if published_directory:
         # make folder if it doesn't exist
@@ -145,3 +167,27 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pmid, session,
             print('Could not copy published model {}'.format(model_filepath))
     
     return model_bigg_id
+
+
+def run_model_polisher(polished_directory):
+    model_polisher_path = abspath(join(dirname(__file__), '..', '..', '..',
+                                       'bin', 'ModelPolisher-0.4.jar'))
+    logging.info('Running model polisher with {}'.format(model_polisher_path))
+
+    command = [settings.java,
+               '-jar',
+               '-Xms8G',
+               '-Xmx8G',
+               '-Duser.language=en',
+               model_polisher_path,
+               '--user=%s' % settings.postgres_user,
+               '--host=%s' % settings.postgres_host,
+               '--dbname=%s' % settings.postgres_database,
+               '--input=%s' % join(polished_directory, 'unpolished_fbc2'),
+               '--output=%s' % polished_directory,
+               '--compress-output=true',
+               '--omit-generic-terms=false',
+               '--log-level=INFO',
+               '--log-file=model_polisher.log']
+    print ' '.join(command)
+    subprocess.call(command)

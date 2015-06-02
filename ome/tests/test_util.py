@@ -13,7 +13,7 @@ def test_increment_id():
 
 def test_check_pseudoreaction():
     assert check_pseudoreaction('ATPM') is True
-    assert check_pseudoreaction('ATPM(NGAM)') is True
+    assert check_pseudoreaction('ATPM_NGAM') is True
     assert check_pseudoreaction('ATPM1') is False
     assert check_pseudoreaction('EX_glc_e') is True
     assert check_pseudoreaction('aEX_glc_e') is False

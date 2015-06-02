@@ -17,29 +17,31 @@ from os.path import join
 def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger):
     session = base.Session()
 
-    # preferences
+    # preferences. TODO these would be better as arguments to load_model
     settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
     settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
-    settings.model_dump_directory = None
-    settings.model_published_directory = None
 
     timestamp = '2014-9-16 14:26:22'
-    pmid = '25575024'
+    pmid = 'pmid:25575024'
     # can't load the model without the genome
     with pytest.raises(Exception):
         for x in range(2):
             load_model(test_model[x], test_genbank[x]['genome_id'], timestamp,
-                       pmid, session)
+                       pmid, session, dump_directory=None,
+                       published_directory=None, polished_directory=None)
     
     for x in range(2):
         # load the test genomes
         load_genome(test_genbank[x]['path'], session)
         # load the models
         load_model(test_model[x]['path'], test_genbank[x]['genome_id'],
-                   timestamp, pmid, session)
+                   timestamp, pmid, session, dump_directory=None,
+                   published_directory=None, polished_directory=None)
+        
     # load the third model
-    load_model(test_model[2]['path'], test_genbank[0]['genome_id'],
-                timestamp, pmid, session)
+    load_model(test_model[2]['path'], test_genbank[0]['genome_id'], timestamp,
+               pmid, session, dump_directory=None, published_directory=None,
+               polished_directory=None)
     
     # test the model
     assert session.query(Model).count() == 3
@@ -47,9 +49,9 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     assert session.query(Chromosome).count() == 2
     assert session.query(Reaction).count() == 98
     assert session.query(ModelReaction).count() == 286
-    assert session.query(CompartmentalizedComponent).count() == 72
-    assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3
-    assert session.query(Metabolite).count() == 54
+    assert session.query(CompartmentalizedComponent).count() == 73
+    assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3 + 1
+    assert session.query(Metabolite).count() == 55
     assert session.query(Gene).count() == 281 # b4151 and b4152 are in genome1 but not in model1
     assert session.query(ModelGene).count() == 414
     
@@ -157,7 +159,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
             .filter(Reaction.bigg_id == 'PDH')
             .count() == 3)
 
-    # pseudoreactions. ATPM should be prefered to ATPM(NGAM) based on
+    # pseudoreactions. ATPM should be prefered to ATPM_NGAM based on
     # reaction-id-prefs file. Thus, ATPM should be present 3 times, once with
     # the ATPM(NGAM) synonym, and never as ATPM_1.
     assert (session
@@ -291,4 +293,5 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     # can't load the same model twice
     with pytest.raises(AlreadyLoadedError):
         load_model(test_model[0]['path'], test_genbank[0]['genome_id'],
-                   timestamp, pmid, session)
+                   timestamp, pmid, session, dump_directory=None,
+                   published_directory=None, polished_directory=None)

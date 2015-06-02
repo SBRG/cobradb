@@ -32,6 +32,8 @@ def dump_model(bigg_id):
         raise Exception('Could not find model %s' % bigg_id)
 
     model = cobra.core.Model(str(bigg_id))
+    # COBRApy uses the description as the ID sometimes. See https://github.com/opencobra/cobrapy/pull/152
+    model.description = str(bigg_id)
 
     # reactions
     logging.debug('Dumping reactions')

@@ -18,6 +18,11 @@
       <compartment id="C_e" name="Extracellular"/>
     </listOfCompartments>
     <listOfSpecies>
+      <species id="M_formmfr(b)_c" name="formmfr(b)_c" compartment="c">
+        <notes>
+          <html xmlns="http://www.w3.org/1999/xhtml"/>
+        </notes>
+      </species>
       <species id="M__13dpg_c" name="3-Phospho-D-glyceroyl-phosphate" compartment="C_c">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml">

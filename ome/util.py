@@ -11,7 +11,7 @@ def increment_id(id, increment_name=''):
 
 def check_pseudoreaction(reaction_id):
     patterns = [
-        r'^ATPM$', r'^ATPM\(NGAM\)$',
+        r'^ATPM$', r'^ATPM_NGAM$',
         r'^EX_.*',
         r'^DM.*',
         r'(?i).*biomass.*' # case insensitive

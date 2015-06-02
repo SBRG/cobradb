@@ -37,19 +37,16 @@ def load_and_normalize(model_filepath):
     else:
        raise Exception('The %s file is not a valid filetype', model_filepath)
     # convert the ids
-    model, old_ids = convert_ids(model, 'cobrapy')
+    model, old_ids = convert_ids(model)
 
     # extract metabolite formulas from names (e.g. for iAF1260)
     model = get_formulas_from_names(model)
 
     return model, old_ids
 
-def convert_ids(model, new_id_style):
-    """Converts metabolite and reaction ids to the new style. Style options:
+def convert_ids(model):
+    """Converts metabolite and reaction ids to the new style.
 
-    cobrapy: EX_lac__L_e
-    simpheny: EX_lac-L(e)
-    
     Returns a tuple with the new model and a dictionary of old ids set up like this:
 
     {'reactions': {'new_id': 'old_id'},
@@ -64,7 +61,7 @@ def convert_ids(model, new_id_style):
     # fix metabolites
     for metabolite in model.metabolites:
         new_id = id_for_new_id_style(fix_legacy_id(metabolite.id, use_hyphens=False),
-                                     is_metabolite=True, new_id_style=new_id_style)
+                                     is_metabolite=True)
         metaboliteIdDict[new_id] = metabolite.id
         metabolite.id = new_id
     model.metabolites._generate_index()
@@ -84,11 +81,15 @@ def convert_ids(model, new_id_style):
 
     # separate ids and compartments, and convert to the new_id_style
     for reaction in model.reactions:
-        new_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False),
-                                     new_id_style=new_id_style)
+        new_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
         reactionIdDict[new_id] = reaction.id
         reaction.id = new_id
     model.reactions._generate_index()
+
+    # fix the model id
+    bigg_id = re.sub(r'[^a-zA-Z0-9_]', '_', model.id)
+    model.id = bigg_id
+    model.description = bigg_id
 
     old_ids = { 'metabolites': metaboliteIdDict,
                 'reactions': reactionIdDict,
@@ -96,54 +97,60 @@ def convert_ids(model, new_id_style):
     return model, old_ids
 
 # the regex to separate the base id, the chirality ('_L') and the compartment ('_c')
-reg = re.compile(r'(.*?)(?:(.*[^_])_([LDSR]))?[_\(\[]([a-z])[_\)\]]?$')
-def id_for_new_id_style(old_id, is_metabolite=False, new_id_style='cobrapy'):
+reg_compartment = re.compile(r'(.*?)[_\(\[]([a-z][a-z0-9]?)[_\)\]]?$')
+reg_chirality = re.compile(r'(.*?)_?_([LDSRM])$')
+def id_for_new_id_style(old_id, is_metabolite=False):
     """ Get the new style id"""
+    new_id = old_id
 
-    def join_parts(the_id, the_compartment):
-        if (new_id_style.lower()=='cobrapy'):
-            if the_compartment:
-                the_id = the_id+'_'+the_compartment
-            the_id = the_id.replace('-', '__')
-        elif (new_id_style.lower()=='simpheny'):
-            if the_compartment and is_metabolite:
-                the_id = the_id+'['+the_compartment+']'
-            elif the_compartment:
-                the_id = the_id+'('+the_compartment+')'
-            the_id = the_id.replace('__', '-')
-        else:
-            raise Exception('Invalid id style')
+    def _join_parts(the_id, the_compartment):
+        if the_compartment:
+            the_id = the_id + '_' + the_compartment
         return the_id
 
-    # separate the base id, the chirality ('_L') and the compartment ('_c')
-    m = reg.match(old_id)
-    if m is None:
-        # still change the underscore/dash
-        new_id = join_parts(old_id, None)
-    elif m.group(2) is None:
-        new_id = join_parts(m.group(1), m.group(4))
-    else:
-        # if the chirality is not joined by two underscores, then fix that
-        a = "__".join(m.groups()[1:3])
-        new_id = join_parts(a, m.group(4))
+    def _remove_d_underscore(s):
+        """Removed repeated, leading, and trailing underscores."""
+        s = re.sub(r'_+', '_', s)
+        s = re.sub(r'^_+', '', s)
+        s = re.sub(r'_+$', '', s)
+        return s
 
-    # deal with inconsistent notation of (sec) vs. [sec] in iJO1366 versions
-    new_id = new_id.replace('(_sec_)m', '_sec_m').replace('[sec]', '_sec_').replace('(sec)', '_sec_')
-    if new_id.startswith('_'):
-        return new_id[1:]
+    # remove parentheses and brackets, for SBML & BiGG spec compatibility
+    new_id = re.sub(r'[^a-zA-Z0-9_]', '_', new_id)
+    
+    # strip leading and trailing underscores
+    # new_id = re.sub(r'^_+', '', new_id)
+    # new_id = re.sub(r'_+$', '', new_id)
+
+    compartment_match = reg_compartment.match(new_id)
+    if compartment_match is None:
+        # still remove double underscores
+        new_id = _remove_d_underscore(new_id)
     else:
-        return new_id
+        base, compartment = compartment_match.groups()
+        chirality_match = reg_chirality.match(base)
+        if chirality_match is None:
+            new_id = _join_parts(_remove_d_underscore(base), compartment)
+        else:
+            new_base = '%s__%s' % (_remove_d_underscore(chirality_match.group(1)),
+                                   chirality_match.group(2))
+            new_id = _join_parts(new_base, compartment)
+    
+    return new_id
 
 
 def get_formulas_from_names(model):
     reg = re.compile(r'.*_([A-Za-z0-9]+)$')
+    # support cobra 0.3 and 0.4
     for metabolite in model.metabolites:
-        if (metabolite.formula is not None
-            and metabolite.formula.formula!=''
-            and metabolite.formula.formula is not None): continue
+        if (metabolite.formula is not None and str(metabolite.formula) != '' and getattr(metabolite, 'formula', None) is not None):
+            continue
         m = reg.match(metabolite.name)
         if m:
-            metabolite.formula = Formula(m.group(1))
+            try:
+                metabolite.formula = Formula(m.group(1))
+            except TypeError:
+                metabolite.formula = str(m.group(1))
     return model
 
 
