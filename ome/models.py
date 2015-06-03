@@ -164,7 +164,7 @@ class Comments(Base):
     text = Column(String)
     date_created = Column(DateTime)
     type = Column(String)
-
+    url = Column(String)
 
 class ModelCount(Base):
     __tablename__='model_count'
