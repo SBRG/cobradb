@@ -92,30 +92,30 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
             .query(Gene)
             .join(GeneSource,
                   GeneSource.id == Gene.alternative_transcript_of)
-            .filter(Gene.bigg_id == '904.1')
+            .filter(Gene.bigg_id == '904_AT1')
             .filter(GeneSource.bigg_id == 'b0904')
             .count()) == 1
     assert session.query(Synonym).filter(Synonym.synonym == '904').count() == 3 # 3 in first model, 0 in second model
     assert session.query(Gene).filter(Gene.name == 'focA').count() == 3 # 3 in first model, 0 in second model
     
-    assert session.query(Gene).filter(Gene.bigg_id == '904.1').count() == 1
-    assert session.query(Gene).filter(Gene.bigg_id == '904.12').count() == 1
+    assert session.query(Gene).filter(Gene.bigg_id == '904_AT1').count() == 1
+    assert session.query(Gene).filter(Gene.bigg_id == '904_AT12').count() == 1
     assert session.query(Gene).filter(Gene.bigg_id == 'b0904').count() == 2
     assert session.query(Gene).filter(Gene.bigg_id == 'frdB').count() == 0
-    assert session.query(Gene).filter(Gene.bigg_id == 'frdB.1').count() == 1
-    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904.1').count() == 1
-    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904.12').count() == 1
-    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == 'gene_with_period.22').count() == 1
+    assert session.query(Gene).filter(Gene.bigg_id == 'frdB_AT1').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904_AT1').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904_AT12').count() == 1
+    assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == 'gene_with_period_AT22').count() == 1
     
-    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.1').first().id).count() == 8
-    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904.12').first().id).count() == 8
+    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904_AT1').first().id).count() == 8
+    assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904_AT12').first().id).count() == 8
 
     # make sure the locus tag b4153 is back in this gene_reaction_rule (in place of frdB)
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
             .filter(Reaction.bigg_id == 'FRD7')
-            .first()).gene_reaction_rule == '(904.12 and gene_with_period.22 and b4153 and b4154)'
+            .first()).gene_reaction_rule == '(904_AT12 and gene_with_period_AT22 and b4153 and b4154)'
 
     # (2 ny-n) Model 1 has a different ACALD from models 2 and 5. The
     # reaction-hash-prefs file should force the second and third models to have

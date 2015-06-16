@@ -2,6 +2,7 @@
 
 from ome import settings, timing, base
 from ome.components import Gene, Protein
+from ome.util import scrub_gene_id
 
 import sys, os, math, re
 from warnings import warn
@@ -463,9 +464,11 @@ def load_genome(genbank_filepath, session):
         # bigg_id required
         bigg_id = None
         gene_name = None
+        locus_tag = None
 
         if 'locus_tag' in feature.qualifiers:
-            bigg_id = feature.qualifiers['locus_tag'][0]
+            locus_tag = feature.qualifiers['locus_tag'][0]
+            bigg_id = scrub_gene_id(locus_tag)
 
         if 'gene' in feature.qualifiers:
             gene_name = feature.qualifiers['gene'][0]
@@ -477,7 +480,7 @@ def load_genome(genbank_filepath, session):
                     msg += ' (Warnings limited to %d)' % warning_num
                 logging.warn(msg)
                 bigg_id_warnings += 1
-            bigg_id = gene_name
+            bigg_id = scrub_gene_id(gene_name)
             gene_name = None
         elif bigg_id is None:
             logging.error(('No locus_tag or gene name for gene %d in chromosome '
@@ -492,6 +495,7 @@ def load_genome(genbank_filepath, session):
         if gene_db is None:
             ome_gene = {}
             ome_gene['bigg_id'] = bigg_id
+            ome_gene['locus_tag'] = locus_tag
             ome_gene['chromosome_id'] = chromosome.id
             ome_gene['name'] = gene_name
             ome_gene['leftpos'] = int(feature.location.start)
@@ -531,7 +535,7 @@ def load_genome(genbank_filepath, session):
         if 'protein_id' in feature.qualifiers and len(feature.qualifiers['protein_id']) > 0:
 
             ome_protein = {}
-            ome_protein['bigg_id'] = feature.qualifiers['protein_id'][0]
+            ome_protein['bigg_id'] = scrub_gene_id(feature.qualifiers['protein_id'][0])
             ome_protein['gene_id'] = gene.id
 
             if 'product' in feature.qualifiers and len(feature.qualifiers['product']) > 0:

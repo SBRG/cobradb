@@ -171,7 +171,7 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pub_ref, session,
 
 def run_model_polisher(polished_directory):
     model_polisher_path = abspath(join(dirname(__file__), '..', '..', '..',
-                                       'bin', 'ModelPolisher-0.4.jar'))
+                                       'bin', 'ModelPolisher-0.7.jar'))
     logging.info('Running model polisher with {}'.format(model_polisher_path))
 
     command = [settings.java,

@@ -12,7 +12,7 @@ def test_convert_ids(test_model):
     model_in.reactions.get_by_id('DADA').add_metabolites({
         Metabolite('dad_DASH_2_c'): -1
     })
-    returned, old_ids = convert_ids(model_in)
+    returned, old_ids = convert_ids(model_in.copy())
 
     assert returned.id == 'A_bad_id'
     assert returned.description == 'A_bad_id'
@@ -20,6 +20,15 @@ def test_convert_ids(test_model):
     assert 'dad_2_c' in [x.id for x in returned.reactions.get_by_id('DADA').metabolites]
     assert ('dad_2_c', 'dad_DASH_2_c') in old_ids['metabolites'].items()
     assert ('EX_gln__L_e', 'EX_gln_L_e') in old_ids['reactions'].items()
+
+    # genes
+    assert 'gene_with_period_AT22' in [x.id for x in returned.genes]
+    assert returned.reactions.get_by_id('FRD7').gene_reaction_rule == model_in.reactions.get_by_id('FRD7').gene_reaction_rule.replace('.22', '_AT22').replace('.12', '_AT12')
+    assert old_ids['genes']['gene_with_period_AT22'] == 'gene_with_period.22'
+    assert len(returned.genes) == len(model_in.genes)
+
+    assert ['.22' not in x.id for x in returned.genes]
+    assert ['.22' not in x.gene_reaction_rule for x in returned.reactions]
 
 
 def test_id_for_new_id_style():

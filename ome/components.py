@@ -17,6 +17,7 @@ class Gene(GenomeRegion):
                 primary_key=True)
     info = Column(String(300))
     name = Column(String)
+    locus_tag = Column(String)
     mapped_to_genbank = Column(Boolean)
     alternative_transcript_of = Column(Integer,
                                        ForeignKey('gene.id'),
@@ -30,7 +31,8 @@ class Gene(GenomeRegion):
 
     def __init__(self, bigg_id, leftpos=None, rightpos=None,
                  mapped_to_genbank=False, strand=None, chromosome_id=None,
-                 info=None, name=None, alternative_transcript_of=None):
+                 info=None, name=None, alternative_transcript_of=None, 
+                 locus_tag=None):
 
         super(Gene, self).__init__(bigg_id=bigg_id, chromosome_id=chromosome_id,
                                    leftpos=leftpos, rightpos=rightpos, strand=strand)
@@ -38,6 +40,7 @@ class Gene(GenomeRegion):
         self.info = info
         self.mapped_to_genbank = mapped_to_genbank
         self.alternative_transcript_of = alternative_transcript_of
+        self.locus_tag = locus_tag
 
 
 class Motif(GenomeRegion):
