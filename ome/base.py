@@ -1,51 +1,61 @@
 """Module to implement ORM to the ome database"""
 
+from ome import settings
+
 from types import MethodType
 from os import system
-
 from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import Session as _SA_Session
-from sqlalchemy import Table, MetaData, create_engine,Column, Integer, \
-    String, Float, ForeignKey
+from sqlalchemy import (Table, MetaData, create_engine, Column, Integer, String,
+                        Float, Numeric, ForeignKey, Boolean, Enum)
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
-
-from ome import settings
-import pymongo
 from sqlalchemy.schema import Sequence
+import logging
 
+# connect to mongo
+try:
+    import pymongo
+    connection = pymongo.Connection()
+    MONGO_INSTALLED = True
+    omics_database = connection.omics_database
+except Exception as e:
+    logging.warn("Failed to connect to mongo with error: " + e.message)
+    MONGO_INSTALLED = False
+    omics_database = None
+
+# connect to postgres
 engine = create_engine("postgresql://%s:%s@%s/%s" %
     (settings.postgres_user, settings.postgres_password, settings.postgres_host, settings.postgres_database))
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 
-
-try:
-    connection = pymongo.Connection()
-    omics_database = connection.omics_database
-except Exception as e:
-    from warnings import warn
-    warn("Failed to connect to mongo with error: " + e.message)
-    omics_database = None
+# exceptions
+class NotFoundError(Exception):
+    pass
 
 
 class Genome(Base):
     __tablename__ = 'genome'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    bioproject_id = Column(String(200))
-    organism = Column(String(200))
+    bioproject_id = Column(String(200), nullable=False)
+    organism = Column(String(200), nullable=False)
+    taxon_id = Column(String(200), nullable=True)
 
-    __table_args__ = (UniqueConstraint('bioproject_id'),{})
-
+    __table_args__ = (
+        UniqueConstraint('bioproject_id', 'organism'),
+    )
 
     def __repr__(self):
-        return "Genome (#%d) %s %s" % (self.id, self.bioproject_id, self.organism)
+        return ('<ome Genome(id={self.id}, bioproject_id={self.bioproject_id}, '
+                'organism={self.organism}, taxon_id={self.taxon_id})>').format(self=self)
 
-    def __init__(self, bioproject_id, organism):
+    def __init__(self, bioproject_id, organism, taxon_id):
         self.bioproject_id = bioproject_id
         self.organism = organism
+        self.taxon_id = taxon_id
 
 
 class Chromosome(Base):
@@ -74,78 +84,80 @@ class GenomeRegion(Base):
     __tablename__ = 'genome_region'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     chromosome_id = Column(Integer, ForeignKey('chromosome.id'))
-    name = Column(String)
-    leftpos = Column(Integer)
-    rightpos = Column(Integer)
-    strand = Column(String(1))
+    bigg_id = Column(String, nullable=False)
+    leftpos = Column(Integer, nullable=True)
+    rightpos = Column(Integer, nullable=True)
+    strand = Column(String(1), nullable=True)
     type = Column(String(20))
 
-    __table_args__ = (UniqueConstraint('name','leftpos','rightpos','strand','chromosome_id'),{})
+    __table_args__ = (
+        UniqueConstraint('bigg_id', 'chromosome_id'),
+    )
 
-    __mapper_args__ = {'polymorphic_identity': 'genome_region',
-                       'polymorphic_on': type
-                      }
+    __mapper_args__ = {
+        'polymorphic_identity': 'genome_region',
+        'polymorphic_on': type
+    }
 
     def __repr__(self):
-        return "GenomeRegion: %d-%d (%s)" % \
-                (self.leftpos, self.rightpos, self.strand)
+        return ('<ome GenomeRegion(id={self.id}, leftpos={self.leftpos}, rightpos={self.rightpos})>'
+                .format(self.leftpos, self.rightpos, self.strand))
 
-
-    def __init__(self, leftpos, rightpos, strand, chromosome_id, name=None):
+    def __init__(self, bigg_id, chromosome_id, leftpos=None, rightpos=None,
+                 strand=None):
+        self.bigg_id = bigg_id
+        self.chromosome_id = chromosome_id
         self.leftpos = leftpos
         self.rightpos = rightpos
         self.strand = strand
-        self.chromosome_id = chromosome_id
-        self.name = name
 
-
+        
 class Component(Base):
     __tablename__ = 'component'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-
+    bigg_id = Column(String)
     name = Column(String)
-    formula = Column(String)
     type = Column(String(20))
 
-    __table_args__ = (UniqueConstraint('name'),{})
+    __table_args__ = (UniqueConstraint('bigg_id'), {})
 
-    __mapper_args__ = {'polymorphic_identity': 'component',
-                       'polymorphic_on': type
-                      }
+    __mapper_args__ = {
+        'polymorphic_identity': 'component',
+        'polymorphic_on': type
+    }
 
-    def __init__(self, name):
+    def __init__(self, bigg_id, name):
+        self.bigg_id = bigg_id
         self.name = name
 
     def __repr__(self):
         return "Component (#%d):  %s" % \
             (self.id, self.name)
 
-
+        
 class Reaction(Base):
     __tablename__ = 'reaction'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    biggid = Column(String)
-    name = Column(String)
-    long_name = Column(String)
     type = Column(String(20))
-    notes = Column(String)
-    __table_args__ = (UniqueConstraint('name'),{})
+    bigg_id = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    reaction_hash = Column(String, nullable=False)
+    pseudoreaction = Column(Boolean, default=False)
 
-    __mapper_args__ = {'polymorphic_identity': 'reaction',
-                       'polymorphic_on': type
-                      }
+    __table_args__ = (
+        UniqueConstraint('bigg_id'),
+    )
 
-    def __init__(self, name, long_name, notes, biggid=""):
-        self.name = name
-        self.biggid = biggid
-        self.long_name = long_name
-        self.notes = notes
+    __mapper_args__ = {
+        'polymorphic_identity': 'reaction',
+        'polymorphic_on': type
+    }
 
     def __repr__(self):
-        return "Reaction (#%d):  %s" % \
-            (self.id, self.name)
+        return ('<ome Reaction(id=%d, bigg_id=%s%s)>' %
+                (self.id, self.bigg_id, ', pseudoreaction' if self.pseudoreaction else ''))
 
 
 class DataSource(Base):
@@ -174,20 +186,22 @@ class DataSource(Base):
         self.institution = institution
 
 
-class Synonyms(Base):
-    __tablename__ = "synonyms"
+class Synonym(Base):
+    __tablename__ = "synonym"
     id = Column(Integer, Sequence('wids'), primary_key=True)
     ome_id = Column(Integer)
     synonym = Column(String)
-    type = Column(String)
+    type = Column(Enum('reaction', 'metabolite', 'gene', name='synonym_type'))
     synonym_data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
     synonym_data_source = relationship("DataSource")
 
-
-    __table_args__ = (UniqueConstraint('ome_id','synonym','type'),{})
+    __table_args__ = (
+        UniqueConstraint('ome_id', 'synonym', 'type'),
+    )
 
     def __repr__(self):
-        return "%s in (%s)" % (self.synonym, self.synonym_data_source)
+        return ('<ome Synonym(id=%d, synonym="%s", type="%s, ome_id=%d)>' %
+                (self.id, self.synonym, self.type, self.ome_id))
 
     def __init__(self, ome_id, synonym, type, synonym_data_source_id):
         self.ome_id = ome_id
@@ -196,6 +210,59 @@ class Synonyms(Base):
         self.synonym_data_source_id = synonym_data_source_id
 
 
+class Publication(Base):
+    __tablename__ = "publication"
+    id = Column(Integer, Sequence('wids'), primary_key=True)
+    reference_type = Column(Enum('pmid', 'doi', name='reference_type'))
+    reference_id = Column(String)
+    
+    __table_args__=(
+        UniqueConstraint('reference_type', 'reference_id'),
+    )
+    
+
+class PublicationModel(Base):
+    __tablename__ = "publication_model"
+    model_id = Column(Integer,
+                      ForeignKey('model.id', ondelete='CASCADE'),
+                      primary_key=True)
+    publication_id = Column(Integer,
+                            ForeignKey('publication.id', ondelete='CASCADE'),
+                            primary_key=True)
+
+    __table_args__ = (
+        UniqueConstraint('model_id', 'publication_id'),
+    )
+    
+
+class LinkOut(Base):
+    __tablename__="link_out"
+    id = Column(Integer, Sequence('wids'), primary_key=True) 
+    external_id = Column(String)
+    external_source = Column(String)
+    ome_id = Column(Integer)
+    type = Column(String)
+
+
+class OldIDSynonym(Base):
+    __tablename__ = "old_id_model_synonym"
+    id = Column(Integer, Sequence('wids'), primary_key=True) 
+    type = Column(Enum('model_reaction', 'model_compartmentalized_component', 'model_gene',
+                       name='old_id_synonym_type'))
+    synonym_id = Column(Integer,
+                        ForeignKey('synonym.id', ondelete='CASCADE'),
+                        nullable=False)
+    ome_id = Column(Integer, nullable=False)
+    
+    __table_args__ = (
+        UniqueConstraint('synonym_id', 'ome_id'),
+    )
+
+    def __repr__(self):
+        return ('<ome OldIDSynonym(id=%d, type="%s", ome_id=%d, synonym_id=%d)>' %
+                (self.id, self.type, self.ome_id, self.synonym_id))
+
+        
 class GenomeRegionMap(Base):
         __tablename__ = 'genome_region_map'
 
@@ -247,7 +314,7 @@ class _Session(_SA_Session):
 
 
     def __repr__(self):
-        return "OME session %d" % (self.__hash__())
+        return "<ome Session(%d)>" % (self.__hash__())
 
 
 def get_or_create(session, class_type, **kwargs):
@@ -320,4 +387,3 @@ Session = sessionmaker(bind=engine, class_=_Session)
 
 if __name__ == "__main__":
     session = Session()
-

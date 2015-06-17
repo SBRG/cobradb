@@ -1,10 +1,16 @@
+# -*- coding: utf-8 -*-
+
+from ome import settings, timing, base
+from ome.components import Gene, Protein
+from ome.util import scrub_gene_id
+
 import sys, os, math, re
 from warnings import warn
-
 from sqlalchemy import text, or_, and_, func
+import logging
 
-from ome import settings, timing
-
+class BadGenomeError(Exception):
+    pass
 
 def getAttributes(file_name):
     file = open(settings.data_directory + '/annotation/MetaCyc/17.1/data/'+file_name,'r')
@@ -18,6 +24,15 @@ def getAttributes(file_name):
 
         if attflag == 1 and line != '#\n': atts.append(line.lstrip('#    ').rstrip('\n'))
 
+def get_metacyc_data():
+    metacyc_genes = parse_metacyc_dat('genes.dat')
+    metacyc_promoters = parse_metacyc_dat('promoters.dat')
+    metacyc_proteins = parse_metacyc_dat('proteins.dat')
+    metacyc_ligands = parse_metacyc_dat('compounds.dat')
+    metacyc_protein_cplxs = parse_metacyc_dat('protligandcplxes.dat')
+    metacyc_tus = parse_metacyc_dat('transunits.dat')
+    return (metacyc_genes, metacyc_promoters, metacyc_proteins, metacyc_ligands,
+            metacyc_protein_cplxs, metacyc_tus)
 
 def parse_metacyc_dat(file_name):
     file = open(settings.data_directory + '/annotation/MetaCyc/17.1/data/'+file_name,'r')
@@ -141,14 +156,18 @@ def scrub_metacyc_entry(entry, args=['UNIQUE-ID','TYPES'],extra_args=[]):
 
 
 def get_gene_with_metacyc(session, base, components, genome, gene_entry):
-    vals = scrub_metacyc_entry(gene_entry, args=['UNIQUE-ID','ACCESSION-1','LEFT-END-POSITION',\
-                                                          'RIGHT-END-POSITION','TRANSCRIPTION-DIRECTION',\
-                                                          'COMMON-NAME'])
+    vals = scrub_metacyc_entry(gene_entry,
+                               args=['UNIQUE-ID','ACCESSION-1','LEFT-END-POSITION',
+                                     'RIGHT-END-POSITION','TRANSCRIPTION-DIRECTION',
+                                     'COMMON-NAME'])
     if vals is None: return None
 
-    gene = session.query(components.Gene).filter(and_(components.Gene.chromosome_id == genome.id,
-                                                      or_(components.Gene.locus_id == vals['ACCESSION-1'][0],
-                                                          components.Gene.name == vals['COMMON-NAME'][0]))).first()
+    gene = (session
+            .query(components.Gene)
+            .filter(and_(components.Gene.chromosome_id == genome.id, 
+                         or_(components.Gene.bigg_id == vals['ACCESSION-1'][0], 
+                             components.Gene.name == vals['COMMON-NAME'][0])))
+            .first())
     if gene is None:
         print 'Exception, MetaCyc gene:'+vals['ACCESSION-1'][0]+' not found in genbank'
 
@@ -156,77 +175,86 @@ def get_gene_with_metacyc(session, base, components, genome, gene_entry):
 
 
 def update_gene_with_metacyc(session, base, components, gene_entry):
-    vals = scrub_metacyc_entry(gene_entry, args=['UNIQUE-ID','ACCESSION-1','LEFT-END-POSITION',\
-                                                          'RIGHT-END-POSITION','TRANSCRIPTION-DIRECTION',\
-                                                          'COMMON-NAME'])
+    vals = scrub_metacyc_entry(gene_entry,
+                               args=['UNIQUE-ID','ACCESSION-1','LEFT-END-POSITION',
+                                     'RIGHT-END-POSITION','TRANSCRIPTION-DIRECTION', 'COMMON-NAME'])
     if vals is None: return None
 
     gene = get_gene_with_metacyc(session, base, components, gene_entry)
     if not gene: return None
 
-    gene.long_name = vals['COMMON-NAME'][0]
+    gene.name = vals['COMMON-NAME'][0]
 
     session.add(gene)
     session.flush()
 
 
-def get_protein_with_metacyc(session, base, components, genome, protein_entry):
-    vals = scrub_metacyc_entry(protein_entry,extra_args=['GENE'])
-    if vals is None: return None
+def get_protein_with_metacyc(session, base, components, genome, protein_entry, metacyc_genes):
+    vals = scrub_metacyc_entry(protein_entry, extra_args=['GENE'])
+    if vals is None:
+        return None
 
-    """First see if the gene exists from genbank, if not log an error message and return"""
+    # First see if the gene exists from genbank, if not log an error message and return
 
-    try: gene_entry = metacyc_genes[vals['GENE'][0]]
+    try:
+        gene_entry = metacyc_genes[vals['GENE'][0]]
     except:
         print 'MetaCyc issue, gene: '+vals['GENE'][0]+' does not exist'
         return None
 
     gene = get_gene_with_metacyc(session, base, components, genome, gene_entry)
 
-
-    """If the gene exists in genbank, then the protein should exist in genbank as well,
-       if not log an error message and return
-    """
+    # If the gene exists in genbank, then the protein should exist in genbank as
+    # well, if not log an error message and return
 
     try:
         return session.query(components.Protein).filter(components.Protein.gene_id == gene.id).one()
     except:
         return None
 
+
 def update_protein_with_metacyc(session, base, components, genome, protein_entry):
     vals = scrub_metacyc_entry(protein_entry,extra_args=['GENE', 'COMMON-NAME'])
     if vals is None: return None
 
-    protein = get_protein_with_metacyc(session, base, components, genome, protein_entry)
+    protein = get_protein_with_metacyc(session, base, components, genome,
+                                       protein_entry, metacyc_genes)
     if not protein: return None
 
-    protein.long_name = vals['COMMON-NAME'][0]
+    protein.name = vals['COMMON-NAME'][0]
 
     session.add(protein)
     session.flush()
 
 
-
 def get_or_create_metacyc_ligand(session, base, components, ligand_entry):
-    vals = scrub_metacyc_entry(ligand_entry,extra_args=['COMMON-NAME','SMILES'])
-    if vals is None: return None
+    vals = scrub_metacyc_entry(ligand_entry,extra_args=['COMMON-NAME', 'SMILES'])
+    if vals is None:
+        return None
 
     name = vals['COMMON-NAME'][0].replace('\'','[prime]')
     markup = re.compile("<.+?>")
     name = markup.sub("", name)
 
+    return session.get_or_create(components.Metabolite,
+                                 bigg_id=vals['UNIQUE-ID'][0], kegg_id=None,
+                                 cas_number=None, formula=None, name=name,
+                                 flag=True, smiles=vals['SMILES'][0])
 
-    return session.get_or_create(components.Metabolite, name=vals['UNIQUE-ID'][0], kegg_id=None, cas_number=None, formula=None, \
-                                 long_name=name, flag=True, smiles=vals['SMILES'][0])
 
-
-def get_or_create_metacyc_protein_complex(session, base, components, genome, protein_complex_entry):
+def get_or_create_metacyc_protein_complex(session, base, components, genome,
+                                          protein_complex_entry,
+                                          metacyc_proteins, metacyc_ligands,
+                                          metacyc_protein_cplxs):
     #if protein_complex_entry['UNIQUE-ID'][0] == 'CPLX0-226': print protein_complex_entry
     #print protein_complex_entry['UNIQUE-ID'][0]
-    vals = scrub_metacyc_entry(protein_complex_entry,extra_args=['COMMON-NAME','COMPONENTS'])
-    if vals is None: return None
+    vals = scrub_metacyc_entry(protein_complex_entry, extra_args=['COMMON-NAME', 'COMPONENTS'])
+    if vals is None:
+        return None
 
-    protein_complex = session.get_or_create(components.Complex, name=vals['UNIQUE-ID'][0], long_name=vals['COMMON-NAME'][0])
+    protein_complex = session.get_or_create(components.Complex,
+                                            bigg_id=vals['UNIQUE-ID'][0],
+                                            name=vals['COMMON-NAME'][0])
 
     for component in vals['COMPONENTS']:
 
@@ -251,7 +279,10 @@ def get_or_create_metacyc_protein_complex(session, base, components, genome, pro
             complex_component = get_or_create_metacyc_protein_complex(session, base, components, genome, metacyc_protein_cplxs[component])
 
         elif 'Polypeptides' in component_vals['TYPES']:
-            complex_component = get_protein_with_metacyc(session, base, components, genome, metacyc_proteins[component])
+            complex_component = get_protein_with_metacyc(session, base,
+                                                         components, genome,
+                                                         metacyc_proteins[component],
+                                                         metacyc_genes)
 
         elif 'Compounds' in component_vals['TYPES']:
             complex_component = get_or_create_metacyc_ligand(session, base, components, metacyc_ligands[component])
@@ -264,11 +295,12 @@ def get_or_create_metacyc_protein_complex(session, base, components, genome, pro
     return protein_complex
 
 
-def get_or_create_metacyc_transcription_unit(session, base, components, genome, tu_entry):
+def get_or_create_metacyc_transcription_unit(session, base, components, genome,
+                                             tu_entry, metacyc_genes, metacyc_promoters):
 
-    vals = scrub_metacyc_entry(tu_entry,extra_args=['COMPONENTS', 'COMMON-NAME'])
+    vals = scrub_metacyc_entry(tu_entry, extra_args=['COMPONENTS', 'COMMON-NAME'])
     if vals is None:
-        vals = scrub_metacyc_entry(tu_entry,extra_args=['COMPONENTS'])
+        vals = scrub_metacyc_entry(tu_entry, extra_args=['COMPONENTS'])
     if vals is None: return None
 
     genes = []
@@ -292,8 +324,14 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome, 
         strand = genes[0].strand
     except: return
 
-    try: name = vals['COMMON-NAME'][0]
-    except: name = vals['UNIQUE-ID'][0]
+    try:
+        bigg_id = vals['UNIQUE-ID'][0]
+    except:
+        bigg_id = vals['COMMON-NAME'][0]
+    try:
+        name = vals['COMMON-NAME'][0]
+    except:
+        name = ''
 
     if not tss and strand == '+':
         tss = leftpos
@@ -301,9 +339,13 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome, 
         tss = rightpos
 
     if strand == '+':
-        tu = session.get_or_create(components.TU, name=name, leftpos=tss, rightpos=rightpos, strand=strand, genome_id=genome.id)
+        tu = session.get_or_create(components.TU, bigg_id=bigg_id, name=name,
+                                   leftpos=tss, rightpos=rightpos,
+                                   strand=strand, genome_id=genome.id)
     else:
-        tu = session.get_or_create(components.TU, name=name, leftpos=leftpos, rightpos=tss, strand=strand, genome_id=genome.id)
+        tu = session.get_or_create(components.TU, bigg_id=bigg_id, name=name,
+                                   leftpos=leftpos, rightpos=tss, strand=strand,
+                                   genome_id=genome.id)
 
     for gene in genes:
         session.get_or_create(components.TUGenes, tu_id=tu.id, gene_id=gene.id)
@@ -311,163 +353,286 @@ def get_or_create_metacyc_transcription_unit(session, base, components, genome, 
     return tu
 
 
-@timing
-def load_genome(genbank_file, base, components, debug=False):
+def get_bioproject_id(genbank_filepath, fast=False):
+    """Load the file and return the Bioproject ID and the loaded file.
 
+    Returns a tuples of (BioProject ID, SeqIO object).
+    
+    Arguments
+    ---------
+
+    genbank_filepath: The path to the genbank file.
+
+    fast: If True, then only look in the first 100 lines for a BioProject ID,
+    and return a tuple of (BioProject ID, None)
+
+    """
+    # imports 
     from Bio import SeqIO
 
-    session = base.Session()
-    try:
-        gb_file = SeqIO.read(settings.data_directory+'/annotation/genbank/'+genbank_file,'gb')
-    except IOError:
-        warn("File '%s' not found" % genbank_file)
-    except Exception as e:
-        warn('biopython failed to parse %s with error "%s"' %
-             (genbank_file, e.message))
-        return
+    if fast:
+        # try to find the BioProject ID in the first 100 lines. Otherwise, use
+        # the full SeqIO.read
+        line_limit = 100
+        with open(genbank_filepath, 'r') as f:
+            for i, line in enumerate(f.readlines()):
+                s = line.split('BioProject: ')
+                if len(s) > 1:
+                    return s[1].strip(), None
+                if i > line_limit:
+                    break
+        logging.debug('Could not use get_bioproject_id in fast mode. Falling back.')
 
-    #from IPython import embed; embed()
-    bioproject_id = ''
+    # load the genbank file
+    logging.debug('Loading file: %s' % genbank_filepath)
+    try:
+        gb_file = SeqIO.read(genbank_filepath, 'gb')
+    except IOError:
+        raise BadGenomeError("File '%s' not found" % genbank_filepath)
+    except Exception as e:
+        raise BadGenomeError('BioPython failed to parse %s with error "%s"' %
+                             (genbank_filepath, e.message))
+
+    bioproject_id = None
     for value in gb_file.dbxrefs[0].split():
         if 'BioProject' in value:
             bioproject_id = value.split(':')[1]
 
-    if not bioproject_id:
-        print 'Invalid genbank file %s: does not contain a BioProject ID' % (genbank_file)
+    if bioproject_id is None:
+        raise BadGenomeError('Invalid genbank file %s: Does not contain a BioProject ID' % genbank_filepath)
+
+    return bioproject_id, gb_file
 
 
-    genome = session.query(base.Genome).filter(base.Genome.bioproject_id == bioproject_id).first()
+@timing
+def load_genome(genbank_filepath, session):
+    bioproject_id, gb_file = get_bioproject_id(genbank_filepath)
+
+    organism = gb_file.annotations['organism']
+    genome = (session
+              .query(base.Genome)
+              .filter(base.Genome.bioproject_id == bioproject_id)
+              .filter(base.Genome.organism == organism)
+              .first())
 
     if not genome:
-        ome_genome = {'bioproject_id' : bioproject_id,
-                      'organism'      : gb_file.annotations['organism']}
+        logging.debug('Adding new genome: %s' % bioproject_id)
+        ome_genome = { 'bioproject_id': bioproject_id,
+                       'organism': organism,
+                       'taxon_id':'None' }
         genome = base.Genome(**ome_genome)
         session.add(genome)
         session.flush()
-
-    chromosome = session.query(base.Chromosome).filter(base.Chromosome.genbank_id == gb_file.annotations['gi']).filter(base.Chromosome.genome_id == genome.id).first()
+    else:
+        logging.debug('Genome already loaded for bioproject_id %s' % bioproject_id)
+    
+    chromosome = (session
+                  .query(base.Chromosome)
+                  .filter(base.Chromosome.genbank_id == gb_file.annotations['gi'])
+                  .filter(base.Chromosome.genome_id == genome.id)
+                  .first())
 
     if not chromosome:
-        ome_chromosome = {'genome_id': genome.id,
-                      'genbank_id': gb_file.annotations['gi'],
-                      'ncbi_id': gb_file.id}
-
+        logging.debug('Adding new chromosome: %s' % gb_file.annotations['gi'])
+        ome_chromosome = { 'genome_id': genome.id,
+                           'genbank_id': gb_file.annotations['gi'],
+                           'ncbi_id': gb_file.id }
         chromosome = base.Chromosome(**ome_chromosome)
         session.add(chromosome)
         session.flush()
     else:
-        return
+        logging.debug('Chromosome already loaded: %s' % gb_file.annotations['gi'])
 
+    db_xref_data_source_id = { data_source.name: data_source.id for data_source
+                               in session.query(base.DataSource).all() }
 
-    db_xref_data_source_id = {data_source.name:data_source.id for data_source in session.query(base.DataSource).all()}
+    bigg_id_warnings = 0
+    duplicate_genes_warnings = 0
+    warning_num = 5
+    for i, feature in enumerate(gb_file.features):
+        # get the source information
+        if feature.type == 'source':
+            if 'db_xref' in feature.qualifiers:
+                if 'taxon' == feature.qualifiers['db_xref'][0].split(':')[0]:
+                    genome.taxon_id = feature.qualifiers['db_xref'][0].split(':')[1]
+            continue
 
+        # only read in CDSs
+        if feature.type != 'CDS':
+            continue
 
-    for i,feature in enumerate(gb_file.features):
-        if debug and i > 100: continue
-        ome_gene = {'long_name':''}
-        ome_protein = {'long_name':''}
+        # bigg_id required
+        bigg_id = None
+        gene_name = None
+        locus_tag = None
 
+        if 'locus_tag' in feature.qualifiers:
+            locus_tag = feature.qualifiers['locus_tag'][0]
+            bigg_id = scrub_gene_id(locus_tag)
 
-        if feature.type == 'CDS':
+        if 'gene' in feature.qualifiers:
+            gene_name = feature.qualifiers['gene'][0]
 
-            locus_id = ''
-            gene_name = ''
-
-            if 'locus_tag' in feature.qualifiers:
-                locus_id = feature.qualifiers['locus_tag'][0]
-
-            if 'gene' in feature.qualifiers:
-                gene_name = feature.qualifiers['gene'][0]
-
-
-            if not gene_name and locus_id:
-                gene_name = locus_id
-            elif gene_name and not locus_id:
-                locus_id = gene_name
-
-
-            ome_gene['locus_id'] = locus_id
+        if gene_name is not None and bigg_id is None:
+            if bigg_id_warnings <= warning_num:
+                msg = 'No locus_tag for gene. Using Gene name as bigg_id: %s' % gene_name
+                if bigg_id_warnings == warning_num:
+                    msg += ' (Warnings limited to %d)' % warning_num
+                logging.warn(msg)
+                bigg_id_warnings += 1
+            bigg_id = scrub_gene_id(gene_name)
+            gene_name = None
+        elif bigg_id is None:
+            logging.error(('No locus_tag or gene name for gene %d in chromosome '
+                           '%s' % (i, chromosome.genbank_id)))
+            continue
+        
+        gene_db = (session
+                   .query(Gene)
+                   .filter(Gene.bigg_id == bigg_id)
+                   .filter(Gene.chromosome_id == chromosome.id)
+                   .first())
+        if gene_db is None:
+            ome_gene = {}
+            ome_gene['bigg_id'] = bigg_id
+            ome_gene['locus_tag'] = locus_tag
+            ome_gene['chromosome_id'] = chromosome.id
             ome_gene['name'] = gene_name
             ome_gene['leftpos'] = int(feature.location.start)
             ome_gene['rightpos'] = int(feature.location.end)
-            ome_gene['chromosome_id'] = chromosome.id
-
+            ome_gene['mapped_to_genbank'] = True
+            ome_gene['info'] = ''
             if feature.strand == 1: ome_gene['strand'] = '+'
             elif feature.strand == -1: ome_gene['strand'] = '-'
 
-            if 'product' in feature.qualifiers:
-                ome_gene['info'] = feature.qualifiers['product'][0][0:300]
+            # record the notes in info
             elif 'note' in feature.qualifiers:
                 ome_gene['info'] = feature.qualifiers['note'][0][0:300]
-
+            
+            # record the function in info
             if 'function' in feature.qualifiers:
-                ome_gene['info'] = ome_gene['info'] + ',' + feature.qualifiers['function'][0]
-                ome_protein['long_name'] = feature.qualifiers['function'][0]
+                ome_gene['info'] = ome_gene['info'] + ', ' + feature.qualifiers['function'][0]
 
+            # finally, create the gene
+            gene = Gene(**ome_gene)
+            session.add(gene)
+            session.commit()
+        else:
+            gene = gene_db
+            # warn about duplicate genes.
+            # 
+            # TODO The only downside to loading CDS's this way is that the
+            # leftpos and rightpos correspond to a CDS, not the whole gene. So
+            # these need to be fixed eventually.
+            if duplicate_genes_warnings <= warning_num:
+                msg = 'Duplicate genes %s on chromosome %s' % (bigg_id, chromosome.id)
+                if duplicate_genes_warnings == warning_num:
+                    msg += ' (Warnings limited to %d)' % warning_num
+                logging.warn(msg)
+                duplicate_genes_warnings += 1
 
-            gene = session.get_or_create(components.Gene, **ome_gene)
+        # get the protein
+        if 'protein_id' in feature.qualifiers and len(feature.qualifiers['protein_id']) > 0:
 
+            ome_protein = {}
+            ome_protein['bigg_id'] = scrub_gene_id(feature.qualifiers['protein_id'][0])
+            ome_protein['gene_id'] = gene.id
 
-            """
-            if gene == None:
-                print "get or create returned none"
-                gene = components.Gene(**ome_gene)
-                session.add(gene)
-            """
-            if 'db_xref' in feature.qualifiers:
-                for ref in feature.qualifiers['db_xref']:
-                    if gene.id != None:
-                        splitrefs = ref.split(':')
-                        ome_synonym = {'type':'gene'}
-                        ome_synonym['ome_id'] = gene.id
-                        ome_synonym['synonym'] = splitrefs[1]
+            if 'product' in feature.qualifiers and len(feature.qualifiers['product']) > 0:
+                ome_protein['name'] = feature.qualifiers['product'][0]
+            else:
+                ome_protein['name'] = ''
 
-                        try: data_source_id = db_xref_data_source_id[splitrefs[0]]
-                        except:
-                            data_source = base.DataSource(name=splitrefs[0])
-                            session.add(data_source)
-                            session.flush()
-                            data_source_id = data_source.id
-                            db_xref_data_source_id[splitrefs[0]] = data_source_id
+            session.get_or_create(Protein, **ome_protein)
+        
+        # add the synonyms
+        if 'db_xref' in feature.qualifiers:
+            for ref in feature.qualifiers['db_xref']:
+                if gene.id is not None:
+                    splitrefs = ref.split(':')
+                    ome_synonym = { 'type': 'gene' }
+                    ome_synonym['ome_id'] = gene.id
+                    ome_synonym['synonym'] = splitrefs[1].strip()
 
+                    try:
+                        data_source_id = db_xref_data_source_id[splitrefs[0]]
+                    except KeyError:
+                        data_source = base.DataSource(name=splitrefs[0])
+                        session.add(data_source)
+                        session.flush()
+                        data_source_id = data_source.id
+                        db_xref_data_source_id[splitrefs[0]] = data_source_id
 
-                        ome_synonym['synonym_data_source_id'] = data_source_id
-                        if not session.query(base.Synonyms).filter(base.Synonyms.ome_id == gene.id).filter(base.Synonyms.synonym == splitrefs[1]).filter(base.Synonyms.type == 'gene').first():
-                            synonym = base.Synonyms(**ome_synonym)
+                    ome_synonym['synonym_data_source_id'] = data_source_id
+                    found_synonym = (session
+                                     .query(base.Synonym)
+                                     .filter(base.Synonym.ome_id == gene.id)
+                                     .filter(base.Synonym.synonym == splitrefs[1].strip())
+                                     .filter(base.Synonym.type == 'gene')
+                                     .count() > 0)
+                    if not found_synonym:
+                        synonym = base.Synonym(**ome_synonym)
+                        session.add(synonym)
+                else:
+                    print gene.id, " ->the gene id is none"
 
-                            session.add(synonym)
-                    else:
-                        print gene.id, " ->the gene id is none"
-
-            if 'gene_synonym' in feature.qualifiers:
-                for ref in feature.qualifiers['gene_synonym']:
-                    syn = ref.split(';')
-                    for value in syn:
+        if 'gene_synonym' in feature.qualifiers:
+            for ref in feature.qualifiers['gene_synonym']:
+                syn = ref.split(';')
+                for value in syn:
+                    ome_synonym = {'type': 'gene'}
+                    ome_synonym['ome_id'] = gene.id
+                    ome_synonym['synonym'] = value.strip()
+                    ome_synonym['synonym_data_source_id'] = None
+                    found_synonym = (session
+                                     .query(base.Synonym)
+                                     .filter(base.Synonym.ome_id == gene.id)
+                                     .filter(base.Synonym.synonym == value.strip())
+                                     .filter(base.Synonym.type == 'gene')
+                                     .count() > 0)
+                    if not found_synonym:
+                        synonym = base.Synonym(**ome_synonym)
+                        session.add(synonym)
+        
+        if 'old_locus_tag' in feature.qualifiers:
+            for ref in feature.qualifiers['old_locus_tag']:
+                syn = ref.split(';')
+                for value in syn:
+                    ome_synonym = {'type': 'gene'}
+                    ome_synonym['ome_id'] = gene.id
+                    ome_synonym['synonym'] = value.strip()
+                    ome_synonym['synonym_data_source_id'] = None
+                    found_synonym = (session
+                                     .query(base.Synonym)
+                                     .filter(base.Synonym.ome_id == gene.id)
+                                     .filter(base.Synonym.synonym == value.strip())
+                                     .filter(base.Synonym.type == 'gene')
+                                     .count() > 0)
+                    if not found_synonym:
+                        synonym = base.Synonym(**ome_synonym)
+                        session.add(synonym)
+                        
+        if 'note' in feature.qualifiers:
+            for ref in feature.qualifiers['note']:
+                syn = ref.split(';')
+                for value in syn:
+                    value  = value.split(':')
+                    if value[0]== 'ORF_ID':
                         ome_synonym = {'type': 'gene'}
                         ome_synonym['ome_id'] = gene.id
-                        ome_synonym['synonym'] = value
-
+                        ome_synonym['synonym'] = value[1].strip()
                         ome_synonym['synonym_data_source_id'] = None
-                        synonym = base.Synonyms(**ome_synonym)
-                        session.add(synonym)
-
-            if 'product' in feature.qualifiers and feature.type == 'CDS':
-                try:
-                    ome_protein["long_name"] = feature.qualifiers["gene"]
-                except KeyError:
-                    None
-                # If there is no protein_id, don't make a protein entry
-                try:
-                    ome_protein['name'] = feature.qualifiers['protein_id'][0]
-                except (KeyError, IndexError) as e:
-                    continue  # don't make a protein entry
-                ome_protein['gene_id'] = gene.id
-
-                session.get_or_create(components.Protein, **ome_protein)
+                        found_synonym = (session
+                                         .query(base.Synonym)
+                                         .filter(base.Synonym.ome_id == gene.id)
+                                         .filter(base.Synonym.synonym == value[1].strip())
+                                         .filter(base.Synonym.type == 'gene')
+                                         .count() > 0)
+                        if not found_synonym:
+                            synonym = base.Synonym(**ome_synonym)
+                            session.add(synonym)
 
     session.commit()
-    session.close()
-
 
 
 @timing
@@ -476,7 +641,7 @@ def load_motifs(base, components):
 
 
 @timing
-def load_metacyc_proteins(base, components, genome):
+def load_metacyc_proteins(base, components, genome, metacyc_proteins):
     session = base.Session()
 
     for unique_id,entry in metacyc_proteins.iteritems():
@@ -492,8 +657,9 @@ def load_metacyc_proteins(base, components, genome):
 
     session.close()
 
+
 @timing
-def load_metacyc_protein_cplxs(base, components, genome):
+def load_metacyc_protein_cplxs(base, components, genome, metacyc_protein_cplxs):
     session = base.Session()
 
     for unique_id,entry in metacyc_protein_cplxs.iteritems():
@@ -505,18 +671,18 @@ def load_metacyc_protein_cplxs(base, components, genome):
             get_or_create_metacyc_protein_complex(session, base, components, entry)
 
 
-
 @timing
-def load_metacyc_transcription_units(base, components, genome):
-
+def load_metacyc_transcription_units(base, components, genome, metacyc_tus,
+                                     metacyc_genes, metacyc_promoters):
     session = base.Session()
     ##First load annotation file containing merger of metacyc and NCBI
     metacyc_ID = session.get_or_create(base.DataSource, name="metacyc").id
 
-
     for unique_id,entry in metacyc_tus.iteritems():
 
-        get_or_create_metacyc_transcription_unit(session, base, components, genome, entry)
+        get_or_create_metacyc_transcription_unit(session, base, components,
+                                                 genome, entry, metacyc_genes,
+                                                 metacyc_promoters)
 
     session.close()
 
@@ -528,7 +694,6 @@ def load_metacyc_bindsites(base, components, chromosome):
     metacyc_ID = session.get_or_create(base.DataSource, name="metacyc").id
     metacyc_binding_sites = parse_metacyc_dat('dnabindsites.dat')
     metacyc_regulation = parse_metacyc_dat('regulation.dat')
-
 
     for unique_id,entry in metacyc_binding_sites.iteritems():
 
@@ -549,8 +714,12 @@ def load_metacyc_bindsites(base, components, chromosome):
                 leftpos = centerpos
                 rightpos = centerpos
 
-            session.get_or_create(components.DnaBindingSite, name=vals['UNIQUE-ID'][0], leftpos=leftpos,\
-                                  rightpos=rightpos, strand='+', chromosome_id=chromosome.id, centerpos=centerpos, width=length)
+            session.get_or_create(components.DnaBindingSite,
+                                  bigg_id=vals['UNIQUE-ID'][0],
+                                  name=vals['COMMON-NAME'][0], leftpos=leftpos,
+                                  rightpos=rightpos, strand='+',
+                                  chromosome_id=chromosome.id,
+                                  centerpos=centerpos, width=length)
 
 
     for unique_id,entry in metacyc_regulation.iteritems():
@@ -634,7 +803,7 @@ def load_kegg_pathways(base, components):
         pathway_name = vals[1].strip()
         kegg_pathway = session.get_or_create(components.GeneGroup, name = pathway_name)
         for bnum in bnums:
-            gene = session.query(components.Gene).filter_by(locus_id=bnum).first()
+            gene = session.query(components.Gene).filter_by(bigg_id=bnum).first()
             if not gene: continue
             session.get_or_create(components.GeneGrouping, group_id = kegg_pathway.id, gene_id = gene.id)
     session.commit()
@@ -646,7 +815,6 @@ def load_regulatory_network(base, components, datasets, chromosome):
 
     datasets.RegulatoryNetwork.__table__.drop()
     datasets.RegulatoryNetwork.__table__.create()
-
 
     session = base.Session()
     regulatory_network = open(settings.data_directory+'/annotation/regulondb_gene_reg_network.txt','r')
@@ -666,11 +834,9 @@ def load_regulatory_network(base, components, datasets, chromosome):
                                                           direction=vals[2],
                                                           evidence=vals[3])
 
-
     session.flush()
     session.commit()
     session.close()
-
 
 
 @timing
@@ -683,7 +849,7 @@ def write_chromosome_annotation_gff(base, components, chromosome):
 
         for gene in session.query(components.Gene).filter(components.Gene.chromosome_id == chromosome.id).all():
 
-            info_string = 'gene_id "%s"; transcript_id "%s"; gene_name "%s";' % (gene.locus_id, gene.locus_id, gene.name)
+            info_string = 'gene_id "%s"; transcript_id "%s"; gene_name "%s";' % (gene.bigg_id, gene.bigg_id, gene.name)
 
             gff_string = '%s\t%s\t%s\t%d\t%d\t.\t%s\t.\t%s\n' % (genbank_fasta_string, 'ome_db', 'exon', gene.leftpos,
                                                                                                          gene.rightpos,
@@ -692,14 +858,3 @@ def write_chromosome_annotation_gff(base, components, chromosome):
             gff_file.write(gff_string)
 
     session.close()
-
-
-try:
-    metacyc_genes = parse_metacyc_dat('genes.dat')
-    metacyc_promoters = parse_metacyc_dat('promoters.dat')
-    metacyc_proteins = parse_metacyc_dat('proteins.dat')
-    metacyc_ligands = parse_metacyc_dat('compounds.dat')
-    metacyc_protein_cplxs = parse_metacyc_dat('protligandcplxes.dat')
-    metacyc_tus = parse_metacyc_dat('transunits.dat')
-except: None
-

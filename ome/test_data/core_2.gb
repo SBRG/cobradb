@@ -1,0 +1,2803 @@
+LOCUS       NC_000913                  0 bp    DNA              CON 22-JUL-2013
+DEFINITION  Escherichia coli str. K-12 substr. MG1655, complete genome.
+ACCESSION   NC_000913
+VERSION     NC_000913.2  GI:49175990
+DBLINK      Project:57779 BioProject:PRJNA57779-core-2
+KEYWORDS    RefSeq.
+SOURCE      Escherichia coli str. K-12 substr. MG1655
+  ORGANISM  Escherichia coli str. K-12 substr. MG1655
+            Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacteriales;
+            Enterobacteriaceae; Escherichia.
+REFERENCE   1  (bases 1 to 4639675)
+  AUTHORS   Riley,M., Abe,T., Arnaud,M.B., Berlyn,M.K., Blattner,F.R.,
+            Chaudhuri,R.R., Glasner,J.D., Horiuchi,T., Keseler,I.M., Kosuge,T.,
+            Mori,H., Perna,N.T., Plunkett,G. III, Rudd,K.E., Serres,M.H.,
+            Thomas,G.H., Thomson,N.R., Wishart,D. and Wanner,B.L.
+  TITLE     Escherichia coli K-12: a cooperatively developed annotation
+            snapshot--2005
+  JOURNAL   Nucleic Acids Res. 34 (1), 1-9 (2006)
+   PUBMED   16397293
+  REMARK    Publication Status: Online-Only
+REFERENCE   2  (bases 1 to 4639675)
+  AUTHORS   Blattner,F.R., Plunkett,G. III, Bloch,C.A., Perna,N.T., Burland,V.,
+            Riley,M., Collado-Vides,J., Glasner,J.D., Rode,C.K., Mayhew,G.F.,
+            Gregor,J., Davis,N.W., Kirkpatrick,H.A., Goeden,M.A., Rose,D.J.,
+            Mau,B. and Shao,Y.
+  TITLE     The complete genome sequence of Escherichia coli K-12
+  JOURNAL   Science 277 (5331), 1453-1474 (1997)
+   PUBMED   9278503
+REFERENCE   3  (bases 1 to 4639675)
+  AUTHORS   Arnaud,M., Berlyn,M.K.B., Blattner,F.R., Galperin,M.Y.,
+            Glasner,J.D., Horiuchi,T., Kosuge,T., Mori,H., Perna,N.T.,
+            Plunkett,G. III, Riley,M., Rudd,K.E., Serres,M.H., Thomas,G.H. and
+            Wanner,B.L.
+  TITLE     Workshop on Annotation of Escherichia coli K-12
+  JOURNAL   Unpublished
+  REMARK    Woods Hole, Mass., on 14-18 November 2003 (sequence corrections)
+REFERENCE   4  (bases 1 to 4639675)
+  AUTHORS   Glasner,J.D., Perna,N.T., Plunkett,G. III, Anderson,B.D.,
+            Bockhorst,J., Hu,J.C., Riley,M., Rudd,K.E. and Serres,M.H.
+  TITLE     ASAP: Escherichia coli K-12 strain MG1655 version m56
+  JOURNAL   Unpublished
+  REMARK    ASAP download 10 June 2004 (annotation updates)
+REFERENCE   5  (bases 1 to 4639675)
+  AUTHORS   Hayashi,K., Morooka,N., Mori,H. and Horiuchi,T.
+  TITLE     A more accurate sequence comparison between genomes of Escherichia
+            coli K12 W3110 and MG1655 strains
+  JOURNAL   Unpublished
+  REMARK    GenBank accessions AG613214 to AG613378 (sequence corrections)
+REFERENCE   6  (bases 1 to 4639675)
+  AUTHORS   Perna,N.T.
+  TITLE     Escherichia coli K-12 MG1655 yqiK-rfaE intergenic region, genomic
+            sequence correction
+  JOURNAL   Unpublished
+  REMARK    GenBank accession AY605712 (sequence corrections)
+REFERENCE   7  (bases 1 to 4639675)
+  AUTHORS   Rudd,K.E.
+  TITLE     A manual approach to accurate translation start site annotation: an
+            E. coli K-12 case study
+  JOURNAL   Unpublished
+REFERENCE   8  (bases 1 to 4639675)
+  CONSRTM   NCBI Genome Project
+  TITLE     Direct Submission
+  JOURNAL   Submitted (04-MAR-2013) National Center for Biotechnology
+            Information, NIH, Bethesda, MD 20894, USA
+REFERENCE   9  (bases 1 to 4639675)
+  AUTHORS   Rudd,K.E.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (06-FEB-2013) Department of Biochemistry and Molecular
+            Biology, University of Miami Miller School of Medicine, 118 Gautier
+            Bldg., Miami, FL 33136, USA
+  REMARK    Sequence update by submitter
+REFERENCE   10  (bases 1 to 4639675)
+  AUTHORS   Rudd,K.E.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (24-APR-2007) Department of Biochemistry and Molecular
+            Biology, University of Miami Miller School of Medicine, 118 Gautier
+            Bldg., Miami, FL 33136, USA
+  REMARK    Annotation update from ecogene.org as a multi-database collaboration
+REFERENCE   11  (bases 1 to 4639675)
+  AUTHORS   Plunkett,G. III.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (07-FEB-2006) Laboratory of Genetics, University of
+            Wisconsin, 425G Henry Mall, Madison, WI 53706-1580, USA
+  REMARK    Protein updates by submitter
+REFERENCE   12  (bases 1 to 4639675)
+  AUTHORS   Plunkett,G. III.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (10-JUN-2004) Laboratory of Genetics, University of
+            Wisconsin, 425G Henry Mall, Madison, WI 53706-1580, USA
+  REMARK    Sequence update by submitter
+REFERENCE   13  (bases 1 to 4639675)
+  AUTHORS   Plunkett,G. III.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (13-OCT-1998) Laboratory of Genetics, University of
+            Wisconsin, 425G Henry Mall, Madison, WI 53706-1580, USA
+REFERENCE   14  (bases 1 to 4639675)
+  AUTHORS   Blattner,F.R. and Plunkett,G. III.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (02-SEP-1997) Laboratory of Genetics, University of
+            Wisconsin, 425G Henry Mall, Madison, WI 53706-1580, USA
+REFERENCE   15  (bases 1 to 4639675)
+  AUTHORS   Blattner,F.R. and Plunkett,G. III.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (16-JAN-1997) Laboratory of Genetics, University of
+            Wisconsin, 425G Henry Mall, Madison, WI 53706-1580, USA
+COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
+            reference sequence is identical to U00096.
+            [WARNING] On Nov 3, 2013 this sequence was replaced by
+            gi:556503834.
+            On Jun 24, 2004 this sequence version replaced gi:16127994.
+            RefSeq Category: Reference Genome
+            COM: Community selected
+            PRT: Proteomics
+            UPR: UniProt Genome
+            Current U00096 annotation updates are derived from EcoGene
+            http://ecogene.org. Suggestions for updates can be sent to Dr.
+            Kenneth Rudd (krudd@miami.edu). These updates are being generated
+            from a collaboration that also includes ASAP/ERIC, the Coli Genetic
+            Stock Center, EcoliHub, EcoCyc, RegulonDB and UniProtKB/Swiss-Prot.
+            COMPLETENESS: full length.
+FEATURES             Location/Qualifiers
+     CDS             8238..9191
+                     /function="enzyme; Central intermediary metabolism:
+                     Non-oxidative branch, pentose pathway"
+                     /function="1.7.3 metabolism; central intermediary
+                     metabolism; pentose phosphate shunt, non-oxidative branch"
+                     /function="7.1 location of gene products; cytoplasm"
+                     /locus_tag="b0008"
+                     /gene="talB"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK0008; JW0007; yaaK"
+                     /EC_number="2.2.1.2"
+                     /product="transaldolase B"
+                     /db_xref="GI:16128002"
+                     /db_xref="ASAP:ABE-0000027"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A870"
+                     /db_xref="EcoGene:EG11556"
+                     /db_xref="GeneID:944748"
+                     /GO_process="GO:0009052 - pentose-phosphate shunt,
+                     non-oxidative branch"
+                     /transl_table=11
+                     /protein_id="NP_414549.1"
+     CDS             123017..125680
+                     /function="enzyme; Energy metabolism, carbon: Pyruvate
+                     dehydrogenase"
+                     /locus_tag="b0114"
+                     /gene="aceE"
+                     /codon_start=1
+                     /gene_synonym="ECK0113; JW0110"
+                     /EC_number="1.2.4.1"
+                     /note="pyruvate dehydrogenase (decarboxylase component)"
+                     /db_xref="GI:16128107"
+                     /db_xref="ASAP:ABE-0000397"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFG8"
+                     /db_xref="EcoGene:EG10024"
+                     /db_xref="GeneID:944834"
+                     /GO_process="GO:0006086 - acetyl-CoA biosynthetic process
+                     from pyruvate; GO:0009061 - anaerobic respiration;
+                     GO:0016052 - carbohydrate catabolic process; GO:0006096 -
+                     glycolysis; GO:0009436 - glyoxylate catabolic process"
+                     /transl_table=11
+                     /product="pyruvate dehydrogenase, decarboxylase component
+                     E1, thiamin-binding"
+                     /protein_id="NP_414656.1"
+     CDS             125695..127587
+                     /function="enzyme; Energy metabolism, carbon: Pyruvate
+                     dehydrogenase"
+                     /locus_tag="b0115"
+                     /gene="aceF"
+                     /codon_start=1
+                     /gene_synonym="ECK0114; JW0111"
+                     /EC_number="2.3.1.12"
+                     /note="pyruvate dehydrogenase (dihydrolipoyltransacetylase
+                     component)"
+                     /db_xref="GI:16128108"
+                     /db_xref="ASAP:ABE-0000400"
+                     /db_xref="UniProtKB/Swiss-Prot:P06959"
+                     /db_xref="EcoGene:EG10025"
+                     /db_xref="GeneID:944794"
+                     /GO_process="GO:0006086 - acetyl-CoA biosynthetic process
+                     from pyruvate; GO:0009061 - anaerobic respiration;
+                     GO:0016052 - carbohydrate catabolic process; GO:0006096 -
+                     glycolysis; GO:0009436 - glyoxylate catabolic process"
+                     /transl_table=11
+                     /product="pyruvate dehydrogenase,
+                     dihydrolipoyltransacetylase component E2"
+                     /protein_id="NP_414657.1"
+     CDS             127912..129336
+                     /function="enzyme; Energy metabolism, carbon: Pyruvate
+                     dehydrogenase"
+                     /locus_tag="b0116"
+                     /gene="lpd"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="dhl; ECK0115; JW0112; lpdA"
+                     /EC_number="1.8.1.4"
+                     /note="lipoamide dehydrogenase (NADH); component of
+                     2-oxodehydrogenase and pyruvate complexes; L-protein of
+                     glycine cleavage complex"
+                     /db_xref="GI:16128109"
+                     /db_xref="ASAP:ABE-0000404"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A9P0"
+                     /db_xref="EcoGene:EG10543"
+                     /db_xref="GeneID:944854"
+                     /GO_process="GO:0006086 - acetyl-CoA biosynthetic process
+                     from pyruvate; GO:0009060 - aerobic respiration; GO:0009061
+                     - anaerobic respiration; GO:0016052 - carbohydrate
+                     catabolic process; GO:0009063 - cellular amino acid
+                     catabolic process; GO:0006096 - glycolysis; GO:0009436 -
+                     glyoxylate catabolic process; GO:0006099 - tricarboxylic
+                     acid cycle"
+                     /transl_table=11
+                     /product="lipoamide dehydrogenase, E3 component is part of
+                     three enzyme complexes"
+                     /protein_id="NP_414658.1"
+     CDS             131615..134212
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0118"
+                     /codon_start=1
+                     /gene_synonym="ECK0117; JW0114; yacI; yacJ"
+                     /EC_number="4.2.1.3"
+                     /EC_number="4.2.1.99"
+                     /note="aconitate hydrase B"
+                     /db_xref="GI:16128111"
+                     /db_xref="ASAP:ABE-0000411"
+                     /db_xref="UniProtKB/Swiss-Prot:P36683"
+                     /db_xref="EcoGene:EG12316"
+                     /db_xref="GeneID:944864"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration; GO:0006099 - tricarboxylic acid
+                     cycle"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     8932712,9298646"
+                     /gene="acnB"
+                     /product="bifunctional aconitate hydratase
+                     2/2-methylisocitrate dehydratase"
+                     /protein_id="NP_414660.1"
+                     /transl_table=11
+     CDS             372145..373095
+                     /function="enzyme; Degradation of small molecules: Carbon
+                     compounds"
+                     /locus_tag="b0351"
+                     /gene="mhpF"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK0348; JW0342"
+                     /EC_number="1.2.1.10"
+                     /note="acetaldehyde dehydrogenase"
+                     /db_xref="GI:16128336"
+                     /db_xref="ASAP:ABE-0001207"
+                     /db_xref="UniProtKB/Swiss-Prot:P77580"
+                     /db_xref="EcoGene:EG13625"
+                     /db_xref="GeneID:945008"
+                     /GO_process="GO:0019395 - fatty acid oxidation"
+                     /transl_table=11
+                     /product="acetaldehyde-CoA dehydrogenase II, NAD-binding"
+                     /protein_id="NP_414885.1"
+     CDS             complement(377686..378795)
+                     /function="enzyme; Energy metabolism, carbon: Fermentation"
+                     /locus_tag="b0356"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="adhC; ECK0353; JW0347"
+                     /EC_number="1.1.1.1"
+                     /EC_number="1.1.1.284"
+                     /note="alcohol dehydrogenase class III; formaldehyde
+                     dehydrogenase, glutathione-dependent"
+                     /db_xref="GI:16128341"
+                     /db_xref="ASAP:ABE-0001221"
+                     /db_xref="UniProtKB/Swiss-Prot:P25437"
+                     /db_xref="EcoGene:EG50010"
+                     /db_xref="GeneID:944988"
+                     /GO_process="GO:0006113 - fermentation"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     1731906"
+                     /gene="frmA"
+                     /product="alcohol dehydrogenase class
+                     III/glutathione-dependent formaldehyde dehydrogenase"
+                     /protein_id="NP_414890.1"
+                     /transl_table=11
+     CDS             472190..473476
+                     /function="putative transport; Central intermediary
+                     metabolism: Pool, multipurpose conversions"
+                     /locus_tag="b0451"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK0445; JW0441; ybaG"
+                     /transl_table=11
+                     /note="probable ammonium transporter"
+                     /db_xref="GI:16128436"
+                     /db_xref="ASAP:ABE-0001564"
+                     /db_xref="UniProtKB/Swiss-Prot:P69681"
+                     /db_xref="EcoGene:EG11821"
+                     /db_xref="GeneID:945084"
+                     /gene="amtB"
+                     /product="ammonium transporter"
+                     /protein_id="NP_414985.1"
+     CDS             496399..497043
+                     /function="enzyme; Purine ribonucleotide biosynthesis"
+                     /locus_tag="b0474"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="dnaW; ECK0468; JW0463; plsA"
+                     /EC_number="2.7.4.3"
+                     /note="adenylate kinase activity; pleiotropic effects on
+                     glycerol-3-phosphate acyltransferase activity"
+                     /db_xref="GI:16128458"
+                     /db_xref="ASAP:ABE-0001645"
+                     /db_xref="UniProtKB/Swiss-Prot:P69441"
+                     /db_xref="EcoGene:EG10032"
+                     /db_xref="GeneID:945097"
+                     /GO_process="GO:0015949 - nucleobase, nucleoside and
+                     nucleotide interconversion; GO:0009152 - purine
+                     ribonucleotide biosynthetic process"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     3027060,8650159,9298646,9600841"
+                     /gene="adk"
+                     /product="adenylate kinase"
+                     /protein_id="NP_415007.1"
+                     /transl_table=11
+     CDS             510865..511797
+                     /function="enzyme; l-glutamine catabolism"
+                     /locus_tag="b0485"
+                     /codon_start=1
+                     /gene_synonym="ECK0479; glsA1; JW0474; ybaS"
+                     /transl_table=11
+                     /note="putative glutaminase"
+                     /db_xref="GI:16128469"
+                     /db_xref="ASAP:ABE-0001688"
+                     /db_xref="UniProtKB/Swiss-Prot:P77454"
+                     /db_xref="EcoGene:EG13247"
+                     /db_xref="GeneID:946187"
+                     /GO_process="GO:0009063 - cellular amino acid catabolic
+                     process"
+                     /gene="glsA"
+                     /product="glutaminase 1"
+                     /protein_id="NP_415018.1"
+     CDS             complement(752408..753691)
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0720"
+                     /gene="gltA"
+                     /codon_start=1
+                     /product="citrate synthase"
+                     /gene_synonym="ECK0709; gluT; icdB; JW0710"
+                     /db_xref="GI:16128695"
+                     /db_xref="ASAP:ABE-0002451"
+                     /db_xref="UniProtKB/Swiss-Prot:P0ABH7"
+                     /db_xref="EcoGene:EG10402"
+                     /db_xref="GeneID:945323"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006099
+                     - tricarboxylic acid cycle"
+                     /EC_number="2.3.3.1"
+                     /transl_table=11
+                     /protein_id="NP_415248.1"
+     CDS             754400..754789
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0721"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="cybA; ECK0710; JW0711"
+                     /transl_table=11
+                     /note="succinate dehydrogenase, cytochrome b556"
+                     /db_xref="GI:16128696"
+                     /db_xref="ASAP:ABE-0002460"
+                     /db_xref="UniProtKB/Swiss-Prot:P69054"
+                     /db_xref="EcoGene:EG10933"
+                     /db_xref="GeneID:945316"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0017004 -
+                     cytochrome complex assembly; GO:0006099 - tricarboxylic
+                     acid cycle"
+                     /gene="sdhC"
+                     /product="succinate dehydrogenase, membrane subunit, binds
+                     cytochrome b556"
+                     /protein_id="NP_415249.1"
+     CDS             754783..755130
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0722"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK0711; JW0712"
+                     /transl_table=11
+                     /note="succinate dehydrogenase, hydrophobic subunit"
+                     /db_xref="GI:16128697"
+                     /db_xref="ASAP:ABE-0002464"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AC44"
+                     /db_xref="EcoGene:EG10934"
+                     /db_xref="GeneID:945322"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0006099 -
+                     tricarboxylic acid cycle"
+                     /gene="sdhD"
+                     /product="succinate dehydrogenase, membrane subunit, binds
+                     cytochrome b556"
+                     /protein_id="NP_415250.1"
+     CDS             755130..756896
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0723"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK0712; JW0713"
+                     /EC_number="1.3.99.1"
+                     /product="succinate dehydrogenase, flavoprotein subunit"
+                     /db_xref="GI:16128698"
+                     /db_xref="ASAP:ABE-0002466"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AC41"
+                     /db_xref="EcoGene:EG10931"
+                     /db_xref="GeneID:945402"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0006099 -
+                     tricarboxylic acid cycle"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     9298646,9600841,9740056"
+                     /gene="sdhA"
+                     /protein_id="NP_415251.1"
+                     /transl_table=11
+     CDS             756912..757628
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0724"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK0713; JW0714"
+                     /EC_number="1.3.99.1"
+                     /note="succinate dehydrogenase, iron sulfur protein"
+                     /db_xref="GI:16128699"
+                     /db_xref="ASAP:ABE-0002468"
+                     /db_xref="UniProtKB/Swiss-Prot:P07014"
+                     /db_xref="EcoGene:EG10932"
+                     /db_xref="GeneID:945300"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0006099 -
+                     tricarboxylic acid cycle"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     9298646"
+                     /gene="sdhB"
+                     /product="succinate dehydrogenase, FeS subunit"
+                     /protein_id="NP_415252.1"
+                     /transl_table=11
+     CDS             757929..760730
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0726"
+                     /gene="sucA"
+                     /codon_start=1
+                     /gene_synonym="ECK0714; JW0715; lys"
+                     /EC_number="1.2.4.2"
+                     /note="2-oxoglutarate dehydrogenase (decarboxylase
+                     component)"
+                     /db_xref="GI:16128701"
+                     /db_xref="ASAP:ABE-0002478"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFG3"
+                     /db_xref="EcoGene:EG10979"
+                     /db_xref="GeneID:945303"
+                     /GO_process="GO:0006099 - tricarboxylic acid cycle"
+                     /transl_table=11
+                     /product="2-oxoglutarate decarboxylase, thiamin-requiring"
+                     /protein_id="NP_415254.1"
+     CDS             760745..761962
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0727"
+                     /gene="sucB"
+                     /codon_start=1
+                     /gene_synonym="ECK0715; JW0716"
+                     /EC_number="2.3.1.61"
+                     /note="2-oxoglutarate dehydrogenase
+                     (dihydrolipoyltranssuccinase E2 component)"
+                     /db_xref="GI:16128702"
+                     /db_xref="ASAP:ABE-0002480"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFG6"
+                     /db_xref="EcoGene:EG10980"
+                     /db_xref="GeneID:945307"
+                     /GO_process="GO:0006099 - tricarboxylic acid cycle"
+                     /transl_table=11
+                     /product="dihydrolipoyltranssuccinase"
+                     /protein_id="NP_415255.1"
+     CDS             762237..763403
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0728"
+                     /codon_start=1
+                     /product="succinyl-CoA synthetase, beta subunit"
+                     /gene_synonym="ECK0716; JW0717"
+                     /db_xref="GI:16128703"
+                     /db_xref="ASAP:ABE-0002483"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A836"
+                     /db_xref="EcoGene:EG10981"
+                     /db_xref="GeneID:945312"
+                     /GO_process="GO:0006099 - tricarboxylic acid cycle"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     9298646"
+                     /EC_number="6.2.1.5"
+                     /gene="sucC"
+                     /protein_id="NP_415256.1"
+                     /transl_table=11
+     CDS             763403..764272
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b0729"
+                     /gene="sucD"
+                     /codon_start=1
+                     /gene_synonym="ECK0717; JW0718"
+                     /EC_number="6.2.1.5"
+                     /note="succinyl-CoA synthetase, alpha subunit"
+                     /db_xref="GI:16128704"
+                     /db_xref="ASAP:ABE-0002485"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AGE9"
+                     /db_xref="EcoGene:EG10982"
+                     /db_xref="GeneID:945314"
+                     /GO_process="GO:0006099 - tricarboxylic acid cycle"
+                     /transl_table=11
+                     /product="succinyl-CoA synthetase, NAD(P)-binding, alpha
+                     subunit"
+                     /protein_id="NP_415257.1"
+     CDS             770681..772249
+                     /function="enzyme; Energy metabolism, carbon: Electron
+                     transport"
+                     /locus_tag="b0733"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK0721; JW0722"
+                     /EC_number="1.9.3.-"
+                     /note="cytochrome d terminal oxidase, polypeptide subunit
+                     I"
+                     /db_xref="GI:90111166"
+                     /db_xref="ASAP:ABE-0002499"
+                     /db_xref="UniProtKB/Swiss-Prot:P0ABJ9"
+                     /db_xref="EcoGene:EG10173"
+                     /db_xref="GeneID:945341"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     10428033"
+                     /gene="cydA"
+                     /product="cytochrome d terminal oxidase, subunit I"
+                     /protein_id="NP_415261.2"
+                     /transl_table=11
+     CDS             772265..773404
+                     /function="enzyme; Energy metabolism, carbon: Electron
+                     transport"
+                     /locus_tag="b0734"
+                     /gene="cydB"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK0722; JW0723"
+                     /EC_number="1.9.3.-"
+                     /note="cytochrome d terminal oxidase polypeptide subunit
+                     II"
+                     /db_xref="GI:16128709"
+                     /db_xref="ASAP:ABE-0002501"
+                     /db_xref="UniProtKB/Swiss-Prot:P0ABK2"
+                     /db_xref="EcoGene:EG10174"
+                     /db_xref="GeneID:945347"
+                     /transl_table=11
+                     /product="cytochrome d terminal oxidase, subunit II"
+                     /protein_id="NP_415262.1"
+     CDS             complement(786066..786818)
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b0755"
+                     /gene="gpmA"
+                     /codon_start=1
+                     /product="phosphoglyceromutase 1"
+                     /gene_synonym="ECK0744; gpm; JW0738"
+                     /db_xref="GI:16128723"
+                     /db_xref="ASAP:ABE-0002563"
+                     /db_xref="UniProtKB/Swiss-Prot:P62707"
+                     /db_xref="EcoGene:EG11699"
+                     /db_xref="GeneID:945068"
+                     /GO_process="GO:0006094 - gluconeogenesis; GO:0006096 -
+                     glycolysis"
+                     /EC_number="5.4.2.1"
+                     /transl_table=11
+                     /protein_id="NP_415276.1"
+     CDS             797809..798804
+                     /function="orf; Not classified"
+                     /locus_tag="b0767"
+                     /gene="pgl"
+                     /codon_start=1
+                     /gene_synonym="blu; ECK0756; JW0750; ybhE"
+                     /EC_number="3.1.1.31"
+                     /note="putative isomerase"
+                     /db_xref="GI:16128735"
+                     /db_xref="ASAP:ABE-0002611"
+                     /db_xref="UniProtKB/Swiss-Prot:P52697"
+                     /db_xref="EcoGene:EG13231"
+                     /db_xref="GeneID:946398"
+                     /transl_table=11
+                     /product="6-phosphogluconolactonase"
+                     /protein_id="NP_415288.1"
+     CDS             complement(844964..845686)
+                     /function="transport; Transport of small molecules: Amino
+                     acids, amines"
+                     /locus_tag="b0809"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK0798; JW0794"
+                     /transl_table=11
+                     /note="ATP-binding component of glutamine high-affinity
+                     transport system"
+                     /db_xref="GI:16128777"
+                     /db_xref="ASAP:ABE-0002764"
+                     /db_xref="UniProtKB/Swiss-Prot:P10346"
+                     /db_xref="EcoGene:EG10389"
+                     /db_xref="GeneID:945435"
+                     /GO_process="GO:0006542 - glutamine biosynthetic process"
+                     /gene="glnQ"
+                     /product="glutamine transporter subunit"
+                     /protein_id="NP_415330.1"
+     CDS             complement(845683..846342)
+                     /function="transport; Transport of small molecules: Amino
+                     acids, amines"
+                     /locus_tag="b0810"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK0799; JW0795"
+                     /transl_table=11
+                     /note="glutamine high-affinity transport system; membrane
+                     component"
+                     /db_xref="GI:16128778"
+                     /db_xref="ASAP:ABE-0002766"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AEQ6"
+                     /db_xref="EcoGene:EG10388"
+                     /db_xref="GeneID:945621"
+                     /GO_process="GO:0006542 - glutamine biosynthetic process"
+                     /gene="glnP"
+                     /product="glutamine transporter subunit"
+                     /protein_id="NP_415331.1"
+     CDS             complement(846481..847227)
+                     /function="transport; Transport of small molecules: Amino
+                     acids, amines"
+                     /locus_tag="b0811"
+                     /GO_component="GO:0042597 - periplasmic space"
+                     /codon_start=1
+                     /gene_synonym="ECK0800; JW0796"
+                     /transl_table=11
+                     /note="periplasmic glutamine-binding protein; permease"
+                     /db_xref="GI:16128779"
+                     /db_xref="ASAP:ABE-0002771"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AEQ3"
+                     /db_xref="EcoGene:EG10386"
+                     /db_xref="GeneID:944872"
+                     /GO_process="GO:0006542 - glutamine biosynthetic process"
+                     /gene="glnH"
+                     /product="glutamine transporter subunit"
+                     /protein_id="NP_415332.1"
+     CDS             complement(914575..915270)
+                     /function="transport; Transport of small molecules: Other"
+                     /locus_tag="b0875"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="bniP; ECK0866; JW0859"
+                     /transl_table=11
+                     /note="transmembrane water channel; aquaporin Z"
+                     /db_xref="GI:16128843"
+                     /db_xref="ASAP:ABE-0002976"
+                     /db_xref="UniProtKB/Swiss-Prot:P60844"
+                     /db_xref="EcoGene:EG13270"
+                     /db_xref="GeneID:945497"
+                     /GO_process="GO:0006970 - response to osmotic stress"
+                     /gene="aqpZ"
+                     /product="aquaporin Z"
+                     /protein_id="NP_415396.1"
+     CDS             complement(949563..950303)
+                     /function="enzyme; Energy metabolism, carbon: Anaerobic
+                     respiration"
+                     /locus_tag="b0902"
+                     /gene="pflA"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="act; ECK0893; JW0885"
+                     /EC_number="1.97.1.4"
+                     /product="pyruvate formate lyase activating enzyme 1"
+                     /db_xref="GI:16128869"
+                     /db_xref="ASAP:ABE-0003068"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A9N4"
+                     /db_xref="EcoGene:EG10028"
+                     /db_xref="GeneID:945517"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006464
+                     - protein modification process"
+                     /transl_table=11
+                     /protein_id="NP_415422.1"
+     CDS             complement(950495..952777)
+                     /function="enzyme; Energy metabolism, carbon: Anaerobic
+                     respiration"
+                     /locus_tag="b0903"
+                     /gene="pflB"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK0894; JW0886; pfl"
+                     /EC_number="2.3.1.54"
+                     /note="formate acetyltransferase 1"
+                     /db_xref="GI:16128870"
+                     /db_xref="ASAP:ABE-0003071"
+                     /db_xref="UniProtKB/Swiss-Prot:P09373"
+                     /db_xref="EcoGene:EG10701"
+                     /db_xref="GeneID:945514"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0009063
+                     - cellular amino acid catabolic process"
+                     /transl_table=11
+                     /product="pyruvate formate lyase I"
+                     /protein_id="NP_415423.1"
+     CDS             complement(952832..953689)
+                     /function="putative transport; Degradation of small
+                     molecules: Carbon compounds"
+                     /locus_tag="b0904"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK0895; JW0887; ycaE"
+                     /transl_table=11
+                     /note="probable formate transporter (formate channel 1)"
+                     /db_xref="GI:16128871"
+                     /db_xref="ASAP:ABE-0003073"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AC23"
+                     /db_xref="EcoGene:EG11258"
+                     /db_xref="GeneID:945513"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /gene="test_in_genome_2"
+                     /product="formate channel"
+                     /protein_id="NP_415424.1"
+     CDS             1036963..1038507
+                     /function="putative enzyme; Energy metabolism, carbon:
+                     Electron transport"
+                     /locus_tag="b0978"
+                     /gene="appC"
+                     /GO_component="GO:0019866 - organelle inner membrane"
+                     /codon_start=1
+                     /gene_synonym="cbdA; cyxA; ECK0969; JW0960"
+                     /EC_number="1.10.3.-"
+                     /product="cytochrome bd-II oxidase, subunit I"
+                     /db_xref="GI:16128944"
+                     /db_xref="ASAP:ABE-0003300"
+                     /db_xref="UniProtKB/Swiss-Prot:P26459"
+                     /db_xref="EcoGene:EG11380"
+                     /db_xref="GeneID:945585"
+                     /transl_table=11
+                     /protein_id="NP_415497.1"
+     CDS             1038519..1039655
+                     /function="putative enzyme; Energy metabolism, carbon:
+                     Electron transport"
+                     /locus_tag="b0979"
+                     /gene="appB"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="cbdB; cyxB; ECK0970; JW0961"
+                     /EC_number="1.10.3.-"
+                     /note="probable third cytochrome oxidase, subunit II"
+                     /db_xref="GI:16128945"
+                     /db_xref="ASAP:ABE-0003302"
+                     /db_xref="UniProtKB/Swiss-Prot:P26458"
+                     /db_xref="EcoGene:EG11379"
+                     /db_xref="GeneID:947547"
+                     /transl_table=11
+                     /product="cytochrome bd-II oxidase, subunit II"
+                     /protein_id="NP_415498.1"
+     CDS             1157092..1158525
+                     /function="transport; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b1101"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="car; cat; CR; ECK1087; glcA; JW1087; tgl;
+                     umg; umgC"
+                     /EC_number="2.7.1.69"
+                     /note="PTS system, glucose-specific IIBC component"
+                     /db_xref="GI:16129064"
+                     /db_xref="ASAP:ABE-0003722"
+                     /db_xref="UniProtKB/Swiss-Prot:P69786"
+                     /db_xref="EcoGene:EG10787"
+                     /db_xref="GeneID:945651"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process;
+                     GO:0006464 - protein modification process"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     3023349"
+                     /gene="ptsG"
+                     /product="fused glucose-specific PTS enzymes: IIB
+                     component/IIC component"
+                     /protein_id="NP_415619.1"
+                     /transl_table=11
+     CDS             1194346..1195596
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle;
+                     Phage or Prophage Related"
+                     /locus_tag="b1136"
+                     /codon_start=1
+                     /gene_synonym="ECK1122; icdA; icdE; JW1122"
+                     /EC_number="1.1.1.42"
+                     /note="isocitrate dehydrogenase, specific for NADP+"
+                     /db_xref="GI:16129099"
+                     /db_xref="ASAP:ABE-0003823"
+                     /db_xref="UniProtKB/Swiss-Prot:P08200"
+                     /db_xref="EcoGene:EG10489"
+                     /db_xref="GeneID:945702"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006099
+                     - tricarboxylic acid cycle"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     9298646"
+                     /gene="icd"
+                     /product="e14 prophage; isocitrate dehydrogenase, specific
+                     for NADP+"
+                     /protein_id="NP_415654.1"
+                     /transl_table=11
+     CDS             complement(1294669..1297344)
+                     /function="enzyme; Energy metabolism, carbon: Fermentation"
+                     /locus_tag="b1241"
+                     /gene="adhE"
+                     /codon_start=1
+                     /gene_synonym="adhC; ana; ECK1235; JW1228"
+                     /EC_number="1.1.1.1"
+                     /EC_number="1.2.1.10"
+                     /note="CoA-linked acetaldehyde dehydrogenase and
+                     iron-dependent alcohol dehydrogenase;
+                     pyruvate-formate-lyase deactivase"
+                     /db_xref="GI:16129202"
+                     /db_xref="ASAP:ABE-0004164"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A9Q7"
+                     /db_xref="EcoGene:EG10031"
+                     /db_xref="GeneID:945837"
+                     /GO_process="GO:0006113 - fermentation"
+                     /transl_table=11
+                     /product="fused acetaldehyde-CoA
+                     dehydrogenase/iron-dependent alcohol
+                     dehydrogenase/pyruvate-formate lyase deactivase"
+                     /protein_id="NP_415757.1"
+     CDS             1333855..1336530
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b1276"
+                     /gene="acnA"
+                     /codon_start=1
+                     /gene_synonym="acn; ECK1271; JW1268"
+                     /EC_number="4.2.1.3"
+                     /note="aconitate hydrase 1"
+                     /db_xref="GI:16129237"
+                     /db_xref="ASAP:ABE-0004283"
+                     /db_xref="UniProtKB/Swiss-Prot:P25516"
+                     /db_xref="EcoGene:EG11325"
+                     /db_xref="GeneID:946724"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006099
+                     - tricarboxylic acid cycle"
+                     /transl_table=11
+                     /product="aconitate hydratase 1"
+                     /protein_id="NP_415792.1"
+     CDS             complement(1357514..1358932)
+                     /function="putative enzyme; Not classified"
+                     /locus_tag="b1297"
+                     /codon_start=1
+                     /gene_synonym="ECK1292; JW5201; ycjK"
+                     /transl_table=11
+                     /note="putative glutamine synthetase"
+                     /db_xref="GI:90111244"
+                     /db_xref="ASAP:ABE-0004365"
+                     /db_xref="UniProtKB/Swiss-Prot:P78061"
+                     /db_xref="EcoGene:EG13908"
+                     /db_xref="GeneID:946202"
+                     /GO_process="GO:0006542 - glutamine biosynthetic process;
+                     GO:0006807 - nitrogen compound metabolic process"
+                     /gene="puuA"
+                     /product="gamma-Glu-putrescine synthase"
+                     /protein_id="NP_415813.4"
+     CDS             complement(1439878..1440867)
+                     /function="enzyme; Energy metabolism, carbon: Fermentation"
+                     /locus_tag="b1380"
+                     /gene="ldhA"
+                     /codon_start=1
+                     /product="fermentative D-lactate dehydrogenase,
+                     NAD-dependent"
+                     /gene_synonym="ECK1377; hslF; hslI; htpH; JW1375"
+                     /db_xref="GI:16129341"
+                     /db_xref="ASAP:ABE-0004619"
+                     /db_xref="UniProtKB/Swiss-Prot:P52643"
+                     /db_xref="EcoGene:EG13186"
+                     /db_xref="GeneID:946315"
+                     /GO_process="GO:0006113 - fermentation"
+                     /EC_number="1.1.1.28"
+                     /transl_table=11
+                     /protein_id="NP_415898.1"
+     CDS             complement(1550852..1551862)
+                     /function="enzyme; Energy metabolism, carbon: Anaerobic
+                     respiration"
+                     /locus_tag="b1478"
+                     /gene="adhP"
+                     /codon_start=1
+                     /gene_synonym="ECK1472; JW1474; yddN"
+                     /EC_number="1.1.1.1"
+                     /note="alcohol dehydrogenase"
+                     /db_xref="GI:90111280"
+                     /db_xref="ASAP:ABE-0004928"
+                     /db_xref="UniProtKB/Swiss-Prot:P39451"
+                     /db_xref="EcoGene:EG12622"
+                     /db_xref="GeneID:946036"
+                     /GO_process="GO:0009061 - anaerobic respiration"
+                     /transl_table=11
+                     /product="ethanol-active dehydrogenase/acetaldehyde-active
+                     reductase"
+                     /protein_id="NP_415995.4"
+     CDS             complement(1551996..1553693)
+                     /function="enzyme; Central intermediary metabolism:
+                     Gluconeogenesis"
+                     /locus_tag="b1479"
+                     /gene="maeA"
+                     /codon_start=1
+                     /gene_synonym="ECK1473; JW5238; sfcA"
+                     /EC_number="1.1.1.38"
+                     /note="NAD-linked malate dehydrogenase (malic enzyme)"
+                     /db_xref="GI:90111281"
+                     /db_xref="ASAP:ABE-0004931"
+                     /db_xref="UniProtKB/Swiss-Prot:P26616"
+                     /db_xref="EcoGene:EG10948"
+                     /db_xref="GeneID:946031"
+                     /GO_process="GO:0006094 - gluconeogenesis"
+                     /transl_table=11
+                     /product="malate dehydrogenase, (decarboxylating,
+                     NAD-requiring) (malic enzyme)"
+                     /protein_id="NP_415996.2"
+     CDS             complement(1610349..1611275)
+                     /function="enzyme; l-glutamine catabolism"
+                     /locus_tag="b1524"
+                     /codon_start=1
+                     /gene_synonym="ECK1517; glsA2; JW1517; yneH"
+                     /transl_table=11
+                     /note="putative glutaminase"
+                     /db_xref="GI:16129483"
+                     /db_xref="ASAP:ABE-0005086"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A6W0"
+                     /db_xref="EcoGene:EG13816"
+                     /db_xref="GeneID:944973"
+                     /GO_process="GO:0009063 - cellular amino acid catabolic
+                     process"
+                     /gene="glsB"
+                     /product="glutaminase 2"
+                     /protein_id="NP_416041.1"
+     CDS             complement(1672996..1674384)
+                     /function="enzyme; Central intermediary metabolism: Pool,
+                     multipurpose conversions"
+                     /locus_tag="b1602"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK1597; JW1594"
+                     /EC_number="1.6.1.2"
+                     /product="pyridine nucleotide transhydrogenase, beta
+                     subunit"
+                     /db_xref="GI:16129560"
+                     /db_xref="ASAP:ABE-0005352"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AB67"
+                     /db_xref="EcoGene:EG10745"
+                     /db_xref="GeneID:946144"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     3525165"
+                     /gene="pntB"
+                     /protein_id="NP_416119.1"
+                     /transl_table=11
+     CDS             complement(1674395..1675927)
+                     /function="enzyme; Central intermediary metabolism: Pool,
+                     multipurpose conversions"
+                     /locus_tag="b1603"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK1598; JW1595"
+                     /EC_number="1.6.1.2"
+                     /product="pyridine nucleotide transhydrogenase, alpha
+                     subunit"
+                     /db_xref="GI:16129561"
+                     /db_xref="ASAP:ABE-0005354"
+                     /db_xref="UniProtKB/Swiss-Prot:P07001"
+                     /db_xref="EcoGene:EG10744"
+                     /db_xref="GeneID:946628"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     3525165"
+                     /gene="pntA"
+                     /protein_id="NP_416120.1"
+                     /transl_table=11
+     CDS             complement(1683209..1684612)
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b1611"
+                     /codon_start=1
+                     /gene_synonym="ECK1606; JW1603"
+                     /EC_number="4.2.1.2"
+                     /note="fumarase C= fumarate hydratase Class II; isozyme"
+                     /db_xref="GI:16129569"
+                     /db_xref="ASAP:ABE-0005380"
+                     /db_xref="UniProtKB/Swiss-Prot:P05042"
+                     /db_xref="EcoGene:EG10358"
+                     /db_xref="GeneID:946147"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006113
+                     - fermentation; GO:0006099 - tricarboxylic acid cycle"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     1917897,8496960"
+                     /gene="fumC"
+                     /product="fumarate hydratase (fumarase C),aerobic Class II"
+                     /protein_id="NP_416128.1"
+                     /transl_table=11
+     CDS             complement(1684755..1686401)
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b1612"
+                     /gene="fumA"
+                     /codon_start=1
+                     /gene_synonym="ECK1607; JW1604"
+                     /EC_number="4.2.1.2"
+                     /note="fumarase A = fumarate hydratase Class I; aerobic
+                     isozyme"
+                     /db_xref="GI:16129570"
+                     /db_xref="ASAP:ABE-0005392"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AC33"
+                     /db_xref="EcoGene:EG10356"
+                     /db_xref="GeneID:946826"
+                     /GO_process="GO:0006099 - tricarboxylic acid cycle"
+                     /transl_table=11
+                     /product="fumarate hydratase (fumarase A), aerobic Class I"
+                     /protein_id="NP_416129.1"
+     CDS             1697379..1698971
+                     /function="transport; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b1621"
+                     /gene="malX"
+                     /codon_start=1
+                     /gene_synonym="ECK1616; JW1613"
+                     /EC_number="2.7.1.69"
+                     /note="PTS system, maltose and glucose-specific IIABC
+                     component"
+                     /db_xref="GI:16129579"
+                     /db_xref="ASAP:ABE-0005429"
+                     /db_xref="UniProtKB/Swiss-Prot:P19642"
+                     /db_xref="EcoGene:EG10563"
+                     /db_xref="GeneID:946009"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /transl_table=11
+                     /product="fused maltose and glucose-specific PTS enzymes:
+                     IIB component, IIC component"
+                     /protein_id="NP_416138.1"
+     CDS             1753722..1755134
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b1676"
+                     /codon_start=1
+                     /gene_synonym="ECK1672; JW1666"
+                     /EC_number="2.7.1.40"
+                     /note="pyruvate kinase I (formerly F), fructose stimulated"
+                     /db_xref="GI:16129632"
+                     /db_xref="ASAP:ABE-0005600"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AD61"
+                     /db_xref="EcoGene:EG10804"
+                     /db_xref="GeneID:946179"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006113
+                     - fermentation; GO:0006096 - glycolysis"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     1859631,9298646"
+                     /gene="pykF"
+                     /product="pyruvate kinase I"
+                     /protein_id="NP_416191.1"
+                     /transl_table=11
+     CDS             complement(1782758..1785136)
+                     /function="enzyme; Central intermediary metabolism:
+                     Gluconeogenesis"
+                     /locus_tag="b1702"
+                     /gene="ppsA"
+                     /codon_start=1
+                     /product="phosphoenolpyruvate synthase"
+                     /gene_synonym="ECK1700; JW1692; pps"
+                     /db_xref="GI:16129658"
+                     /db_xref="ASAP:ABE-0005678"
+                     /db_xref="UniProtKB/Swiss-Prot:P23538"
+                     /db_xref="EcoGene:EG10759"
+                     /db_xref="GeneID:946209"
+                     /GO_process="GO:0006094 - gluconeogenesis"
+                     /EC_number="2.7.9.2"
+                     /transl_table=11
+                     /protein_id="NP_416217.1"
+     CDS             1804394..1805323
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b1723"
+                     /gene="pfkB"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK1721; JW5280"
+                     /EC_number="2.7.1.11"
+                     /note="6-phosphofructokinase II; suppressor of pfkA"
+                     /db_xref="GI:49176138"
+                     /db_xref="ASAP:ABE-0005748"
+                     /db_xref="UniProtKB/Swiss-Prot:P06999"
+                     /db_xref="EcoGene:EG10700"
+                     /db_xref="GeneID:946230"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /transl_table=11
+                     /product="6-phosphofructokinase II"
+                     /protein_id="NP_416237.3"
+     CDS             1840395..1841738
+                     /function="enzyme; Amino acid biosynthesis: Glutamate"
+                     /locus_tag="b1761"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK1759; JW1750"
+                     /EC_number="1.4.1.4"
+                     /note="NADP-specific glutamate dehydrogenase"
+                     /db_xref="GI:16129715"
+                     /db_xref="ASAP:ABE-0005865"
+                     /db_xref="UniProtKB/Swiss-Prot:P00370"
+                     /db_xref="EcoGene:EG10372"
+                     /db_xref="GeneID:946802"
+                     /GO_process="GO:0006537 - glutamate biosynthetic process"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     6308576,9298646"
+                     /gene="gdhA"
+                     /product="glutamate dehydrogenase, NADP-specific"
+                     /protein_id="NP_416275.1"
+                     /transl_table=11
+     CDS             complement(1854957..1855793)
+                     /function="putative enzyme; Not classified"
+                     /locus_tag="b1773"
+                     /gene="ydjI"
+                     /codon_start=1
+                     /product="putative aldolase"
+                     /gene_synonym="ECK1771; JW1762"
+                     /db_xref="GI:16129727"
+                     /db_xref="ASAP:ABE-0005906"
+                     /db_xref="UniProtKB/Swiss-Prot:P77704"
+                     /db_xref="EcoGene:EG13485"
+                     /db_xref="GeneID:946291"
+                     /transl_table=11
+                     /protein_id="NP_416287.1"
+     CDS             1860795..1861790
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b1779"
+                     /gene="gapA"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK1777; JW1768"
+                     /EC_number="1.2.1.12"
+                     /product="glyceraldehyde-3-phosphate dehydrogenase A"
+                     /db_xref="GI:16129733"
+                     /db_xref="ASAP:ABE-0005920"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A9B2"
+                     /db_xref="EcoGene:EG10367"
+                     /db_xref="GeneID:947679"
+                     /GO_process="GO:0006094 - gluconeogenesis; GO:0006096 -
+                     glycolysis; GO:0008615 - pyridoxine biosynthetic process"
+                     /transl_table=11
+                     /protein_id="NP_416293.1"
+     CDS             1892829..1894190
+                     /function="enzyme; Biosynthesis of cofactors, carriers:
+                     Folic acid"
+                     /locus_tag="b1812"
+                     /gene="pabB"
+                     /codon_start=1
+                     /gene_synonym="ECK1810; JW1801"
+                     /EC_number="2.6.1.85"
+                     /note="p-aminobenzoate synthetase, component I"
+                     /db_xref="GI:16129766"
+                     /db_xref="ASAP:ABE-0006031"
+                     /db_xref="UniProtKB/Swiss-Prot:P05041"
+                     /db_xref="EcoGene:EG10683"
+                     /db_xref="GeneID:946337"
+                     /GO_process="GO:0046656 - folic acid biosynthetic process"
+                     /transl_table=11
+                     /product="aminodeoxychorismate synthase, subunit I"
+                     /protein_id="NP_416326.1"
+     CDS             1900072..1901043
+                     /function="enzyme; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b1817"
+                     /gene="manX"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK1815; gptB; JW1806; mpt; ptsL; ptsX"
+                     /EC_number="2.7.1.69"
+                     /note="PTS enzyme IIAB, mannose-specific"
+                     /db_xref="GI:16129771"
+                     /db_xref="ASAP:ABE-0006054"
+                     /db_xref="UniProtKB/Swiss-Prot:P69797"
+                     /db_xref="EcoGene:EG10567"
+                     /db_xref="GeneID:946334"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /transl_table=11
+                     /product="fused mannose-specific PTS enzymes: IIA
+                     component/IIB component"
+                     /protein_id="NP_416331.1"
+     CDS             1901106..1901906
+                     /function="transport; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b1818"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK1816; JW1807; pel; ptsP; ptsX"
+                     /transl_table=11
+                     /note="PTS enzyme IIC, mannose-specific"
+                     /db_xref="GI:16129772"
+                     /db_xref="ASAP:ABE-0006056"
+                     /db_xref="UniProtKB/Swiss-Prot:P69801"
+                     /db_xref="EcoGene:EG10568"
+                     /db_xref="GeneID:946332"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /gene="manY"
+                     /product="mannose-specific enzyme IIC component of PTS"
+                     /protein_id="NP_416332.1"
+     CDS             1901919..1902770
+                     /function="transport; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b1819"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK1817; gptB; JW1808; mpt; ptsM; ptsX"
+                     /transl_table=11
+                     /note="PTS enzyme IID, mannose-specific"
+                     /db_xref="GI:345452720"
+                     /db_xref="ASAP:ABE-0006058"
+                     /db_xref="UniProtKB/Swiss-Prot:P69805"
+                     /db_xref="EcoGene:EG10569"
+                     /db_xref="GeneID:946342"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /gene="manZ"
+                     /product="mannose-specific enzyme IID component of PTS"
+                     /protein_id="NP_416333.4"
+     CDS             1928905..1930083
+                     /function="enzyme; Purine ribonucleotide biosynthesis"
+                     /locus_tag="b1849"
+                     /gene="purT"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK1850; JW1838"
+                     /EC_number="2.7.2.1"
+                     /product="phosphoribosylglycinamide formyltransferase 2"
+                     /db_xref="GI:16129802"
+                     /db_xref="ASAP:ABE-0006162"
+                     /db_xref="UniProtKB/Swiss-Prot:P33221"
+                     /db_xref="EcoGene:EG11809"
+                     /db_xref="GeneID:946368"
+                     /GO_process="GO:0006164 - purine nucleotide biosynthetic
+                     process"
+                     /transl_table=11
+                     /protein_id="NP_416363.1"
+     CDS             complement(1932863..1934338)
+                     /function="enzyme; Energy metabolism, carbon: Oxidative
+                     branch, pentose pathway"
+                     /locus_tag="b1852"
+                     /gene="zwf"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK1853; JW1841"
+                     /EC_number="1.1.1.49"
+                     /product="glucose-6-phosphate 1-dehydrogenase"
+                     /db_xref="GI:16129805"
+                     /db_xref="ASAP:ABE-0006171"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AC53"
+                     /db_xref="EcoGene:EG11221"
+                     /db_xref="GeneID:946370"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process;
+                     GO:0009051 - pentose-phosphate shunt, oxidative branch"
+                     /transl_table=11
+                     /protein_id="NP_416366.1"
+     CDS             1935673..1937115
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b1854"
+                     /gene="pykA"
+                     /codon_start=1
+                     /gene_synonym="ECK1855; JW1843"
+                     /EC_number="2.7.1.40"
+                     /note="pyruvate kinase II, glucose stimulated"
+                     /db_xref="GI:16129807"
+                     /db_xref="ASAP:ABE-0006182"
+                     /db_xref="UniProtKB/Swiss-Prot:P21599"
+                     /db_xref="EcoGene:EG10803"
+                     /db_xref="GeneID:946527"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006113
+                     - fermentation; GO:0006096 - glycolysis"
+                     /transl_table=11
+                     /product="pyruvate kinase II"
+                     /protein_id="NP_416368.1"
+     CDS             complement(2097886..2099292)
+                     /function="enzyme; Energy metabolism, carbon: Oxidative
+                     branch, pentose pathway"
+                     /locus_tag="b2029"
+                     /gene="gnd"
+                     /codon_start=1
+                     /product="6-phosphogluconate dehydrogenase,
+                     decarboxylating"
+                     /gene_synonym="ECK2024; JW2011"
+                     /db_xref="GI:16129970"
+                     /db_xref="ASAP:ABE-0006737"
+                     /db_xref="UniProtKB/Swiss-Prot:P00350"
+                     /db_xref="EcoGene:EG10411"
+                     /db_xref="GeneID:946554"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process;
+                     GO:0009052 - pentose-phosphate shunt, non-oxidative branch;
+                     GO:0009051 - pentose-phosphate shunt, oxidative branch"
+                     /EC_number="1.1.1.44"
+                     /transl_table=11
+                     /protein_id="NP_416533.1"
+     CDS             complement(2175534..2176586)
+                     /product="fructose-bisphosphate aldolase class I"
+                     /gene="fbaB"
+                     /codon_start=1
+                     /locus_tag="b2097"
+                     /gene_synonym="dhnA; ECK2090; JW5344"
+                     /db_xref="GI:90111385"
+                     /db_xref="ASAP:ABE-0006941"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A991"
+                     /db_xref="EcoGene:EG14062"
+                     /db_xref="GeneID:946632"
+                     /GO_process="GO:0006096 - glycolysis"
+                     /EC_number="4.1.2.13"
+                     /transl_table=11
+                     /protein_id="NP_416600.4"
+     CDS             2220207..2221922
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2133"
+                     /gene="dld"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2126; JW2121"
+                     /EC_number="1.1.1.28"
+                     /note="D-lactate dehydrogenase, FAD protein, NADH
+                     independent"
+                     /db_xref="GI:16130071"
+                     /db_xref="ASAP:ABE-0007048"
+                     /db_xref="UniProtKB/Swiss-Prot:P06149"
+                     /db_xref="EcoGene:EG10231"
+                     /db_xref="GeneID:946653"
+                     /GO_process="GO:0009060 - aerobic respiration"
+                     /transl_table=11
+                     /product="D-lactate dehydrogenase, FAD-binding, NADH
+                     independent"
+                     /protein_id="NP_416637.1"
+     CDS             complement(2388070..2389527)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2276"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2270; JW2271"
+                     /transl_table=11
+                     /note="NADH dehydrogenase I chain N"
+                     /db_xref="GI:145698289"
+                     /db_xref="ASAP:ABE-0007526"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFF0"
+                     /db_xref="EcoGene:EG12093"
+                     /db_xref="GeneID:945136"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /gene="nuoN"
+                     /product="NADH:ubiquinone oxidoreductase, membrane subunit
+                     N"
+                     /protein_id="NP_416779.2"
+     CDS             complement(2389534..2391063)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2277"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2271; JW2272; nuoA"
+                     /transl_table=11
+                     /note="NADH dehydrogenase I chain M"
+                     /db_xref="GI:16130212"
+                     /db_xref="ASAP:ABE-0007529"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFE8"
+                     /db_xref="EcoGene:EG11773"
+                     /db_xref="GeneID:947731"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /gene="nuoM"
+                     /product="NADH:ubiquinone oxidoreductase, membrane subunit
+                     M"
+                     /protein_id="NP_416780.1"
+     CDS             complement(2391227..2393068)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2278"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2272; JW2273"
+                     /transl_table=11
+                     /note="NADH dehydrogenase I chain L"
+                     /db_xref="GI:16130213"
+                     /db_xref="ASAP:ABE-0007532"
+                     /db_xref="UniProtKB/Swiss-Prot:P33607"
+                     /db_xref="EcoGene:EG12092"
+                     /db_xref="GeneID:945540"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /gene="nuoL"
+                     /product="NADH:ubiquinone oxidoreductase, membrane subunit
+                     L"
+                     /protein_id="NP_416781.1"
+     CDS             complement(2393065..2393367)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2279"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2273; JW2274"
+                     /transl_table=11
+                     /note="NADH dehydrogenase I chain K"
+                     /db_xref="GI:16130214"
+                     /db_xref="ASAP:ABE-0007534"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFE4"
+                     /db_xref="EcoGene:EG12091"
+                     /db_xref="GeneID:947580"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /gene="nuoK"
+                     /product="NADH:ubiquinone oxidoreductase, membrane subunit
+                     K"
+                     /protein_id="NP_416782.1"
+     CDS             complement(2393364..2393918)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2280"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2274; JW2275"
+                     /transl_table=11
+                     /note="NADH dehydrogenase I chain J"
+                     /db_xref="GI:16130215"
+                     /db_xref="ASAP:ABE-0007536"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFE0"
+                     /db_xref="EcoGene:EG12090"
+                     /db_xref="GeneID:946756"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /gene="nuoJ"
+                     /product="NADH:ubiquinone oxidoreductase, membrane subunit
+                     J"
+                     /protein_id="NP_416783.1"
+     CDS             complement(2393930..2394472)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2281"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2275; JW2276"
+                     /EC_number="1.6.5.3"
+                     /note="NADH dehydrogenase I chain I"
+                     /db_xref="GI:16130216"
+                     /db_xref="ASAP:ABE-0007539"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFD6"
+                     /db_xref="EcoGene:EG12089"
+                     /db_xref="GeneID:946757"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     9298646,11416161"
+                     /gene="nuoI"
+                     /product="NADH:ubiquinone oxidoreductase, chain I"
+                     /protein_id="NP_416784.1"
+                     /transl_table=11
+     CDS             complement(2394487..2395464)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2282"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2276; JW2277"
+                     /transl_table=11
+                     /note="NADH dehydrogenase I chain H"
+                     /db_xref="GI:16130217"
+                     /db_xref="ASAP:ABE-0007541"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFD4"
+                     /db_xref="EcoGene:EG12088"
+                     /db_xref="GeneID:946761"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /gene="nuoH"
+                     /product="NADH:ubiquinone oxidoreductase, membrane subunit
+                     H"
+                     /protein_id="NP_416785.1"
+     CDS             complement(2395461..2398187)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2283"
+                     /gene="nuoG"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2277; JW2278"
+                     /EC_number="1.6.5.3"
+                     /note="NADH dehydrogenase I chain G"
+                     /db_xref="GI:145698290"
+                     /db_xref="ASAP:ABE-0007543"
+                     /db_xref="UniProtKB/Swiss-Prot:P33602"
+                     /db_xref="EcoGene:EG12087"
+                     /db_xref="GeneID:946762"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /transl_table=11
+                     /product="NADH:ubiquinone oxidoreductase, chain G"
+                     /protein_id="NP_416786.4"
+     CDS             complement(2398240..2399577)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2284"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2278; JW2279; nuoB"
+                     /EC_number="1.6.5.3"
+                     /note="NADH dehydrogenase I chain F"
+                     /db_xref="GI:16130219"
+                     /db_xref="ASAP:ABE-0007545"
+                     /db_xref="UniProtKB/Swiss-Prot:P31979"
+                     /db_xref="EcoGene:EG11774"
+                     /db_xref="GeneID:946753"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     11416161,11997136"
+                     /gene="nuoF"
+                     /product="NADH:ubiquinone oxidoreductase, chain F"
+                     /protein_id="NP_416787.1"
+                     /transl_table=11
+     CDS             complement(2399574..2400074)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2285"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2279; JW2280"
+                     /EC_number="1.6.5.3"
+                     /note="NADH dehydrogenase I chain E"
+                     /db_xref="GI:16130220"
+                     /db_xref="ASAP:ABE-0007547"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFD1"
+                     /db_xref="EcoGene:EG12086"
+                     /db_xref="GeneID:946746"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     11416161,11997136"
+                     /gene="nuoE"
+                     /product="NADH:ubiquinone oxidoreductase, chain E"
+                     /protein_id="NP_416788.1"
+                     /transl_table=11
+     CDS             complement(2400077..2401867)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2286"
+                     /gene="nuoC"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2280; JW5375; nuoCD; nuoD"
+                     /EC_number="1.6.5.3"
+                     /note="NADH dehydrogenase I chain C, D"
+                     /db_xref="GI:145698291"
+                     /db_xref="ASAP:ABE-0007549"
+                     /db_xref="UniProtKB/Swiss-Prot:P33599"
+                     /db_xref="EcoGene:EG12084"
+                     /db_xref="GeneID:946759"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /transl_table=11
+                     /product="NADH:ubiquinone oxidoreductase, fused CD subunit"
+                     /protein_id="NP_416789.2"
+     CDS             complement(2401973..2402635)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2287"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2281; JW5875"
+                     /EC_number="1.6.5.3"
+                     /note="NADH dehydrogenase I chain B"
+                     /db_xref="GI:16130222"
+                     /db_xref="ASAP:ABE-0007551"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFC7"
+                     /db_xref="EcoGene:EG12083"
+                     /db_xref="GeneID:946738"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     7607227,11997136"
+                     /gene="nuoB"
+                     /product="NADH:ubiquinone oxidoreductase, chain B"
+                     /protein_id="NP_416790.1"
+                     /transl_table=11
+     CDS             complement(2402651..2403094)
+                     /function="enzyme; Energy metabolism, carbon: Aerobic
+                     respiration"
+                     /locus_tag="b2288"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2282; JW2283"
+                     /transl_table=11
+                     /note="NADH dehydrogenase I chain A"
+                     /db_xref="GI:49176207"
+                     /db_xref="ASAP:ABE-0007553"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFC3"
+                     /db_xref="EcoGene:EG12082"
+                     /db_xref="GeneID:946764"
+                     /GO_process="GO:0009060 - aerobic respiration; GO:0009061 -
+                     anaerobic respiration"
+                     /gene="nuoA"
+                     /product="NADH:ubiquinone oxidoreductase, membrane subunit
+                     A"
+                     /protein_id="NP_416791.3"
+     CDS             2411492..2412694
+                     /function="enzyme; Energy metabolism, carbon: Electron
+                     transport"
+                     /locus_tag="b2296"
+                     /gene="ackA"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2290; JW2293"
+                     /EC_number="2.7.2.-"
+                     /EC_number="2.7.2.1"
+                     /note="acetate kinase"
+                     /db_xref="GI:16130231"
+                     /db_xref="ASAP:ABE-0007579"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A6A3"
+                     /db_xref="EcoGene:EG10027"
+                     /db_xref="GeneID:946775"
+                     /GO_process="GO:0045733 - acetate catabolic process;
+                     GO:0016052 - carbohydrate catabolic process; GO:0009063 -
+                     cellular amino acid catabolic process; GO:0042867 -
+                     pyruvate catabolic process"
+                     /transl_table=11
+                     /product="acetate kinase A and propionate kinase 2"
+                     /protein_id="NP_416799.1"
+     CDS             2412769..2414913
+                     /function="enzyme; Degradation of small molecules: Carbon
+                     compounds"
+                     /locus_tag="b2297"
+                     /gene="pta"
+                     /codon_start=1
+                     /gene_synonym="ECK2291; JW2294"
+                     /EC_number="2.3.1.8"
+                     /note="phosphotransacetylase"
+                     /db_xref="GI:16130232"
+                     /db_xref="ASAP:ABE-0007582"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A9M8"
+                     /db_xref="EcoGene:EG20173"
+                     /db_xref="GeneID:946778"
+                     /GO_process="GO:0045733 - acetate catabolic process;
+                     GO:0016052 - carbohydrate catabolic process; GO:0009063 -
+                     cellular amino acid catabolic process; GO:0042867 -
+                     pyruvate catabolic process"
+                     /transl_table=11
+                     /product="phosphate acetyltransferase"
+                     /protein_id="NP_416800.1"
+     CDS             2531786..2532043
+                     /function="enzyme; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b2415"
+                     /codon_start=1
+                     /gene_synonym="ctr; ECK2410; Hpr; iex?; JW2408"
+                     /transl_table=11
+                     /note="PTS system protein HPr"
+                     /db_xref="GI:16130341"
+                     /db_xref="ASAP:ABE-0007962"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AA04"
+                     /db_xref="EcoGene:EG10788"
+                     /db_xref="GeneID:946886"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     9298646,9868784,10094700"
+                     /gene="ptsH"
+                     /product="phosphohistidinoprotein-hexose phosphotransferase
+                     component of PTS system (Hpr)"
+                     /protein_id="NP_416910.1"
+     CDS             2532088..2533815
+                     /function="enzyme; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b2416"
+                     /codon_start=1
+                     /gene_synonym="ctr; ECK2411; JW2409"
+                     /EC_number="2.7.3.9"
+                     /note="PEP-protein phosphotransferase system enzyme I"
+                     /db_xref="GI:16130342"
+                     /db_xref="ASAP:ABE-0007967"
+                     /db_xref="UniProtKB/Swiss-Prot:P08839"
+                     /db_xref="EcoGene:EG10789"
+                     /db_xref="GeneID:946879"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     9298646"
+                     /gene="ptsI"
+                     /product="PEP-protein phosphotransferase of PTS system
+                     (enzyme I)"
+                     /protein_id="NP_416911.1"
+                     /transl_table=11
+     CDS             2533856..2534365
+                     /function="enzyme; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b2417"
+                     /gene="crr"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2412; gsr; iex; JW2410; tgs; treD"
+                     /EC_number="2.7.1.69"
+                     /note="PTS system, glucose-specific IIA component"
+                     /db_xref="GI:16130343"
+                     /db_xref="ASAP:ABE-0007971"
+                     /db_xref="UniProtKB/Swiss-Prot:P69783"
+                     /db_xref="EcoGene:EG10165"
+                     /db_xref="GeneID:946880"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /transl_table=11
+                     /product="glucose-specific enzyme IIA component of PTS"
+                     /protein_id="NP_416912.1"
+     CDS             complement(2570511..2571527)
+                     /function="putative enzyme; Degradation of small molecules:
+                     Amines"
+                     /locus_tag="b2458"
+                     /codon_start=1
+                     /gene_synonym="ECK2453; eutI; JW2442; ypfA"
+                     /transl_table=11
+                     /note="ethanolamine utilization; homolog of Salmonella
+                     acetyl/butyryl P transferase"
+                     /db_xref="GI:16130383"
+                     /db_xref="ASAP:ABE-0008097"
+                     /db_xref="UniProtKB/Swiss-Prot:P77218"
+                     /db_xref="EcoGene:EG14188"
+                     /db_xref="GeneID:946940"
+                     /GO_process="GO:0009310 - amine catabolic process"
+                     /gene="eutD"
+                     /product="phosphate acetyltransferase"
+                     /protein_id="NP_416953.1"
+     CDS             complement(2574120..2576399)
+                     /function="putative enzyme; Not classified"
+                     /locus_tag="b2463"
+                     /codon_start=1
+                     /gene_synonym="ECK2458; JW2447; ypfF"
+                     /transl_table=11
+                     /note="putative multimodular enzyme"
+                     /db_xref="GI:16130388"
+                     /db_xref="ASAP:ABE-0008111"
+                     /db_xref="UniProtKB/Swiss-Prot:P76558"
+                     /db_xref="EcoGene:EG14193"
+                     /db_xref="GeneID:946947"
+                     /gene="maeB"
+                     /product="fused malic enzyme predicted
+                     oxidoreductase/predicted phosphotransacetylase"
+                     /protein_id="NP_416958.1"
+     CDS             2576688..2577638
+                     /function="enzyme; Central intermediary metabolism:
+                     Non-oxidative branch, pentose pathway"
+                     /locus_tag="b2464"
+                     /gene="talA"
+                     /codon_start=1
+                     /product="transaldolase A"
+                     /gene_synonym="ECK2459; JW2448"
+                     /db_xref="GI:16130389"
+                     /db_xref="ASAP:ABE-0008115"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A867"
+                     /db_xref="EcoGene:EG11797"
+                     /db_xref="GeneID:947006"
+                     /GO_process="GO:0009052 - pentose-phosphate shunt,
+                     non-oxidative branch"
+                     /EC_number="2.2.1.2"
+                     /transl_table=11
+                     /protein_id="NP_416959.1"
+     CDS             2577658..2579661
+                     /function="enzyme; Central intermediary metabolism:
+                     Non-oxidative branch, pentose pathway"
+                     /locus_tag="b2465"
+                     /gene="tktB"
+                     /codon_start=1
+                     /gene_synonym="ECK2460; JW2449"
+                     /EC_number="2.2.1.1"
+                     /note="transketolase 2 isozyme"
+                     /db_xref="GI:16130390"
+                     /db_xref="ASAP:ABE-0008117"
+                     /db_xref="UniProtKB/Swiss-Prot:P33570"
+                     /db_xref="EcoGene:EG12100"
+                     /db_xref="GeneID:945865"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process;
+                     GO:0015949 - nucleobase, nucleoside and nucleotide
+                     interconversion; GO:0009052 - pentose-phosphate shunt,
+                     non-oxidative branch"
+                     /transl_table=11
+                     /product="transketolase 2, thiamin-binding"
+                     /protein_id="NP_416960.1"
+     CDS             2611956..2612804
+                     /function="putative transport; Transport of small
+                     molecules: Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b2492"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2488; JW2477"
+                     /transl_table=11
+                     /note="probable formate transporter (formate channel 2)"
+                     /db_xref="GI:16130417"
+                     /db_xref="ASAP:ABE-0008206"
+                     /db_xref="UniProtKB/Swiss-Prot:P77733"
+                     /db_xref="EcoGene:EG14220"
+                     /db_xref="GeneID:949032"
+                     /gene="focB"
+                     /product="putative formate transporter"
+                     /protein_id="NP_416987.1"
+     CDS             complement(2714088..2714471)
+                     /function="putative enzyme; Energy metabolism, carbon:
+                     Anaerobic respiration"
+                     /locus_tag="b2579"
+                     /codon_start=1
+                     /gene_synonym="ECK2577; JW2563; yfiD"
+                     /transl_table=11
+                     /note="putative formate acetyltransferase"
+                     /db_xref="GI:16130504"
+                     /db_xref="ASAP:ABE-0008489"
+                     /db_xref="UniProtKB/Swiss-Prot:P68066"
+                     /db_xref="EcoGene:EG11784"
+                     /db_xref="GeneID:947068"
+                     /GO_process="GO:0009061 - anaerobic respiration"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     9600841,9740056,9868784,10094700"
+                     /gene="grcA"
+                     /product="autonomous glycyl radical cofactor"
+                     /protein_id="NP_417074.1"
+     CDS             complement(2722470..2723768)
+                     /function="transport; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b2587"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2585; JW2571; witA"
+                     /transl_table=11
+                     /note="alpha-ketoglutarate permease"
+                     /db_xref="GI:16130512"
+                     /db_xref="ASAP:ABE-0008515"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AEX3"
+                     /db_xref="EcoGene:EG10522"
+                     /db_xref="GeneID:947069"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /gene="kgtP"
+                     /product="alpha-ketoglutarate transporter"
+                     /protein_id="NP_417082.1"
+     CDS             complement(2904665..2905963)
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b2779"
+                     /gene="eno"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2773; JW2750"
+                     /EC_number="4.2.1.11"
+                     /product="enolase"
+                     /db_xref="GI:16130686"
+                     /db_xref="ASAP:ABE-0009110"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A6P9"
+                     /db_xref="EcoGene:EG10258"
+                     /db_xref="GeneID:945032"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006094
+                     - gluconeogenesis; GO:0006096 - glycolysis"
+                     /transl_table=11
+                     /protein_id="NP_417259.1"
+     CDS             complement(3056688..3057347)
+                     /function="enzyme; Central intermediary metabolism:
+                     Non-oxidative branch, pentose pathway"
+                     /locus_tag="b2914"
+                     /codon_start=1
+                     /gene_synonym="ECK2910; JW5475; ygfC"
+                     /EC_number="5.3.1.6"
+                     /note="ribosephosphate isomerase, constitutive"
+                     /db_xref="GI:16130815"
+                     /db_xref="ASAP:ABE-0009567"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A7Z0"
+                     /db_xref="EcoGene:EG11443"
+                     /db_xref="GeneID:947407"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process;
+                     GO:0009052 - pentose-phosphate shunt, non-oxidative branch"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     8366047,9298646,9600841,9740056"
+                     /gene="rpiA"
+                     /product="ribose 5-phosphate isomerase, constitutive"
+                     /protein_id="NP_417389.1"
+                     /transl_table=11
+     CDS             complement(3068187..3069266)
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b2925"
+                     /gene="fbaA"
+                     /codon_start=1
+                     /product="fructose-bisphosphate aldolase, class II"
+                     /gene_synonym="ald; ECK2921; fba; fda; JW2892"
+                     /db_xref="GI:16130826"
+                     /db_xref="ASAP:ABE-0009600"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AB71"
+                     /db_xref="EcoGene:EG10282"
+                     /db_xref="GeneID:947415"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /EC_number="4.1.2.13"
+                     /transl_table=11
+                     /protein_id="NP_417400.1"
+     CDS             complement(3069481..3070644)
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b2926"
+                     /gene="pgk"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK2922; JW2893"
+                     /EC_number="2.7.2.3"
+                     /product="phosphoglycerate kinase"
+                     /db_xref="GI:16130827"
+                     /db_xref="ASAP:ABE-0009605"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A799"
+                     /db_xref="EcoGene:EG10703"
+                     /db_xref="GeneID:947414"
+                     /GO_process="GO:0006094 - gluconeogenesis; GO:0006096 -
+                     glycolysis"
+                     /transl_table=11
+                     /protein_id="NP_417401.1"
+     CDS             complement(3077666..3079657)
+                     /function="enzyme; Central intermediary metabolism:
+                     Non-oxidative branch, pentose pathway"
+                     /locus_tag="b2935"
+                     /codon_start=1
+                     /gene_synonym="ECK2930; JW5478; tkt"
+                     /EC_number="2.2.1.1"
+                     /note="transketolase 1 isozyme"
+                     /db_xref="GI:49176286"
+                     /db_xref="ASAP:ABE-0009625"
+                     /db_xref="UniProtKB/Swiss-Prot:P27302"
+                     /db_xref="EcoGene:EG11427"
+                     /db_xref="GeneID:947420"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process;
+                     GO:0015949 - nucleobase, nucleoside and nucleotide
+                     interconversion; GO:0009052 - pentose-phosphate shunt,
+                     non-oxidative branch"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     1537815"
+                     /gene="tktA"
+                     /product="transketolase 1, thiamin-binding"
+                     /protein_id="YP_026188.1"
+                     /transl_table=11
+     CDS             complement(3117619..3119301)
+                     /function="putative transport; Not classified"
+                     /locus_tag="b2975"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2969; JW2942; yghK"
+                     /transl_table=11
+                     /note="putative permease"
+                     /db_xref="GI:16130875"
+                     /db_xref="ASAP:ABE-0009763"
+                     /db_xref="UniProtKB/Swiss-Prot:Q46839"
+                     /db_xref="EcoGene:EG12995"
+                     /db_xref="GeneID:947259"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /gene="glcA"
+                     /product="glycolate transporter"
+                     /protein_id="NP_417449.1"
+     CDS             complement(3119656..3121827)
+                     /function="enzyme; Central intermediary metabolism:
+                     Glyoxylate bypass"
+                     /locus_tag="b2976"
+                     /gene="glcB"
+                     /codon_start=1
+                     /product="malate synthase G"
+                     /gene_synonym="ECK2970; glc; JW2943"
+                     /db_xref="GI:16130876"
+                     /db_xref="ASAP:ABE-0009767"
+                     /db_xref="UniProtKB/Swiss-Prot:P37330"
+                     /db_xref="EcoGene:EG20080"
+                     /db_xref="GeneID:948857"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process;
+                     GO:0009436 - glyoxylate catabolic process"
+                     /EC_number="2.3.3.9"
+                     /transl_table=11
+                     /protein_id="NP_417450.1"
+     CDS             complement(3132894..3134393)
+                     /function="transport; Transport of small molecules: Anions"
+                     /locus_tag="b2987"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK2981; JW2955"
+                     /transl_table=11
+                     /note="low-affinity phosphate transport"
+                     /db_xref="GI:16130887"
+                     /db_xref="ASAP:ABE-0009800"
+                     /db_xref="UniProtKB/Swiss-Prot:P43676"
+                     /db_xref="EcoGene:EG12883"
+                     /db_xref="GeneID:947475"
+                     /GO_process="GO:0006793 - phosphorus metabolic process"
+                     /gene="pitB"
+                     /product="phosphate transporter"
+                     /protein_id="NP_417461.1"
+     CDS             complement(3258146..3260440)
+                     /function="putative enzyme; Energy metabolism, carbon:
+                     Anaerobic respiration"
+                     /locus_tag="b3114"
+                     /gene="tdcE"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK3103; JW5522; yhaS"
+                     /EC_number="2.3.1.54"
+                     /note="probable formate acetyltransferase 3"
+                     /db_xref="GI:49176316"
+                     /db_xref="ASAP:ABE-0010242"
+                     /db_xref="UniProtKB/Swiss-Prot:P42632"
+                     /db_xref="EcoGene:EG12758"
+                     /db_xref="GeneID:947623"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0009063
+                     - cellular amino acid catabolic process; GO:0006113 -
+                     fermentation"
+                     /transl_table=11
+                     /product="pyruvate formate-lyase 4/2-ketobutyrate
+                     formate-lyase"
+                     /protein_id="YP_026205.1"
+     CDS             complement(3260474..3261682)
+                     /function="putative enzyme; Not classified"
+                     /function="1.1.3 metabolism; carbon utilization; amino
+                     acids"
+                     /function="1.7.30 metabolism; central intermediary
+                     metabolism; threonine catabolism"
+                     /locus_tag="b3115"
+                     /gene="tdcD"
+                     /codon_start=1
+                     /gene_synonym="ECK3104; JW5806; yhaA"
+                     /EC_number="2.7.2.15"
+                     /note="propionate kinase/acetate kinase II, anaerobic"
+                     /db_xref="GI:145698313"
+                     /db_xref="ASAP:ABE-0010245"
+                     /db_xref="UniProtKB/Swiss-Prot:P11868"
+                     /db_xref="EcoGene:EG11172"
+                     /db_xref="GeneID:947635"
+                     /GO_process="GO:0009063 - cellular amino acid catabolic
+                     process"
+                     /transl_table=11
+                     /product="propionate kinase/acetate kinase C, anaerobic"
+                     /protein_id="NP_417585.2"
+     CDS             3352747..3357207
+                     /function="enzyme; Central intermediary metabolism: Pool,
+                     multipurpose conversions"
+                     /locus_tag="b3212"
+                     /gene="gltB"
+                     /codon_start=1
+                     /product="glutamate synthase, large subunit"
+                     /gene_synonym="aspB; ECK3202; JW3179; ossB; psiQ"
+                     /db_xref="GI:308209621"
+                     /db_xref="ASAP:ABE-0010545"
+                     /db_xref="UniProtKB/Swiss-Prot:P09831"
+                     /db_xref="EcoGene:EG10403"
+                     /db_xref="GeneID:947724"
+                     /GO_process="GO:0006537 - glutamate biosynthetic process;
+                     GO:0006807 - nitrogen compound metabolic process"
+                     /EC_number="1.4.1.13"
+                     /transl_table=11
+                     /protein_id="NP_417679.2"
+     CDS             3357220..3358638
+                     /function="enzyme; Central intermediary metabolism: Pool,
+                     multipurpose conversions"
+                     /locus_tag="b3213"
+                     /gene="gltD"
+                     /codon_start=1
+                     /gene_synonym="aspB; ECK3203; JW3180; ossB; psiQ"
+                     /EC_number="1.4.1.13"
+                     /note="glutamate synthase, small subunit"
+                     /db_xref="GI:16131103"
+                     /db_xref="ASAP:ABE-0010547"
+                     /db_xref="UniProtKB/Swiss-Prot:P09832"
+                     /db_xref="EcoGene:EG10404"
+                     /db_xref="GeneID:947723"
+                     /GO_process="GO:0006537 - glutamate biosynthetic process;
+                     GO:0006807 - nitrogen compound metabolic process"
+                     /transl_table=11
+                     /product="glutamate synthase, 4Fe-4S protein, small
+                     subunit"
+                     /protein_id="NP_417680.1"
+     CDS             complement(3381352..3382290)
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b3236"
+                     /codon_start=1
+                     /gene_synonym="ECK3225; JW3205"
+                     /EC_number="1.1.1.37"
+                     /note="malate dehydrogenase"
+                     /db_xref="GI:16131126"
+                     /db_xref="ASAP:ABE-0010613"
+                     /db_xref="UniProtKB/Swiss-Prot:P61889"
+                     /db_xref="EcoGene:EG10576"
+                     /db_xref="GeneID:947854"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0016052
+                     - carbohydrate catabolic process; GO:0006113 -
+                     fermentation; GO:0006094 - gluconeogenesis; GO:0009436 -
+                     glyoxylate catabolic process; GO:0006099 - tricarboxylic
+                     acid cycle"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     7028159,8506346,8670822,9298646,9600841,9740056"
+                     /gene="mdh"
+                     /product="malate dehydrogenase, NAD(P)-binding"
+                     /protein_id="NP_417703.1"
+                     /transl_table=11
+     CDS             complement(3512404..3513081)
+                     /function="enzyme; Central intermediary metabolism:
+                     Non-oxidative branch, pentose pathway"
+                     /locus_tag="b3386"
+                     /gene="rpe"
+                     /codon_start=1
+                     /product="D-ribulose-5-phosphate 3-epimerase"
+                     /gene_synonym="dod; ECK3373; JW3349; yhfD"
+                     /db_xref="GI:16131264"
+                     /db_xref="ASAP:ABE-0011061"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AG07"
+                     /db_xref="EcoGene:EG11960"
+                     /db_xref="GeneID:947896"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process;
+                     GO:0009052 - pentose-phosphate shunt, non-oxidative branch"
+                     /EC_number="5.1.3.1"
+                     /transl_table=11
+                     /protein_id="NP_417845.1"
+     CDS             3530840..3532462
+                     /function="enzyme; Central intermediary metabolism:
+                     Gluconeogenesis"
+                     /locus_tag="b3403"
+                     /codon_start=1
+                     /product="phosphoenolpyruvate carboxykinase"
+                     /gene_synonym="ECK3390; JW3366; pckA"
+                     /db_xref="GI:16131280"
+                     /db_xref="ASAP:ABE-0011106"
+                     /db_xref="UniProtKB/Swiss-Prot:P22259"
+                     /db_xref="EcoGene:EG10688"
+                     /db_xref="GeneID:945667"
+                     /GO_process="GO:0006094 - gluconeogenesis"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     1701430,9298646"
+                     /EC_number="4.1.1.49"
+                     /gene="pck"
+                     /protein_id="NP_417862.1"
+                     /transl_table=11
+     CDS             3635665..3637164
+                     /function="transport; Transport of small molecules: Anions"
+                     /locus_tag="b3493"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3478; JW3460; pit"
+                     /transl_table=11
+                     /note="low-affinity phosphate transport"
+                     /db_xref="GI:16131365"
+                     /db_xref="ASAP:ABE-0011407"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AFJ7"
+                     /db_xref="EcoGene:EG12230"
+                     /db_xref="GeneID:948009"
+                     /GO_process="GO:0006793 - phosphorus metabolic process"
+                     /gene="pitA"
+                     /product="phosphate transporter, low-affinity; tellurite
+                     importer"
+                     /protein_id="NP_417950.1"
+     CDS             complement(3680184..3681470)
+                     /function="transport; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b3528"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /GO_function="GO:0005311 -
+                     sodium:dicarboxylate/tricarboxylate symporter activity"
+                     /codon_start=1
+                     /gene_synonym="ECK3513; JW3496; out"
+                     /transl_table=11
+                     /note="uptake of C4-dicarboxylic acids"
+                     /db_xref="GI:16131400"
+                     /db_xref="ASAP:ABE-0011527"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A830"
+                     /db_xref="EcoGene:EG20044"
+                     /db_xref="GeneID:948039"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /gene="dctA"
+                     /product="C4-dicarboxylic acid, orotate and citrate
+                     transporter"
+                     /protein_id="NP_417985.1"
+     CDS             3775422..3777077
+                     /function="transport; Transport of small molecules:
+                     Carbohydrates, organic acids, alcohols"
+                     /locus_tag="b3603"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3593; JW3578; lct; lctP"
+                     /transl_table=11
+                     /product="L-lactate permease"
+                     /db_xref="GI:16131474"
+                     /db_xref="ASAP:ABE-0011777"
+                     /db_xref="UniProtKB/Swiss-Prot:P33231"
+                     /db_xref="EcoGene:EG11961"
+                     /db_xref="GeneID:948114"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /gene="lldP"
+                     /protein_id="NP_418060.1"
+     CDS             3783283..3784827
+                     /function="putative enzyme; Not classified"
+                     /locus_tag="b3612"
+                     /gene="gpmM"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK3602; gpmC; gpmI; JW3587; pgmI; yibO"
+                     /EC_number="5.4.2.1"
+                     /note="putative 2,3-bisphosphoglycerate-independent
+                     phosphoglycerate mutase"
+                     /db_xref="GI:16131483"
+                     /db_xref="ASAP:ABE-0011818"
+                     /db_xref="UniProtKB/Swiss-Prot:P37689"
+                     /db_xref="EcoGene:EG12296"
+                     /db_xref="GeneID:948130"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /transl_table=11
+                     /product="phosphoglycero mutase III, cofactor-independent"
+                     /protein_id="NP_418069.1"
+     CDS             complement(3913576..3913995)
+                     /function="enzyme; ATP-proton motive force interconversion"
+                     /locus_tag="b3731"
+                     /gene="atpC"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3724; JW3709; papG; uncC"
+                     /EC_number="3.6.3.14"
+                     /note="membrane-bound ATP synthase, F1 sector,
+                     epsilon-subunit"
+                     /db_xref="GI:16131599"
+                     /db_xref="ASAP:ABE-0012206"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A6E6"
+                     /db_xref="EcoGene:EG10100"
+                     /db_xref="GeneID:948245"
+                     /GO_process="GO:0015986 - ATP synthesis coupled proton
+                     transport"
+                     /transl_table=11
+                     /product="F1 sector of membrane-bound ATP synthase, epsilon
+                     subunit"
+                     /protein_id="NP_418187.1"
+     CDS             complement(3914016..3915398)
+                     /function="enzyme; ATP-proton motive force interconversion"
+                     /locus_tag="b3732"
+                     /gene="atpD"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3725; JW3710; papB; uncD"
+                     /EC_number="3.6.3.14"
+                     /note="membrane-bound ATP synthase, F1 sector,
+                     beta-subunit"
+                     /db_xref="GI:16131600"
+                     /db_xref="ASAP:ABE-0012208"
+                     /db_xref="UniProtKB/Swiss-Prot:P0ABB4"
+                     /db_xref="EcoGene:EG10101"
+                     /db_xref="GeneID:948244"
+                     /GO_process="GO:0015986 - ATP synthesis coupled proton
+                     transport"
+                     /transl_table=11
+                     /product="F1 sector of membrane-bound ATP synthase, beta
+                     subunit"
+                     /protein_id="NP_418188.1"
+     CDS             complement(3915425..3916288)
+                     /function="enzyme; ATP-proton motive force interconversion"
+                     /locus_tag="b3733"
+                     /gene="atpG"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3726; JW3711; papC; uncG"
+                     /EC_number="3.6.3.14"
+                     /note="membrane-bound ATP synthase, F1 sector,
+                     gamma-subunit"
+                     /db_xref="GI:16131601"
+                     /db_xref="ASAP:ABE-0012211"
+                     /db_xref="UniProtKB/Swiss-Prot:P0ABA6"
+                     /db_xref="EcoGene:EG10104"
+                     /db_xref="GeneID:948243"
+                     /GO_process="GO:0015986 - ATP synthesis coupled proton
+                     transport"
+                     /transl_table=11
+                     /product="F1 sector of membrane-bound ATP synthase, gamma
+                     subunit"
+                     /protein_id="NP_418189.1"
+     CDS             complement(3916339..3917880)
+                     /function="enzyme; ATP-proton motive force interconversion"
+                     /locus_tag="b3734"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3727; JW3712; papA; uncA"
+                     /EC_number="3.6.3.14"
+                     /note="membrane-bound ATP synthase, F1 sector,
+                     alpha-subunit"
+                     /db_xref="GI:16131602"
+                     /db_xref="ASAP:ABE-0012213"
+                     /db_xref="UniProtKB/Swiss-Prot:P0ABB0"
+                     /db_xref="EcoGene:EG10098"
+                     /db_xref="GeneID:948242"
+                     /GO_process="GO:0015986 - ATP synthesis coupled proton
+                     transport"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     9298646"
+                     /gene="atpA"
+                     /product="F1 sector of membrane-bound ATP synthase, alpha
+                     subunit"
+                     /protein_id="NP_418190.1"
+                     /transl_table=11
+     CDS             complement(3917893..3918426)
+                     /function="enzyme; ATP-proton motive force interconversion"
+                     /locus_tag="b3735"
+                     /gene="atpH"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3728; JW3713; papE; uncH"
+                     /EC_number="3.6.3.14"
+                     /note="membrane-bound ATP synthase, F1 sector,
+                     delta-subunit"
+                     /db_xref="GI:16131603"
+                     /db_xref="ASAP:ABE-0012215"
+                     /db_xref="UniProtKB/Swiss-Prot:P0ABA4"
+                     /db_xref="EcoGene:EG10105"
+                     /db_xref="GeneID:948254"
+                     /GO_process="GO:0015986 - ATP synthesis coupled proton
+                     transport"
+                     /transl_table=11
+                     /product="F1 sector of membrane-bound ATP synthase, delta
+                     subunit"
+                     /protein_id="NP_418191.1"
+     CDS             complement(3918441..3918911)
+                     /function="enzyme; ATP-proton motive force interconversion"
+                     /locus_tag="b3736"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3729; JW3714; papF; uncF"
+                     /EC_number="3.6.3.14"
+                     /note="membrane-bound ATP synthase, F0 sector, subunit b"
+                     /db_xref="GI:16131604"
+                     /db_xref="ASAP:ABE-0012217"
+                     /db_xref="UniProtKB/Swiss-Prot:P0ABA0"
+                     /db_xref="EcoGene:EG10103"
+                     /db_xref="GeneID:948247"
+                     /GO_process="GO:0015986 - ATP synthesis coupled proton
+                     transport"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     6278247,9298646"
+                     /gene="atpF"
+                     /product="F0 sector of membrane-bound ATP synthase, subunit
+                     b"
+                     /protein_id="NP_418192.1"
+                     /transl_table=11
+     CDS             complement(3918973..3919212)
+                     /function="enzyme; ATP-proton motive force interconversion"
+                     /locus_tag="b3737"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3730; JW3715; papH; uncE"
+                     /EC_number="3.6.3.14"
+                     /note="membrane-bound ATP synthase, F0 sector, subunit c"
+                     /db_xref="GI:16131605"
+                     /db_xref="ASAP:ABE-0012220"
+                     /db_xref="UniProtKB/Swiss-Prot:P68699"
+                     /db_xref="EcoGene:EG10102"
+                     /db_xref="GeneID:948253"
+                     /GO_process="GO:0015986 - ATP synthesis coupled proton
+                     transport"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     6256167,6446460"
+                     /gene="atpE"
+                     /product="F0 sector of membrane-bound ATP synthase, subunit
+                     c"
+                     /protein_id="NP_418193.1"
+                     /transl_table=11
+     CDS             complement(3919259..3920074)
+                     /function="enzyme; ATP-proton motive force interconversion"
+                     /locus_tag="b3738"
+                     /gene="atpB"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3731; JW3716; papD; uncB"
+                     /EC_number="3.6.3.14"
+                     /note="membrane-bound ATP synthase, F0 sector, subunit a"
+                     /db_xref="GI:16131606"
+                     /db_xref="ASAP:ABE-0012222"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AB98"
+                     /db_xref="EcoGene:EG10099"
+                     /db_xref="GeneID:948252"
+                     /GO_process="GO:0015986 - ATP synthesis coupled proton
+                     transport; GO:0006457 - protein folding"
+                     /transl_table=11
+                     /product="F0 sector of membrane-bound ATP synthase, subunit
+                     a"
+                     /protein_id="NP_418194.1"
+     CDS             complement(3920083..3920463)
+                     /function="enzyme; ATP-proton motive force interconversion"
+                     /locus_tag="b3739"
+                     /gene="atpI"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK3732; JW5611; uncI"
+                     /EC_number="3.6.3.14"
+                     /note="membrane-bound ATP synthase, dispensable protein,
+                     affects expression of atpB"
+                     /db_xref="GI:90111645"
+                     /db_xref="ASAP:ABE-0012224"
+                     /db_xref="UniProtKB/Swiss-Prot:P0ABC0"
+                     /db_xref="EcoGene:EG10106"
+                     /db_xref="GeneID:948251"
+                     /GO_process="GO:0015986 - ATP synthesis coupled proton
+                     transport"
+                     /transl_table=11
+                     /product="ATP synthase, membrane-bound accessory factor"
+                     /protein_id="NP_418195.2"
+     CDS             complement(4054648..4056057)
+                     /function="enzyme; Amino acid biosynthesis: Glutamine"
+                     /locus_tag="b3870"
+                     /gene="glnA"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK3863; JW3841"
+                     /EC_number="6.3.1.2"
+                     /product="glutamine synthetase"
+                     /db_xref="GI:16131710"
+                     /db_xref="ASAP:ABE-0012640"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A9C5"
+                     /db_xref="EcoGene:EG10383"
+                     /db_xref="GeneID:948370"
+                     /GO_process="GO:0006542 - glutamine biosynthetic process;
+                     GO:0006807 - nitrogen compound metabolic process"
+                     /transl_table=11
+                     /protein_id="NP_418306.1"
+     CDS             4105575..4106537
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b3916"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK3908; JW3887"
+                     /EC_number="2.7.1.11"
+                     /product="6-phosphofructokinase I"
+                     /db_xref="GI:16131754"
+                     /db_xref="ASAP:ABE-0012789"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A796"
+                     /db_xref="EcoGene:EG10699"
+                     /db_xref="GeneID:948412"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     17895580"
+                     /gene="pfkA"
+                     /protein_id="NP_418351.1"
+                     /transl_table=11
+     CDS             complement(4108763..4109530)
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b3919"
+                     /codon_start=1
+                     /product="triosephosphate isomerase"
+                     /gene_synonym="ECK3911; JW3890; tpi"
+                     /db_xref="GI:16131757"
+                     /db_xref="ASAP:ABE-0012799"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A858"
+                     /db_xref="EcoGene:EG11015"
+                     /db_xref="GeneID:948409"
+                     /GO_process="GO:0006096 - glycolysis"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     8740179,9298646,9600841,17895580"
+                     /EC_number="5.3.1.1"
+                     /gene="tpiA"
+                     /protein_id="NP_418354.1"
+                     /transl_table=11
+     CDS             complement(4112592..4113602)
+                     /function="phenotype; Not classified"
+                     /locus_tag="b3925"
+                     /gene="glpX"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK3917; JW3896"
+                     /EC_number="3.1.3.11"
+                     /note="unknown function in glycerol metabolism"
+                     /db_xref="GI:16131763"
+                     /db_xref="ASAP:ABE-0012821"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A9C9"
+                     /db_xref="EcoGene:EG11517"
+                     /db_xref="GeneID:948424"
+                     /GO_process="GO:0008652 - cellular amino acid biosynthetic
+                     process"
+                     /transl_table=11
+                     /product="fructose 1,6-bisphosphatase II"
+                     /protein_id="NP_418360.1"
+     CDS             4142018..4144315
+                     /function="enzyme; Energy metabolism, carbon: Anaerobic
+                     respiration"
+                     /locus_tag="b3951"
+                     /codon_start=1
+                     /gene_synonym="ECK3942; JW3923; yijL"
+                     /transl_table=11
+                     /note="formate acetyltransferase 2"
+                     /db_xref="GI:16131789"
+                     /db_xref="ASAP:ABE-0012934"
+                     /db_xref="UniProtKB/Swiss-Prot:P32674"
+                     /db_xref="EcoGene:EG11910"
+                     /db_xref="GeneID:948454"
+                     /GO_process="GO:0009061 - anaerobic respiration"
+                     /gene="pflD"
+                     /product="putative formate acetyltransferase 2 (pyruvate
+                     formate lyase II)"
+                     /protein_id="NP_418386.1"
+     CDS             4144281..4145159
+                     /function="putative enzyme; Energy metabolism, carbon:
+                     Anaerobic respiration"
+                     /locus_tag="b3952"
+                     /codon_start=1
+                     /gene_synonym="ECK3943; JW3924; yijM"
+                     /transl_table=11
+                     /note="probable pyruvate formate lyase activating enzyme 2"
+                     /db_xref="GI:49176447"
+                     /db_xref="ASAP:ABE-0012937"
+                     /db_xref="UniProtKB/Swiss-Prot:P32675"
+                     /db_xref="EcoGene:EG11911"
+                     /db_xref="GeneID:948453"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006464
+                     - protein modification process"
+                     /gene="pflC"
+                     /product="pyruvate formate lyase II activase"
+                     /protein_id="NP_418387.3"
+     CDS             complement(4148470..4151121)
+                     /function="enzyme; Energy metabolism, carbon: Fermentation"
+                     /locus_tag="b3956"
+                     /gene="ppc"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="asp; ECK3947; glu; JW3928"
+                     /EC_number="4.1.1.31"
+                     /product="phosphoenolpyruvate carboxylase"
+                     /db_xref="GI:16131794"
+                     /db_xref="ASAP:ABE-0012950"
+                     /db_xref="UniProtKB/Swiss-Prot:P00864"
+                     /db_xref="EcoGene:EG10756"
+                     /db_xref="GeneID:948457"
+                     /GO_process="GO:0006113 - fermentation; GO:0006099 -
+                     tricarboxylic acid cycle"
+                     /transl_table=11
+                     /protein_id="NP_418391.1"
+     CDS             complement(4157413..4158813)
+                     /function="putative enzyme; Not classified"
+                     /locus_tag="b3962"
+                     /gene="sthA"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK3954; JW5551; sth; udhA"
+                     /EC_number="1.6.1.1"
+                     /product="pyridine nucleotide transhydrogenase, soluble"
+                     /db_xref="GI:90111670"
+                     /db_xref="ASAP:ABE-0012975"
+                     /db_xref="UniProtKB/Swiss-Prot:P27306"
+                     /db_xref="EcoGene:EG11428"
+                     /db_xref="GeneID:948461"
+                     /GO_process="GO:0009226 - nucleotide-sugar biosynthetic
+                     process"
+                     /transl_table=11
+                     /protein_id="NP_418397.2"
+     CDS             4213501..4215102
+                     /function="enzyme; Central intermediary metabolism:
+                     Glyoxylate bypass"
+                     /locus_tag="b4014"
+                     /gene="aceB"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK4006; JW3974; mas"
+                     /EC_number="2.3.3.9"
+                     /product="malate synthase A"
+                     /db_xref="GI:16131840"
+                     /db_xref="ASAP:ABE-0013125"
+                     /db_xref="UniProtKB/Swiss-Prot:P08997"
+                     /db_xref="EcoGene:EG10023"
+                     /db_xref="GeneID:948512"
+                     /GO_process="GO:0006097 - glyoxylate cycle"
+                     /transl_table=11
+                     /protein_id="NP_418438.1"
+     CDS             4215132..4216436
+                     /function="enzyme; Central intermediary metabolism:
+                     Glyoxylate bypass"
+                     /locus_tag="b4015"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK4007; icl; JW3975"
+                     /EC_number="4.1.3.1"
+                     /product="isocitrate lyase"
+                     /db_xref="GI:16131841"
+                     /db_xref="ASAP:ABE-0013128"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A9G6"
+                     /db_xref="EcoGene:EG10022"
+                     /db_xref="GeneID:948517"
+                     /GO_process="GO:0006097 - glyoxylate cycle"
+                     /experiment="N-terminus verified by Edman degradation: PMID
+                     3049537,10094700"
+                     /gene="aceA"
+                     /protein_id="NP_418439.1"
+                     /transl_table=11
+     CDS             4231781..4233430
+                     /function="enzyme; Energy metabolism, carbon: Glycolysis"
+                     /locus_tag="b4025"
+                     /gene="pgi"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK4017; JW3985"
+                     /EC_number="5.3.1.9"
+                     /product="glucosephosphate isomerase"
+                     /db_xref="GI:16131851"
+                     /db_xref="ASAP:ABE-0013163"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A6T1"
+                     /db_xref="EcoGene:EG10702"
+                     /db_xref="GeneID:948535"
+                     /GO_process="GO:0006094 - gluconeogenesis; GO:0006096 -
+                     glycolysis"
+                     /transl_table=11
+                     /protein_id="NP_418449.1"
+     CDS             4292504..4293817
+                     /function="transport; Transport of small molecules: Amino
+                     acids, amines"
+                     /locus_tag="b4077"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK4070; JW4038"
+                     /transl_table=11
+                     /note="glutamate-aspartate symport protein"
+                     /db_xref="GI:16131903"
+                     /db_xref="ASAP:ABE-0013357"
+                     /db_xref="UniProtKB/Swiss-Prot:P21345"
+                     /db_xref="EcoGene:EG10405"
+                     /db_xref="GeneID:948591"
+                     /GO_process="GO:0006532 - aspartate biosynthetic process;
+                     GO:0006537 - glutamate biosynthetic process"
+                     /gene="gltP"
+                     /product="glutamate/aspartate:proton symporter"
+                     /protein_id="NP_418501.1"
+     CDS             4311373..4311822
+                     /function="enzyme; Central intermediary metabolism:
+                     Non-oxidative branch, pentose pathway"
+                     /locus_tag="b4090"
+                     /gene="rpiB"
+                     /codon_start=1
+                     /gene_synonym="alsB; alsI; ECK4083; JW4051; yjcA"
+                     /EC_number="5.3.1.6"
+                     /note="ribose 5-phosphate isomerase B"
+                     /db_xref="GI:16131916"
+                     /db_xref="ASAP:ABE-0013405"
+                     /db_xref="UniProtKB/Swiss-Prot:P37351"
+                     /db_xref="EcoGene:EG11827"
+                     /db_xref="GeneID:948602"
+                     /GO_process="GO:0016052 - carbohydrate catabolic process;
+                     GO:0009052 - pentose-phosphate shunt, non-oxidative branch"
+                     /transl_table=11
+                     /product="ribose 5-phosphate isomerase B/allose 6-phosphate
+                     isomerase"
+                     /protein_id="NP_418514.1"
+     CDS             complement(4343703..4345349)
+                     /function="enzyme; Energy metabolism, carbon: TCA cycle"
+                     /locus_tag="b4122"
+                     /gene="fumB"
+                     /codon_start=1
+                     /gene_synonym="ECK4115; JW4083"
+                     /EC_number="4.2.1.2"
+                     /note="fumarase B= fumarate hydratase Class I; anaerobic
+                     isozyme"
+                     /db_xref="GI:16131948"
+                     /db_xref="ASAP:ABE-0013501"
+                     /db_xref="UniProtKB/Swiss-Prot:P14407"
+                     /db_xref="EcoGene:EG10357"
+                     /db_xref="GeneID:948642"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006113
+                     - fermentation; GO:0006099 - tricarboxylic acid cycle"
+                     /transl_table=11
+                     /product="anaerobic class I fumarate hydratase (fumarase
+                     B)"
+                     /protein_id="NP_418546.1"
+     CDS             complement(4377030..4377389)
+                     /function="enzyme; Energy metabolism, carbon: Anaerobic
+                     respiration"
+                     /locus_tag="b4151"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK4147; JW4112"
+                     /transl_table=11
+                     /note="fumarate reductase, anaerobic, membrane anchor
+                     polypeptide"
+                     /db_xref="GI:16131976"
+                     /db_xref="ASAP:ABE-0013595"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A8Q3"
+                     /db_xref="EcoGene:EG10333"
+                     /db_xref="GeneID:948668"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006113
+                     - fermentation"
+                     /gene="frdD"
+                     /product="fumarate reductase (anaerobic), membrane anchor
+                     subunit"
+                     /protein_id="NP_418575.1"
+     CDS             complement(4377400..4377795)
+                     /function="enzyme; Energy metabolism, carbon: Anaerobic
+                     respiration"
+                     /locus_tag="b4152"
+                     /GO_component="GO:0019866 - organelle inner membrane;
+                     GO:0009274 - peptidoglycan-based cell wall"
+                     /codon_start=1
+                     /gene_synonym="ECK4148; JW4113"
+                     /transl_table=11
+                     /note="fumarate reductase, anaerobic, membrane anchor
+                     polypeptide"
+                     /db_xref="GI:16131977"
+                     /db_xref="ASAP:ABE-0013598"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A8Q0"
+                     /db_xref="EcoGene:EG10332"
+                     /db_xref="GeneID:948680"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006113
+                     - fermentation"
+                     /gene="frdC"
+                     /product="fumarate reductase (anaerobic), membrane anchor
+                     subunit"
+                     /protein_id="NP_418576.1"
+     CDS             complement(4377806..4378540)
+                     /function="enzyme; Energy metabolism, carbon: Anaerobic
+                     respiration"
+                     /locus_tag="b4153"
+                     /gene="frdB"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK4149; JW4114"
+                     /EC_number="1.3.99.1"
+                     /note="fumarate reductase, anaerobic, iron-sulfur protein
+                     subunit"
+                     /db_xref="GI:16131978"
+                     /db_xref="ASAP:ABE-0013602"
+                     /db_xref="UniProtKB/Swiss-Prot:P0AC47"
+                     /db_xref="EcoGene:EG10331"
+                     /db_xref="GeneID:948666"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006113
+                     - fermentation"
+                     /transl_table=11
+                     /product="fumarate reductase (anaerobic), Fe-S subunit"
+                     /protein_id="NP_418577.1"
+     CDS             complement(4378533..4380341)
+                     /function="enzyme; Energy metabolism, carbon: Anaerobic
+                     respiration"
+                     /locus_tag="b4154"
+                     /gene="frdA"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK4150; JW4115"
+                     /EC_number="1.3.99.1"
+                     /note="fumarate reductase, anaerobic, flavoprotein subunit"
+                     /db_xref="GI:16131979"
+                     /db_xref="ASAP:ABE-0013604"
+                     /db_xref="UniProtKB/Swiss-Prot:P00363"
+                     /db_xref="EcoGene:EG10330"
+                     /db_xref="GeneID:948667"
+                     /GO_process="GO:0009061 - anaerobic respiration; GO:0006113
+                     - fermentation"
+                     /transl_table=11
+                     /product="fumarate reductase (anaerobic) catalytic and
+                     NAD/flavoprotein subunit"
+                     /protein_id="NP_418578.1"
+     CDS             complement(4452634..4453632)
+                     /function="enzyme; Central intermediary metabolism:
+                     Gluconeogenesis"
+                     /locus_tag="b4232"
+                     /gene="fbp"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK4227; fdp; JW4191"
+                     /EC_number="3.1.3.11"
+                     /product="fructose-1,6-bisphosphatase I"
+                     /db_xref="GI:16132054"
+                     /db_xref="ASAP:ABE-0013842"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A993"
+                     /db_xref="EcoGene:EG10283"
+                     /db_xref="GeneID:948753"
+                     /GO_process="GO:0006094 - gluconeogenesis"
+                     /transl_table=11
+                     /protein_id="NP_418653.1"
+     CDS             complement(4524928..4525560)
+                     /function="putative enzyme; Not classified"
+                     /locus_tag="b4301"
+                     /codon_start=1
+                     /gene_synonym="ECK4290; JW4263; yjhK"
+                     /transl_table=11
+                     /note="putative epimerase"
+                     /db_xref="GI:16132122"
+                     /db_xref="ASAP:ABE-0014097"
+                     /db_xref="UniProtKB/Swiss-Prot:P39362"
+                     /db_xref="EcoGene:EG12553"
+                     /db_xref="GeneID:948829"
+                     /gene="sgcE"
+                     /product="KpLE2 phage-like element; predicted epimerase"
+                     /protein_id="NP_418721.1"
+     CDS             4631820..4632467
+                     /function="enzyme; Not classified"
+                     /locus_tag="b4395"
+                     /GO_component="GO:0005737 - cytoplasm"
+                     /codon_start=1
+                     /gene_synonym="ECK4387; gpmB; JW4358"
+                     /transl_table=11
+                     /note="phosphoglyceromutase 2"
+                     /db_xref="GI:16132212"
+                     /db_xref="ASAP:ABE-0014416"
+                     /db_xref="UniProtKB/Swiss-Prot:P0A7A2"
+                     /db_xref="EcoGene:EG12164"
+                     /db_xref="GeneID:948918"
+                     /GO_process="GO:0006094 - gluconeogenesis; GO:0006096 -
+                     glycolysis"
+                     /gene="ytjC"
+                     /product="phosphatase"
+                     /protein_id="NP_418812.1"
+ORIGIN
+//

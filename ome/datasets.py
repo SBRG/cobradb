@@ -11,10 +11,8 @@ from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.sql.expression import join
 from sqlalchemy import func
 
-from pymongo import ASCENDING, DESCENDING
 from math import ceil
 import simplejson as json
-
 
 class ExpandedEnvironments:
     """
@@ -283,13 +281,13 @@ class Analysis(Dataset):
     __tablename__ = 'analysis'
 
     id = Column(Integer, ForeignKey('dataset.id', ondelete='CASCADE'), primary_key=True)
-    type = Column(String(40))
+    analysis_type = Column(String(40))
     children = relationship("Dataset", secondary="analysis_composition",\
                             primaryjoin = id == AnalysisComposition.analysis_id,\
                             backref="parent")
 
     __mapper_args__ = {'polymorphic_identity': 'analysis',
-                       'polymorphic_on': 'type'}
+                       'polymorphic_on': 'analysis_type'}
 
     def __init__(self, name, replicate=1, strain_id=None, environment_id=None, group_name=None):
         super(Analysis, self).__init__(name, replicate, strain_id, environment_id, group_name=group_name)
@@ -504,7 +502,7 @@ grouped = ome.query(func.distinct(ChIPPeakData.dataset_id).label('dataset_id'),\
 gene_expression_data = ome.query(
           Gene.id.label('gene_id'),
           Gene.name.label('gene_name'),
-          Gene.locus_id.label('locus_id'),
+          Gene.bigg_id.label('bigg_id'),
           Strain.id.label('strain_id'),
           Strain.name.label('strain'),
           InVivoEnvironment.id.label('environment_id'),
@@ -518,7 +516,7 @@ gene_expression_data = ome.query(
           func.stddev_pop(GenomeData.value).label('stddev')).\
     join(GenomeData, Dataset, Strain, InVivoEnvironment).\
     group_by(Gene.id, Dataset.group_name, Strain.id, Dataset.type, InVivoEnvironment.id,
-             Gene.locus_id, Gene.name, Strain.name, InVivoEnvironment.carbon_source,
+             Gene.bigg_id, Gene.name, Strain.name, InVivoEnvironment.carbon_source,
                                                     InVivoEnvironment.nitrogen_source,
                                                     InVivoEnvironment.electron_acceptor).order_by(Dataset.type, InVivoEnvironment.id).subquery()
 
@@ -622,8 +620,8 @@ chip_peak_gene = ome.query(ChIPPeakData.value.label('peak_value'),
                            InVivoEnvironment.supplements.label('supplements'),
                            TU.name.label('tu_name'),
                            Gene.id.label('gene_id'),
-                           Gene.locus_id.label('locus_id'),
-                           GenomeRegion2.name.label('gene_name'),
+                           Gene.name.label('name'),
+                           GenomeRegion2.bigg_id.label('gene_bigg_id'),
                            ChIPPeakData.dataset_id.label('chip_peak_id')).\
                     join(GenomeRegionMap, GenomeRegionMap.genome_region_id_1 == ChIPPeakData.genome_region_id).\
                     join(TU, GenomeRegionMap.genome_region_id_2 == TU.genome_region_id).\
@@ -652,8 +650,8 @@ chip_peak_gene_expression = ome.query(ChIPPeakData.value.label('peak_value'),
                  diff_exp_chip_peak.c.electron_acceptor.label('electron_acceptor'),
                  TU.name.label('tu_name'),
                  Gene.id.label('gene_id'),
-                 Gene.locus_id.label('locus_id'),
-                 GenomeRegion2.name.label('gene_name'),
+                 Gene.name.label('name'),
+                 GenomeRegion2.bigg_id.label('gene_bigg_id'),
                  DiffExpData.type.label('dataset_type'),
                  DiffExpData.genome_region_id.label('gene_genome_region_id'),
                  DiffExpData.value.label('value'),
@@ -702,7 +700,7 @@ differential_gene_expression_data = ome.query(DiffExpData.value.label('value'),
                                            NormalizedExpression.id.label('expression_id'),
                                            NormalizedExpression.expression_type.label('dataset_type'),
                                            Gene.id.label('gene_id'),
-                                           Gene.locus_id.label('locus_id'),
+                                           Gene.bigg_id.label('bigg_id'),
                                            Gene.name.label('gene_name'),
                                            Strain.name.label('strain1'),
                                            Strain2.name.label('strain2'),

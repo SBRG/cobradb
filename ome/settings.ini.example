@@ -1,0 +1,27 @@
+[DATABASE]
+postgres_host = localhost
+postgres_port = 5432
+postgres_database = bigg
+postgres_user = username
+postgres_password = pwd
+postgres_test_database = bigg_test
+
+[EXECUTABLES]
+psql = /usr/local/bin/psql
+r = /usr/local/bin/R
+rscript = /usr/local/bin/Rscript
+primer3 = /usr/local/bin/primer3_core
+cufflinks = /usr/local/bin/cufflinks
+cuffnorm = /usr/local/bin/cuffnorm
+cuffquant = /usr/local/bin/cuffquant
+java = /Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home/bin/java
+
+[DATA]
+data_directory = ~/path/to/ome_data/
+model_genome = ~/path/to/ome_data/model-genome.txt
+compartment_names = ~/path/to/ome_data/compartment-names.txt
+reaction_id_prefs = ~/path/to/ome_data/reaction-id-prefs.txt
+reaction_hash_prefs = ~/path/to/ome_data/reaction-hash-prefs.txt
+model_dump_directory = ~/path/to/bigg_static/dumped_models
+model_polished_directory = ~/path/to/bigg_static/polished_models
+model_published_directory = ~/path/to/bigg_static/published_models
