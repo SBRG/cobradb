@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from ome.base import NotFoundError
+from ome.util import scrub_gene_id
 
 import re
 import cobra
@@ -51,18 +52,19 @@ def convert_ids(model):
 
     {'reactions': {'new_id': 'old_id'},
      'metabolites': {'new_id': 'old_id'},
-     'genes': {}}
+     'genes': {'new_id': 'old_id'}}
 
     """
     # loop through the ids:
-    metaboliteIdDict = {}
-    reactionIdDict = {}
+    metabolite_id_dict = {}
+    reaction_id_dict = {}
+    gene_id_dict = {}
 
     # fix metabolites
     for metabolite in model.metabolites:
         new_id = id_for_new_id_style(fix_legacy_id(metabolite.id, use_hyphens=False),
                                      is_metabolite=True)
-        metaboliteIdDict[new_id] = metabolite.id
+        metabolite_id_dict[new_id] = metabolite.id
         metabolite.id = new_id
     model.metabolites._generate_index()
 
@@ -82,18 +84,30 @@ def convert_ids(model):
     # separate ids and compartments, and convert to the new_id_style
     for reaction in model.reactions:
         new_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
-        reactionIdDict[new_id] = reaction.id
+        reaction_id_dict[new_id] = reaction.id
         reaction.id = new_id
     model.reactions._generate_index()
+
+    # update the genes 
+    for gene in list(model.genes):
+        new_id = scrub_gene_id(gene.id)
+        gene_id_dict[new_id] = gene.id
+        for reaction in gene.reactions:
+            reaction.gene_reaction_rule = re.sub(r'\b'+gene.id+r'\b', new_id,
+                                                 reaction.gene_reaction_rule)
+    # remove old genes
+    for gene in list(model.genes):
+        if len(gene.reactions) == 0:
+            gene.remove_from_model()
 
     # fix the model id
     bigg_id = re.sub(r'[^a-zA-Z0-9_]', '_', model.id)
     model.id = bigg_id
     model.description = bigg_id
 
-    old_ids = { 'metabolites': metaboliteIdDict,
-                'reactions': reactionIdDict,
-                'genes': {} }
+    old_ids = {'metabolites': metabolite_id_dict,
+               'reactions': reaction_id_dict,
+               'genes':gene_id_dict}
     return model, old_ids
 
 # the regex to separate the base id, the chirality ('_L') and the compartment ('_c')

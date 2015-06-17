@@ -581,6 +581,9 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
 
 # find gene functions
 def _match_gene_by_fns(fn_list, session, gene_id, chromosome_ids):
+    """Go through each funciton and look for a match. 
+
+    """
     for fn in fn_list:
         match, is_alternative_transcript = fn(session, gene_id, chromosome_ids)
         if len(match) > 0:
@@ -622,7 +625,7 @@ def _by_synonym(session, gene_id, chromosome_ids):
 
 def _by_alternative_transcript(session, gene_id, chromosome_ids): 
     """Function to check for the alternative transcript match."""
-    check = re.match(r'(.*)\.[0-9]{1,2}$', gene_id)
+    check = re.match(r'(.*)_AT[0-9]{1,2}$', gene_id)
     if not check:
         gene_db = []
     else:
@@ -638,7 +641,7 @@ def _by_alternative_transcript(session, gene_id, chromosome_ids):
 
 def _by_alternative_transcript_name(session, gene_id, chromosome_ids): 
     """Function to check for the alternative transcript match."""
-    check = re.match(r'(.*)\.[0-9]{1,2}$', gene_id)
+    check = re.match(r'(.*)_AT[0-9]{1,2}$', gene_id)
     if not check:
         gene_db = []
     else:
@@ -654,7 +657,7 @@ def _by_alternative_transcript_name(session, gene_id, chromosome_ids):
 
 def _by_alternative_transcript_synonym(session, gene_id, chromosome_ids): 
     """Function to check for the alternative transcript match."""
-    check = re.match(r'(.*)\.[0-9]{1,2}$', gene_id)
+    check = re.match(r'(.*)_AT[0-9]{1,2}$', gene_id)
     if not check:
         gene_db = []
     else:
@@ -737,8 +740,8 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids):
         else:
             # find a matching gene
             fns = [_by_bigg_id, _by_name, _by_synonym, _by_alternative_transcript,
-                _by_alternative_transcript_name, _by_alternative_transcript_synonym,
-                _by_bigg_id_no_underscore]
+                   _by_alternative_transcript_name, _by_alternative_transcript_synonym,
+                   _by_bigg_id_no_underscore]
             gene_db, is_alternative_transcript = _match_gene_by_fns(fns, session,
                                                                     gene.id,
                                                                     chromosome_ids)

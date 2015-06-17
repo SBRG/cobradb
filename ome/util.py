@@ -22,6 +22,13 @@ def check_pseudoreaction(reaction_id):
     return False
 
 
+def scrub_gene_id(the_id):
+    """Get a new style gene ID."""
+    the_id = re.sub(r'(.*)\.([0-9]{1,2})$', r'\1_AT\2', the_id)
+    the_id = re.sub(r'\W', r'_', the_id)
+    return the_id
+
+
 # from ome import base, settings
 # from ome.datasets import *
 # from ome.components import *
