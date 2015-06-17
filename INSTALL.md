@@ -24,12 +24,14 @@ sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-de
 
 ```
 sudo -i -u postgres
-createuser -d -l -s <your username>
+createuser -d -l -P -s <your username>
 createdb ome
 exit
 ```
 
 ## Next install python packages.
+
+Note: newer versions of OSX only require ```createdb ome```
 
 All of the rest of the dependencies *should* install automatically through
 setup.py below.  However, in practice you may want to install these individually
