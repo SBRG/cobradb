@@ -20,6 +20,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     # preferences. TODO these would be better as arguments to load_model
     settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
     settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
+    settings.gene_reaction_rule_prefs = test_prefs['gene_reaction_rule_prefs']
 
     timestamp = '2014-9-16 14:26:22'
     pmid = 'pmid:25575024'
@@ -225,6 +226,15 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
              .filter(ModelReaction.gene_reaction_rule == '(b0650) or (b4161)')
              .all())
     assert len(mr_db) == 2
+
+    # gene_reaction_rule_prefs to fix reaction rules
+    mr_db = (session
+             .query(ModelReaction)
+             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+             .filter(Model.bigg_id == 'Ecoli_core_model')
+             .filter(Reaction.bigg_id == 'ACKr')
+             .first())
+    assert mr_db.gene_reaction_rule == '(b1849 or b2296 or b3115)'
 
     # old ids
     assert (session

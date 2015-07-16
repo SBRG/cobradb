@@ -5,7 +5,7 @@ from ome.base import NotFoundError
 from ome.models import *
 from ome.components import *
 from ome.loading.model_loading import parse
-from ome.util import increment_id, check_pseudoreaction
+from ome.util import increment_id, check_pseudoreaction, load_tsv
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
@@ -387,12 +387,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
     data_source_id = _get_data_source(session, 'old_id')
 
     # get reaction id_prefs
-    if os.path.exists(settings.reaction_id_prefs):
-        with open(settings.reaction_id_prefs, 'r') as f:
-            id_prefs = [[x.strip() for x in line.split('\t')]
-                        for line in f.readlines()]
-    else:
-        id_prefs = []
+    id_prefs = load_tsv(settings.reaction_id_prefs)
     def _check_id_prefs(an_id, versus_id):
         """Return True if an_id is preferred over versus_id."""
         for row in id_prefs:
@@ -406,12 +401,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
         return False
 
     # get reaction hash_prefs
-    if os.path.exists(settings.reaction_hash_prefs):
-        with open(settings.reaction_hash_prefs, 'r') as f:
-            hash_prefs = [[x.strip() for x in line.split('\t')]
-                          for line in f.readlines()]
-    else:
-        hash_prefs = []
+    hash_prefs = load_tsv(settings.reaction_hash_prefs)
     def _check_hash_prefs(a_hash):
         """Return the preferred BiGG ID for a_hash, or None."""
         for row in hash_prefs:

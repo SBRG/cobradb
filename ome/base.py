@@ -101,7 +101,7 @@ class GenomeRegion(Base):
 
     def __repr__(self):
         return ('<ome GenomeRegion(id={self.id}, leftpos={self.leftpos}, rightpos={self.rightpos})>'
-                .format(self.leftpos, self.rightpos, self.strand))
+                .format(self=self))
 
     def __init__(self, bigg_id, chromosome_id, leftpos=None, rightpos=None,
                  strand=None):

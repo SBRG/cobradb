@@ -122,11 +122,27 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pub_ref, session,
     loading_methods.load_model_count(session, model_database_id)
 
     session.commit()
+
+    # copy over published model
+    if published_directory:
+        # make folder if it doesn't exist
+        try:
+            os.makedirs(published_directory)
+        except OSError:
+            pass
+        # copy published model
+        try:
+            logging.info('Copying {} to static directory'
+                         .format(basename(model_filepath)))
+            shutil.copy(model_filepath, published_directory)
+        except OSError:
+            print('Could not copy published model {}'.format(model_filepath))
     
     if dump_directory or polished_directory:
         # dump database models
         logging.info('Dumping {}'.format(basename(model_bigg_id)))
         cobra_model = dump_model(model_bigg_id)
+        import ipdb; ipdb.set_trace()
         if dump_directory:
             # make folder if it doesn't exist
             try:
@@ -151,33 +167,20 @@ def load_model(model_filepath, bioproject_id, model_timestamp, pub_ref, session,
                 logging.warn('COBRApy version does not support SBML3 and FBC2')
             else:
                 write_sbml_model3(cobra_model, join(unpolished_dir, model_bigg_id + '.xml'))
-
-    if published_directory:
-        # make folder if it doesn't exist
-        try:
-            os.makedirs(published_directory)
-        except OSError:
-            pass
-        # copy published model
-        try:
-            logging.info('Copying {} to static directory'
-                         .format(basename(model_filepath)))
-            shutil.copy(model_filepath, published_directory)
-        except OSError:
-            print('Could not copy published model {}'.format(model_filepath))
     
     return model_bigg_id
 
 
 def run_model_polisher(polished_directory):
     model_polisher_path = abspath(join(dirname(__file__), '..', '..', '..',
-                                       'bin', 'ModelPolisher-0.7.jar'))
+                                       'bin', 'ModelPolisher-0.8.jar'))
     logging.info('Running model polisher with {}'.format(model_polisher_path))
 
     command = [settings.java,
                '-jar',
                '-Xms8G',
                '-Xmx8G',
+               '-Xss128M',
                '-Duser.language=en',
                model_polisher_path,
                '--user=%s' % settings.postgres_user,
