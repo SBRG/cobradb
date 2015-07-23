@@ -5,7 +5,7 @@ from ome.base import NotFoundError
 from ome.models import *
 from ome.components import *
 from ome.loading.model_loading import parse
-from ome.util import increment_id, check_pseudoreaction
+from ome.util import increment_id, check_pseudoreaction, load_tsv
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
@@ -34,7 +34,7 @@ def _get_data_source(session, name):
     return data_source_db.id
 
 
-def load_model(session, model, genome_db_id, first_created, pub_ref,
+def load_model(session, model, genome_db_id, pub_ref,
                published_filename):
     """Load the model.
 
@@ -46,8 +46,6 @@ def load_model(session, model, genome_db_id, first_created, pub_ref,
     model: A COBRApy model.
 
     genome_db_id: The database ID of the genome. Can be None.
-
-    first_created: A first-created time.
 
     pub_ref: a publication PMID or doi for the model, as a string like this:
 
@@ -63,8 +61,8 @@ def load_model(session, model, genome_db_id, first_created, pub_ref,
     The database ID of the new model row.
 
     """
-    model_db = Model(bigg_id=model.id, first_created=first_created,
-                     genome_id=genome_db_id, description=model.description,
+    model_db = Model(bigg_id=model.id, genome_id=genome_db_id,
+                     description=model.description,
                      published_filename=published_filename)
     session.add(model_db)
     if pub_ref is not None:
@@ -387,12 +385,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
     data_source_id = _get_data_source(session, 'old_id')
 
     # get reaction id_prefs
-    if os.path.exists(settings.reaction_id_prefs):
-        with open(settings.reaction_id_prefs, 'r') as f:
-            id_prefs = [[x.strip() for x in line.split('\t')]
-                        for line in f.readlines()]
-    else:
-        id_prefs = []
+    id_prefs = load_tsv(settings.reaction_id_prefs)
     def _check_id_prefs(an_id, versus_id):
         """Return True if an_id is preferred over versus_id."""
         for row in id_prefs:
@@ -406,12 +399,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
         return False
 
     # get reaction hash_prefs
-    if os.path.exists(settings.reaction_hash_prefs):
-        with open(settings.reaction_hash_prefs, 'r') as f:
-            hash_prefs = [[x.strip() for x in line.split('\t')]
-                          for line in f.readlines()]
-    else:
-        hash_prefs = []
+    hash_prefs = load_tsv(settings.reaction_hash_prefs)
     def _check_hash_prefs(a_hash):
         """Return the preferred BiGG ID for a_hash, or None."""
         for row in hash_prefs:

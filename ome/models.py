@@ -12,7 +12,6 @@ class Model(Base):
     __tablename__='model'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    first_created = Column(DateTime, nullable=False)
     bigg_id = Column(String, nullable=False)
     genome_id = Column(Integer, ForeignKey('genome.id', onupdate="CASCADE", ondelete="CASCADE"))
     genome = relationship('Genome', backref='model')
