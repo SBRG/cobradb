@@ -34,7 +34,7 @@ def _get_data_source(session, name):
     return data_source_db.id
 
 
-def load_model(session, model, genome_db_id, first_created, pub_ref,
+def load_model(session, model, genome_db_id, pub_ref,
                published_filename):
     """Load the model.
 
@@ -46,8 +46,6 @@ def load_model(session, model, genome_db_id, first_created, pub_ref,
     model: A COBRApy model.
 
     genome_db_id: The database ID of the genome. Can be None.
-
-    first_created: A first-created time.
 
     pub_ref: a publication PMID or doi for the model, as a string like this:
 
@@ -63,8 +61,8 @@ def load_model(session, model, genome_db_id, first_created, pub_ref,
     The database ID of the new model row.
 
     """
-    model_db = Model(bigg_id=model.id, first_created=first_created,
-                     genome_id=genome_db_id, description=model.description,
+    model_db = Model(bigg_id=model.id, genome_id=genome_db_id,
+                     description=model.description,
                      published_filename=published_filename)
     session.add(model_db)
     if pub_ref is not None:

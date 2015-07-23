@@ -13,7 +13,6 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger, tmpdir):
 
     session = base.Session()
     
-    timestamp = '2014-9-16 14:26:22'
     pub_ref = 'pmid:25575024'
     # load the test genome
     
@@ -21,7 +20,7 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger, tmpdir):
 
     # load the model
     bigg_id = load_model(test_model[0]['path'], test_genbank[0]['genome_id'],
-                         timestamp, pub_ref, session, dump_directory=str(tmpdir),
+                         pub_ref, session, dump_directory=str(tmpdir),
                          published_directory=str(tmpdir),
                          polished_directory=None)
     assert exists(join(str(tmpdir), bigg_id+'.xml'))

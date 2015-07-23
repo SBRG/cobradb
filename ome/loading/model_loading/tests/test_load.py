@@ -22,12 +22,11 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
     settings.gene_reaction_rule_prefs = test_prefs['gene_reaction_rule_prefs']
 
-    timestamp = '2014-9-16 14:26:22'
     pmid = 'pmid:25575024'
     # can't load the model without the genome
     with pytest.raises(Exception):
         for x in range(2):
-            load_model(test_model[x], test_genbank[x]['genome_id'], timestamp,
+            load_model(test_model[x], test_genbank[x]['genome_id'], 
                        pmid, session, dump_directory=None,
                        published_directory=None, polished_directory=None)
     
@@ -36,11 +35,11 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
         load_genome(test_genbank[x]['path'], session)
         # load the models
         load_model(test_model[x]['path'], test_genbank[x]['genome_id'],
-                   timestamp, pmid, session, dump_directory=None,
+                   pmid, session, dump_directory=None,
                    published_directory=None, polished_directory=None)
         
     # load the third model
-    load_model(test_model[2]['path'], test_genbank[0]['genome_id'], timestamp,
+    load_model(test_model[2]['path'], test_genbank[0]['genome_id'], 
                pmid, session, dump_directory=None, published_directory=None,
                polished_directory=None)
     
@@ -302,6 +301,6 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
 
     # can't load the same model twice
     with pytest.raises(AlreadyLoadedError):
-        load_model(test_model[0]['path'], test_genbank[0]['genome_id'],
-                   timestamp, pmid, session, dump_directory=None,
-                   published_directory=None, polished_directory=None)
+        load_model(test_model[0]['path'], test_genbank[0]['genome_id'], pmid,
+                   session, dump_directory=None, published_directory=None,
+                   polished_directory=None)
