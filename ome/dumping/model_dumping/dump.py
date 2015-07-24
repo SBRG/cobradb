@@ -104,11 +104,18 @@ def dump_model(bigg_id):
                       .filter(Component.type == 'metabolite')
                       .all())
     metabolites = []
+    compartments = set()
     for component_id, compartment_id in metabolites_db:
         if component_id is not None and compartment_id is not None:
             m = cobra.core.Metabolite(id=str(component_id + '_' + compartment_id), compartment=str(compartment_id))
+            compartments.add(str(compartment_id))
             metabolites.append(m)
     model.add_metabolites(metabolites) 
+
+    # compartments
+    model.compartments = {i.bigg_id: i.name
+                          for i in session.query(Compartment)
+                          .filter(Compartment.bigg_id.in_(compartments))}
 
     # reaction matrix
     logging.debug('Dumping reaction matrix')
