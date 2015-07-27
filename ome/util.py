@@ -1,6 +1,7 @@
 import re
-
-
+import os
+from ome import base
+from ome import settings
 def increment_id(id, increment_name=''):
     match = re.match(r'(.*)_%s([0-9]+)$' % increment_name, id)
     if match:
@@ -21,6 +22,32 @@ def check_pseudoreaction(reaction_id):
             return True
     return False
 
+def find_data_source_url(a_name, url_prefs):
+    """Return the url prefix for data source name, or None."""
+    for row in url_prefs:
+        if row[0] == a_name:
+            return row[1]
+    return None
+
+def read_data_source_preferences():
+    if os.path.exists(settings.data_source_preferences):
+        with open(settings.data_source_preferences, 'r') as f:
+            url_prefs = [[x.strip() for x in line.split('\t')]
+                          for line in f.readlines()]
+    else:
+        url_prefs = []
+    return url_prefs
+
+def create_data_source(session, data_source_name):    
+    # get gene url_prefs
+    url_prefs = read_data_source_preferences()
+
+    url = find_data_source_url(data_source_name, url_prefs)
+    data_source = base.DataSource(name=data_source_name, url_prefix = url)
+    session.add(data_source)
+    session.flush()
+    data_source_id = data_source.id
+    return data_source_id
 
 def scrub_gene_id(the_id):
     """Get a new style gene ID."""

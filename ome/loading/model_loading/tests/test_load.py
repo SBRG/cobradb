@@ -57,10 +57,11 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     
     # test linkouts
     result = (session
-              .query(LinkOut.external_source, LinkOut.external_id, LinkOut.ome_id)
-              .join(Metabolite, Metabolite.id == LinkOut.ome_id)
+              .query(Synonym.synonym, Synonym.ome_id)
+              .join(Metabolite, Metabolite.id == Synonym.ome_id)
+              .join(DataSource, DataSource.id == Synonym.synonym_data_source_id)
+              .filter(DataSource.name == 'KEGGID')
               .filter(Metabolite.bigg_id == '13dpg')
-              .filter(LinkOut.external_source == 'KEGGID')
               .all())
     assert len(result) == 2
 
@@ -257,22 +258,25 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
 
     # linkouts
     assert (session
-            .query(LinkOut)
-            .join(Metabolite, Metabolite.id == LinkOut.ome_id)
+            .query(Synonym)
+            .join(Metabolite, Metabolite.id == Synonym.ome_id)
+            .join(DataSource, DataSource.id == Synonym.synonym_data_source_id)
             .filter(Metabolite.bigg_id == '13dpg')
-            .filter(LinkOut.external_source == 'KEGGID')
+            .filter(DataSource.name == 'KEGGID')
             .count()) == 2
     assert (session
-            .query(LinkOut)
-            .join(Metabolite, Metabolite.id == LinkOut.ome_id)
+            .query(Synonym)
+            .join(Metabolite, Metabolite.id == Synonym.ome_id)
+            .join(DataSource, DataSource.id == Synonym.synonym_data_source_id)
             .filter(Metabolite.bigg_id == '13dpg')
-            .filter(LinkOut.external_source == 'BIOPATH')
+            .filter(DataSource.name == 'BIOPATH')
             .count()) == 1
     assert (session
-            .query(LinkOut)
-            .join(Metabolite, Metabolite.id == LinkOut.ome_id)
+            .query(Synonym)
+            .join(Metabolite, Metabolite.id == Synonym.ome_id)
+            .join(DataSource, DataSource.id == Synonym.synonym_data_source_id)
             .filter(Metabolite.bigg_id == '13dpg')
-            .filter(LinkOut.external_source == 'CHEBI')
+            .filter(DataSource.name  == 'CHEBI')
             .count()) == 5
 
     # formulas added in second model

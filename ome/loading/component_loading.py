@@ -2,7 +2,7 @@
 
 from ome import settings, timing, base
 from ome.components import Gene, Protein
-from ome.util import scrub_gene_id
+from ome.util import scrub_gene_id, create_data_source
 
 import sys, os, math, re
 from warnings import warn
@@ -557,12 +557,8 @@ def load_genome(genbank_filepath, session):
                     try:
                         data_source_id = db_xref_data_source_id[splitrefs[0]]
                     except KeyError:
-                        data_source = base.DataSource(name=splitrefs[0])
-                        session.add(data_source)
-                        session.flush()
-                        data_source_id = data_source.id
+                        data_source_id = create_data_source(session, splitrefs[0]) 
                         db_xref_data_source_id[splitrefs[0]] = data_source_id
-
                     ome_synonym['synonym_data_source_id'] = data_source_id
                     found_synonym = (session
                                      .query(base.Synonym)
@@ -583,6 +579,7 @@ def load_genome(genbank_filepath, session):
                     ome_synonym = {'type': 'gene'}
                     ome_synonym['ome_id'] = gene.id
                     ome_synonym['synonym'] = value.strip()
+                    #name: NCBI RefSeq
                     ome_synonym['synonym_data_source_id'] = None
                     found_synonym = (session
                                      .query(base.Synonym)

@@ -5,7 +5,7 @@ from ome.base import NotFoundError
 from ome.models import *
 from ome.components import *
 from ome.loading.model_loading import parse
-from ome.util import increment_id, check_pseudoreaction
+from ome.util import increment_id, check_pseudoreaction, create_data_source
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
@@ -127,7 +127,8 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
                 'LIPIDMAPS', 
                 'CASID',
                 'PUBCHEM ID']
-
+    db_xref_data_source_id = { data_source.name: data_source.id for data_source
+                                   in session.query(base.DataSource).all() }
     for external_source, v in cobra_metabolite.notes.iteritems():
         # ignore formulas
         if external_source.lower() in ['formula', 'formula1', 'none']:
@@ -148,19 +149,23 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
             if external_id.lower() in ['na', 'none']:
                 continue
             exists = (session
-                      .query(LinkOut)
-                      .filter(LinkOut.external_id == external_id)
-                      .filter(LinkOut.external_source == external_source)
-                      .filter(LinkOut.type == 'metabolite')
-                      .filter(LinkOut.ome_id == metabolite_database_id)
+                      .query(base.Synonym)
+                      .filter(base.Synonym.synonym == external_id)
+                      .filter(base.Synonym.type == 'metabolite')
+                      .filter(base.Synonym.ome_id == metabolite_database_id)
                       .count() > 0)
             if not exists:
-                linkout = LinkOut(external_id=external_id, 
-                                  external_source=external_source, 
-                                  type='metabolite', 
-                                  ome_id=metabolite_database_id)
-                session.add(linkout)
-
+                ome_linkout = {'type': 'metabolite'}
+                ome_linkout['ome_id'] = metabolite_database_id
+                ome_linkout['synonym'] = external_id
+                try:
+                    data_source_id = db_xref_data_source_id[external_source]
+                except KeyError:
+                    data_source_id = create_data_source(session, external_source)
+                    db_xref_data_source_id[external_source] = data_source_id
+                ome_linkout['synonym_data_source_id'] = data_source_id 
+                synonym = base.Synonym(**ome_linkout)
+                session.add(synonym)
 
 def load_metabolites(session, model_id, model, compartment_names,
                      old_metabolite_ids):

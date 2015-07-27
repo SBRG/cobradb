@@ -165,25 +165,22 @@ class DataSource(Base):
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
     name = Column(String(100))
-    lab = Column(String(100))
-    institution = Column(String(100))
-    #data_sets = relationship("DataSet")
+    url_prefix = Column(String)
 
     __table_args__ = (UniqueConstraint('name'),{})
 
     def __repr__(self):
-        return "Data Source %s (#%d)" % (self.name, self.id)
+        return "Data Source %s (#%d)" % (self.name, self.id, self.url_prefix)
 
     def __repr__dict__(self):
-        return {"name":self.name,"wid":self.id,"values":{"lab":self.lab,"institution":self.institution}}
+        return {"name":self.name,"wid":self.id, "url_prefix": self.url_prefix}
 
     def __repr__json__(self):
         return json.dumps(self.__repr__dict__())
 
-    def __init__(self, name, lab=None, institution=None):
+    def __init__(self, name, url_prefix=None):
         self.name = name
-        self.lab = lab
-        self.institution = institution
+        self.url_prefix = url_prefix
 
 
 class Synonym(Base):
@@ -233,16 +230,6 @@ class PublicationModel(Base):
     __table_args__ = (
         UniqueConstraint('model_id', 'publication_id'),
     )
-    
-
-class LinkOut(Base):
-    __tablename__="link_out"
-    id = Column(Integer, Sequence('wids'), primary_key=True) 
-    external_id = Column(String)
-    external_source = Column(String)
-    ome_id = Column(Integer)
-    type = Column(String)
-
 
 class OldIDSynonym(Base):
     __tablename__ = "old_id_model_synonym"

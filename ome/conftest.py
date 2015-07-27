@@ -46,7 +46,10 @@ def test_prefs():
                                                'reaction-id-prefs.txt')),
             'reaction_hash_prefs': realpath(join(dirname(__file__),
                                                  'test_data',
-                                                 'reaction-hash-prefs.txt')) }
+                                                 'reaction-hash-prefs.txt')),
+            'data_source_preferences': realpath(join(dirname(__file__),
+                                                 'test_data',
+                                                 'data-source-prefs.txt'))}
 
 @pytest.fixture(scope='session')
 def test_db_create(setup_logger):
