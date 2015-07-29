@@ -47,6 +47,7 @@ nosetests.xml
 # Other
 gurobi.log
 nohup.out
+.ipynb_checkpoints
 
 ome_data/
 ome_data
