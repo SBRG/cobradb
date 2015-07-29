@@ -69,6 +69,8 @@ def load_model(model_filepath, bioproject_id, pub_ref, session,
                 organism = 'Clostridium ljungdahlii DSM 13528'
             elif model_bigg_id == 'iSB619':
                 organism = 'Staphylococcus aureus subsp. aureus N315'
+            elif model_bigg_id == 'iY75_1357':
+                organism = 'Escherichia coli str. K-12 substr. W3110'
             else:
                 raise Exception('My terrible fix broke for model {}'.format(model_bigg_id))
             genome_db = (session

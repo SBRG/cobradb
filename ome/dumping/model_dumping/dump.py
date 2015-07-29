@@ -19,7 +19,7 @@ except ImportError:
 @timing
 def dump_model(bigg_id):
     session = Session()
-    
+
     # find the model
     model_db = (session
                 .query(Model)
@@ -32,7 +32,8 @@ def dump_model(bigg_id):
         raise Exception('Could not find model %s' % bigg_id)
 
     model = cobra.core.Model(str(bigg_id))
-    # COBRApy uses the description as the ID sometimes. See https://github.com/opencobra/cobrapy/pull/152
+    # COBRApy uses the description as the ID sometimes. See
+    # https://github.com/opencobra/cobrapy/pull/152
     model.description = str(bigg_id)
 
     # genes
@@ -148,9 +149,9 @@ def dump_model(bigg_id):
                  .join(ModelReaction)
                  .filter(ModelReaction.model_id == model_db.id)
                  .filter(Component.type == 'metabolite')
-                 .distinct()  # make sure we don't duplicate
-                 )
+                 .distinct())  # make sure we don't duplicate
 
+    # load metabolites
     for stoich, reaction_id, component_id, compartment_id in matrix_db:
         try:
             m = model.metabolites.get_by_id(str(component_id + '_' + compartment_id))
@@ -158,6 +159,7 @@ def dump_model(bigg_id):
             logging.warn('Metabolite not found %s in compartment %s for reaction %s' % \
                          (component_id, compartment_id, reaction_id))
             continue
+        # add to reactions
         if reaction_id in model.reactions:
             # check again that we don't duplicate
             r = model.reactions.get_by_id(reaction_id)
@@ -183,7 +185,7 @@ def dump_model(bigg_id):
 
 # def dump_universal_model():
 #     session = Session()
-    
+
 #     model = cobra.core.Model('Universal model')
 
 #     # reaction matrix
@@ -221,7 +223,7 @@ def dump_model(bigg_id):
 #         it = izip(matrix_db, ProgressBar(len(matrix_db)))
 #     except NameError:
 #         it = izip(matrix_db, repeat(None))
-    
+
 #     for (stoich, r_db, mr_db, model_bigg_id, component, compartment_id), _ in it:
 #         # assign the reaction
 #         try:
@@ -241,7 +243,7 @@ def dump_model(bigg_id):
 #         except KeyError:
 #             m = cobra.core.Metabolite(met_bigg_id)
 #             m.bigg_id = '%s (%s)' % (component.bigg_id, component.kegg_id)
-#         r.add_metabolites({ m: float(stoich) }) 
+#         r.add_metabolites({ m: float(stoich) })
 
 #     session.commit()
 #     session.close()
