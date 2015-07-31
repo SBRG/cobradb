@@ -29,6 +29,14 @@ def find_data_source_url(a_name, url_prefs):
             return row[1]
     return None
 
+def check_and_update_url(session, data_source_id):
+    data_query =  session.query(base.DataSource).filter(base.DataSource.id == data_source_id).first()
+    if data_query.url_prefix is None or data_query.url_prefix == '':
+        url_prefs = read_data_source_preferences()
+        url = find_data_source_url(data_query.name, url_prefs)
+        data_query.url_prefix = url
+        session.flush()
+
 def read_data_source_preferences():
     if os.path.exists(settings.data_source_preferences):
         with open(settings.data_source_preferences, 'r') as f:

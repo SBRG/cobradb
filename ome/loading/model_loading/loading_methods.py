@@ -5,7 +5,7 @@ from ome.base import NotFoundError
 from ome.models import *
 from ome.components import *
 from ome.loading.model_loading import parse
-from ome.util import increment_id, check_pseudoreaction, create_data_source
+from ome.util import increment_id, check_pseudoreaction, create_data_source, check_and_update_url
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
@@ -163,6 +163,7 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
                 except KeyError:
                     data_source_id = create_data_source(session, external_source)
                     db_xref_data_source_id[external_source] = data_source_id
+                check_and_update_url(session, data_source_id) 
                 ome_linkout['synonym_data_source_id'] = data_source_id 
                 synonym = base.Synonym(**ome_linkout)
                 session.add(synonym)

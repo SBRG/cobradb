@@ -188,7 +188,7 @@ class Synonym(Base):
     id = Column(Integer, Sequence('wids'), primary_key=True)
     ome_id = Column(Integer)
     synonym = Column(String)
-    type = Column(Enum('reaction', 'metabolite', 'gene', name='synonym_type'))
+    type = Column(Enum('reaction', 'component', 'gene', 'model_reaction', 'model_compartmentalized_component',  name='synonym_type'))
     synonym_data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
     synonym_data_source = relationship("DataSource")
 
