@@ -5,7 +5,7 @@ from ome.base import NotFoundError
 from ome.models import *
 from ome.components import *
 from ome.loading.model_loading import parse
-from ome.util import increment_id, check_pseudoreaction, create_data_source, check_and_update_url
+from ome.util import increment_id, check_pseudoreaction, create_data_source, check_and_update_url, format_formula
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
@@ -151,11 +151,11 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
             exists = (session
                       .query(base.Synonym)
                       .filter(base.Synonym.synonym == external_id)
-                      .filter(base.Synonym.type == 'metabolite')
+                      .filter(base.Synonym.type == 'component')
                       .filter(base.Synonym.ome_id == metabolite_database_id)
                       .count() > 0)
             if not exists:
-                ome_linkout = {'type': 'metabolite'}
+                ome_linkout = {'type': 'component'}
                 ome_linkout['ome_id'] = metabolite_database_id
                 ome_linkout['synonym'] = external_id
                 try:
@@ -217,8 +217,7 @@ def load_metabolites(session, model_id, model, compartment_names,
         values = (ignore_empty_str(strip_str_or_none(formula_fn(metabolite)))
                   for formula_fn in formula_fns)
         # Get the first non-null result. Otherwise _formula = None.
-        _formula = next(ifilter(None, values), None)
-
+        _formula = format_formula(next(ifilter(None, values), None))
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
             # check for missing info
@@ -283,13 +282,13 @@ def load_metabolites(session, model_id, model, compartment_names,
         old_bigg_id_c = old_metabolite_ids[metabolite.id]
         synonym_db = (session
                       .query(base.Synonym)
-                      .filter(base.Synonym.ome_id == metabolite_db.id)
+                      .filter(base.Synonym.ome_id == comp_component_db.id)
                       .filter(base.Synonym.synonym == old_bigg_id_c)
-                      .filter(base.Synonym.type == 'metabolite')
+                      .filter(base.Synonym.type == 'compartmentalized_component')
                       .first())
         if synonym_db is None:
-            synonym_db = base.Synonym(type='metabolite',
-                                      ome_id=metabolite_db.id,
+            synonym_db = base.Synonym(type='compartmentalized_component',
+                                      ome_id=comp_component_db.id,
                                       synonym=old_bigg_id_c,
                                       synonym_data_source_id=data_source_id)
             session.add(synonym_db)

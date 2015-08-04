@@ -57,6 +57,13 @@ def create_data_source(session, data_source_name):
     data_source_id = data_source.id
     return data_source_id
 
+def format_formula(formula):
+    if formula is not None:
+        formatted_formula = formula.translate(None, "'[]")
+        return formatted_formula
+    else:
+        return formula
+
 def scrub_gene_id(the_id):
     """Get a new style gene ID."""
     the_id = re.sub(r'(.*)\.([0-9]{1,2})$', r'\1_AT\2', the_id)
