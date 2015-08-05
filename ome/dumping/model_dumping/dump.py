@@ -125,15 +125,15 @@ def dump_model(bigg_id):
             m = cobra.core.Metabolite(
                 id=str(component_id + '_' + compartment_id),
                 compartment=str(compartment_id))
-            m.name = component_name
+            m.name = str(component_name)
             compartments.add(str(compartment_id))
             metabolites.append(m)
     model.add_metabolites(metabolites)
 
     # compartments
-    model.compartments = {i.bigg_id: i.name
-                          for i in session.query(Compartment)
-                          .filter(Compartment.bigg_id.in_(compartments))}
+    compartment_db = (session.query(Compartment)
+                      .filter(Compartment.bigg_id.in_(compartments)))
+    model.compartments = {str(i.bigg_id): str(i.name) for i in compartment_db}
 
     # reaction matrix
     logging.debug('Dumping reaction matrix')

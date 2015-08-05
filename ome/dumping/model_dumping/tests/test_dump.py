@@ -20,10 +20,7 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger, tmpdir):
 
     # load the model
     bigg_id = load_model(test_model[0]['path'], test_genbank[0]['genome_id'],
-                         pub_ref, session, dump_directory=str(tmpdir),
-                         published_directory=str(tmpdir),
-                         polished_directory=None)
-    assert exists(join(str(tmpdir), bigg_id+'.xml'))
+                         pub_ref, session)
 
     with pytest.raises(Exception):
         dump_model('C3PO', session)
