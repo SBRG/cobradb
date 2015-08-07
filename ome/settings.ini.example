@@ -27,7 +27,3 @@ reaction_hash_prefs = ~/path/to/ome_data/reaction-hash-prefs.txt
 # original gene_reaction_rule followed by a tab and a fixed
 # gene_reaction_rule.
 gene_reaction_rule_prefs = ~/path/to/ome_data/gene-reaction-rule-prefs.txt
-
-model_dump_directory = ~/path/to/bigg_static/dumped_models
-model_polished_directory = ~/path/to/bigg_static/polished_models
-model_published_directory = ~/path/to/bigg_static/published_models

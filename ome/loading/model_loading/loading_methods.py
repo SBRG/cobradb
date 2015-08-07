@@ -213,7 +213,8 @@ def load_metabolites(session, model_id, model, compartment_names,
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
             # check for missing info
-            if metabolite.name.strip() == '':
+            name = getattr(metabolite, 'name', None)
+            if name is None or name.strip == '':
                 metabolite.name = ''
                 logging.warn('No name for metabolite {} in model {}. TODO Solution: Add name from other models.'
                              .format(metabolite.id, model.id))
@@ -304,7 +305,10 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
                   is_pseudoreaction):
     """Add a new universal reaction with reaction matrix rows."""
 
-    reaction_db = Reaction(bigg_id=bigg_id, name=_fix_name(reaction.name),
+    # name is optional in cobra 0.4b2. This will probably change back.
+    name = getattr(reaction, 'name', '')
+    if name is None: name = ''
+    reaction_db = Reaction(bigg_id=bigg_id, name=_fix_name(name),
                            reaction_hash=reaction_hash,
                            pseudoreaction=is_pseudoreaction)
     session.add(reaction_db)
@@ -740,7 +744,10 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids):
                             .format(gene.id, model.id))
             ome_gene = {}
             ome_gene['bigg_id'] = gene.id
-            ome_gene['name'] = (gene.name if gene.name.strip() != gene.id.strip() else None)
+            # name is optional in cobra 0.4b2. This will probably change back.
+            name = getattr(gene, 'name', '')
+            if name is None: name = ''
+            ome_gene['name'] = (name if name.strip() != gene.id.strip() else None)
             ome_gene['leftpos'] = None
             ome_gene['rightpos'] = None
             ome_gene['chromosome_id'] = None
