@@ -34,13 +34,12 @@ def _get_data_source(session, name):
     return data_source_db.id
 
 
-def load_model(session, model, genome_db_id, pub_ref,
-               published_filename):
+def load_new_model(session, model, genome_db_id, pub_ref, published_filename):
     """Load the model.
 
     Arguments:
     ---------
-    
+
     session: A SQLAlchemy session.
 
     model: A COBRApy model.
@@ -50,9 +49,9 @@ def load_model(session, model, genome_db_id, pub_ref,
     pub_ref: a publication PMID or doi for the model, as a string like this:
 
         doi:10.1128/ecosalplus.10.2.1
-    
+
         pmid:21988831
-    
+
         Can be None
 
     Returns:
@@ -96,7 +95,7 @@ def load_model(session, model, genome_db_id, pub_ref,
 
 def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id):
     """Load new linkouts even ones that are pointing to previously created universal
-    metabolites. 
+    metabolites.
 
     The only scenario where we don't load a linkout is if the external id and
     metabolite is exactly the same as a previous linkout.
@@ -112,8 +111,8 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
             id_string = id_string.replace(s, '')
         return id_string.strip()
 
-    linkouts = ['KEGGID', 
-                'CASNUMBER', 
+    linkouts = ['KEGGID',
+                'CASNUMBER',
                 'SEED',
                 'METACYC',
                 'CHEBI',
@@ -122,7 +121,7 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
                 'HMDB',
                 'BIOPATH',
                 'REACTOME',
-                'LIPIDMAPS', 
+                'LIPIDMAPS',
                 'CASID',
                 'PUBCHEM ID']
 
@@ -153,9 +152,9 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
                       .filter(LinkOut.ome_id == metabolite_database_id)
                       .count() > 0)
             if not exists:
-                linkout = LinkOut(external_id=external_id, 
-                                  external_source=external_source, 
-                                  type='metabolite', 
+                linkout = LinkOut(external_id=external_id,
+                                  external_source=external_source,
+                                  type='metabolite',
                                   ome_id=metabolite_database_id)
                 session.add(linkout)
 
@@ -172,7 +171,7 @@ def load_metabolites(session, model_id, model, compartment_names,
     model_id: The database ID for the model.
 
     model: The COBRApy model.
-    
+
     old_metabolite_ids: A dictionary where keys are new IDs and values are old
     IDs for compartmentalized metabolites.
 
@@ -214,7 +213,8 @@ def load_metabolites(session, model_id, model, compartment_names,
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
             # check for missing info
-            if metabolite.name.strip() == '':
+            name = getattr(metabolite, 'name', None)
+            if name is None or name.strip == '':
                 metabolite.name = ''
                 logging.warn('No name for metabolite {} in model {}. TODO Solution: Add name from other models.'
                              .format(metabolite.id, model.id))
@@ -304,8 +304,11 @@ def load_metabolites(session, model_id, model, compartment_names,
 def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
                   is_pseudoreaction):
     """Add a new universal reaction with reaction matrix rows."""
-    
-    reaction_db = Reaction(bigg_id=bigg_id, name=_fix_name(reaction.name),
+
+    # name is optional in cobra 0.4b2. This will probably change back.
+    name = getattr(reaction, 'name', '')
+    if name is None: name = ''
+    reaction_db = Reaction(bigg_id=bigg_id, name=_fix_name(name),
                            reaction_hash=reaction_hash,
                            pseudoreaction=is_pseudoreaction)
     session.add(reaction_db)
@@ -360,7 +363,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
     TODO if the reaction is already loaded, we need to check the stoichometry
     has. If that doesn't match, then add a new reaction with an incremented ID
     (e.g. ACALD_1)
-    
+
     Arguments
     ---------
 
@@ -369,17 +372,17 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
     model_db_id: The database ID for the model.
 
     model: The COBRApy model.
-    
+
     old_reaction_ids: A dictionary where keys are new IDs and values are old IDs
     for reactions.
-    
+
     Returns
     -------
 
     A dictionary with keys for reactions in the model and values for the
     associated bigg_id in the database.
 
-    """ 
+    """
 
     # only grab this once
     data_source_id = _get_data_source(session, 'old_id')
@@ -417,7 +420,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
 
         # check for pseudoreaction
         is_pseudoreaction = check_pseudoreaction(reaction.id)
-        
+
         # calculate the hash
         reaction_hash = parse.hash_reaction(reaction)
         hash_db = (session
@@ -426,7 +429,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                    .filter(Reaction.pseudoreaction == is_pseudoreaction)
                    .first())
 
-        # bigg_id match  hash match b==h  pseudoreaction  example                   function  
+        # bigg_id match  hash match b==h  pseudoreaction  example                   function
         #  n               n               n            first GAPD                _new_reaction (1)
         #  n               n               y            first EX_glc_e            _new_reaction (1)
         #  y               n               n            incorrect GAPD            _new_reaction & increment (2)
@@ -446,7 +449,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                 if session.query(Reaction).filter(Reaction.bigg_id == new_id).first() is None:
                     return new_id
                 new_id = increment_id(new_id)
-        
+
         preferred_id = _check_hash_prefs(reaction_hash)
         # (0) If there is a preferred ID, make that the new ID, and increment any old IDs
         if preferred_id is not None:
@@ -534,7 +537,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
             session.commit()
 
         # add synonyms
-        # 
+        #
         # get the id from the published model
         old_bigg_id = old_reaction_ids[reaction.id]
         # add a synonym
@@ -569,7 +572,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
 
 # find gene functions
 def _match_gene_by_fns(fn_list, session, gene_id, chromosome_ids):
-    """Go through each funciton and look for a match. 
+    """Go through each funciton and look for a match.
 
     """
     for fn in fn_list:
@@ -611,7 +614,7 @@ def _by_synonym(session, gene_id, chromosome_ids):
     return gene_db, False
 
 
-def _by_alternative_transcript(session, gene_id, chromosome_ids): 
+def _by_alternative_transcript(session, gene_id, chromosome_ids):
     """Function to check for the alternative transcript match."""
     check = re.match(r'(.*)_AT[0-9]{1,2}$', gene_id)
     if not check:
@@ -627,7 +630,7 @@ def _by_alternative_transcript(session, gene_id, chromosome_ids):
     return gene_db, True
 
 
-def _by_alternative_transcript_name(session, gene_id, chromosome_ids): 
+def _by_alternative_transcript_name(session, gene_id, chromosome_ids):
     """Function to check for the alternative transcript match."""
     check = re.match(r'(.*)_AT[0-9]{1,2}$', gene_id)
     if not check:
@@ -643,7 +646,7 @@ def _by_alternative_transcript_name(session, gene_id, chromosome_ids):
     return gene_db, True
 
 
-def _by_alternative_transcript_synonym(session, gene_id, chromosome_ids): 
+def _by_alternative_transcript_synonym(session, gene_id, chromosome_ids):
     """Function to check for the alternative transcript match."""
     check = re.match(r'(.*)_AT[0-9]{1,2}$', gene_id)
     if not check:
@@ -686,7 +689,7 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids):
     model_db_id: The database ID for the model.
 
     model: The COBRApy model.
-    
+
     model_db_rxn_ids: A dictionary with keys for reactions in the model and
     values for the associated bigg_id in the database.
 
@@ -735,13 +738,16 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids):
                                                                     chromosome_ids)
 
         if not gene_db:
-            # add 
+            # add
             if len(chromosome_ids) > 0:
-                logging.warn('Gene not in genbank file: {} from model {}' 
+                logging.warn('Gene not in genbank file: {} from model {}'
                             .format(gene.id, model.id))
             ome_gene = {}
             ome_gene['bigg_id'] = gene.id
-            ome_gene['name'] = (gene.name if gene.name.strip() != gene.id.strip() else None)
+            # name is optional in cobra 0.4b2. This will probably change back.
+            name = getattr(gene, 'name', '')
+            if name is None: name = ''
+            ome_gene['name'] = (name if name.strip() != gene.id.strip() else None)
             ome_gene['leftpos'] = None
             ome_gene['rightpos'] = None
             ome_gene['chromosome_id'] = None
@@ -775,11 +781,11 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids):
                            .filter(Synonym.ome_id == old_gene_db.id)
                            .all())
             for syn_db in synonyms_db:
-                # add a new synonym             
+                # add a new synonym
                 ome_synonym = {}
                 ome_synonym['type'] = syn_db.type
                 ome_synonym['ome_id'] = gene_db.id
-                ome_synonym['synonym'] = syn_db.synonym  
+                ome_synonym['synonym'] = syn_db.synonym
                 ome_synonym['synonym_data_source_id'] = syn_db.synonym_data_source_id
                 synonym_object = Synonym(**ome_synonym)
                 session.add(synonym_object)
@@ -796,7 +802,7 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids):
             session.add(model_gene_db)
             session.commit()
 
-        # find model reaction 
+        # find model reaction
         try:
             model_reaction_db_ids = gene_bigg_id_to_model_reaction_db_ids[gene.id]
         except KeyError:
@@ -811,7 +817,7 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids):
                                        .filter(GeneReactionMatrix.model_reaction_id == mr_db_id)
                                        .count() > 0)
             if not found_gene_reaction_row:
-                new_object = GeneReactionMatrix(model_gene_id=model_gene_db.id, 
+                new_object = GeneReactionMatrix(model_gene_id=model_gene_db.id,
                                                 model_reaction_id=mr_db_id)
                 session.add(new_object)
 
@@ -837,7 +843,7 @@ def load_model_count(session, model_db_id):
                       .count())
     gene_count = (session
                   .query(ModelGene.id)
-                  .filter(ModelGene.model_id == model_db_id)       
+                  .filter(ModelGene.model_id == model_db_id)
                   .count())
     mc = ModelCount(model_id=model_db_id,
                     gene_count=gene_count,

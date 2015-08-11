@@ -12,35 +12,37 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger, tmpdir):
     logging.info('Testing model dump')
 
     session = base.Session()
-    
+
     pub_ref = 'pmid:25575024'
     # load the test genome
-    
+
     load_genome(test_genbank[0]['path'], session)
 
     # load the model
     bigg_id = load_model(test_model[0]['path'], test_genbank[0]['genome_id'],
-                         pub_ref, session, dump_directory=str(tmpdir),
-                         published_directory=str(tmpdir),
-                         polished_directory=None)
-    assert exists(join(str(tmpdir), bigg_id+'.xml'))
-    
+                         pub_ref, session)
+
     with pytest.raises(Exception):
         dump_model('C3PO', session)
-        
+
     model = dump_model(bigg_id)
     # COBRApy uses the description as the ID sometimes. See https://github.com/opencobra/cobrapy/pull/152
     assert model.id == bigg_id
     assert model.description == bigg_id
-    
+
     assert len(model.reactions) == 96
     assert len(model.metabolites) == 73
     assert len(model.genes) == 140
     assert model.genes.get_by_id('b0114').name == 'aceE'
     assert model.genes.get_by_id('b3528').name == 'dctA'
-    
+
+    # check reaction
     assert 'GAPD' in model.reactions
     assert model.reactions.get_by_id('GAPD').name == 'glyceraldehyde-3-phosphate dehydrogenase'
+
+    # check metabolite
+    assert 'g3p_c' in model.metabolites
+    assert model.metabolites.get_by_id('g3p_c').name == 'Glyceraldehyde-3-phosphate'
 
     # make sure ATPM_NGAM and NTP1 are represented
     r1 = model.reactions.get_by_id('ATPM_NGAM')
@@ -54,7 +56,7 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger, tmpdir):
     assert r2.notes['original_bigg_id'] == 'ATPM(NGAM)'
 
     # test solve
-    model.reactions.get_by_id('EX_glc_e').lower_bound = -10
+    model.reactions.get_by_id('EX_glc__D_e').lower_bound = -10
     sol = model.optimize()
     assert sol.f > 0.5 and sol.f < 1.0
 
@@ -73,6 +75,6 @@ def test_dump_model(test_genbank, test_model, test_db, setup_logger, tmpdir):
     assert '' not in [x.id for x in loaded_model.metabolites]
 
     session.close()
-    
+
     # delete test directory
     shutil.rmtree(str(tmpdir))

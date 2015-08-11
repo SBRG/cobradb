@@ -8,7 +8,7 @@ from ome.dumping.model_dumping import dump_model
 
 import cobra.io
 import os
-from os.path import join, basename, abspath, dirname 
+from os.path import join, basename, abspath, dirname
 import logging
 import shutil
 import subprocess
@@ -29,11 +29,7 @@ def check_for_model(name):
     return None
 
 @timing
-def load_model(model_filepath, bioproject_id, pub_ref, session,
-               # the following arguments have no effect
-               dump_directory=settings.model_dump_directory,
-               published_directory=settings.model_published_directory,
-               polished_directory=settings.model_polished_directory):
+def load_model(model_filepath, bioproject_id, pub_ref, session):
     """Load a model into the database. Returns the bigg_id for the new model.
 
     Arguments
@@ -46,7 +42,7 @@ def load_model(model_filepath, bioproject_id, pub_ref, session,
     pub_ref: a publication PMID or doi for the model, as a string like this:
 
         doi:10.1128/ecosalplus.10.2.1
-    
+
         pmid:21988831
 
     """
@@ -55,7 +51,7 @@ def load_model(model_filepath, bioproject_id, pub_ref, session,
     logging.debug('Parsing SBML')
     model, old_parsed_ids = parse.load_and_normalize(model_filepath)
     model_bigg_id = model.id
-    
+
     # check that the model doesn't already exist
     if session.query(Model).filter_by(bigg_id=model_bigg_id).count() > 0:
         raise AlreadyLoadedError('Model %s already loaded' % model_bigg_id)
@@ -69,6 +65,8 @@ def load_model(model_filepath, bioproject_id, pub_ref, session,
                 organism = 'Clostridium ljungdahlii DSM 13528'
             elif model_bigg_id == 'iSB619':
                 organism = 'Staphylococcus aureus subsp. aureus N315'
+            elif model_bigg_id == 'iY75_1357':
+                organism = 'Escherichia coli str. K-12 substr. W3110'
             else:
                 raise Exception('My terrible fix broke for model {}'.format(model_bigg_id))
             genome_db = (session
@@ -87,8 +85,8 @@ def load_model(model_filepath, bioproject_id, pub_ref, session,
     # Load the model objects. Remember: ORDER MATTERS! So don't mess around.
     logging.debug('Loading objects for model {}'.format(model.id))
     published_filename = os.path.basename(model_filepath)
-    model_database_id = loading_methods.load_model(session, model, genome_id,
-                                                   pub_ref, published_filename)
+    model_database_id = loading_methods.load_new_model(session, model, genome_id,
+                                                       pub_ref, published_filename)
 
     # metabolites/components and linkouts
     # get compartment names
@@ -121,3 +119,4 @@ def load_model(model_filepath, bioproject_id, pub_ref, session,
 
     session.commit()
 
+    return model_bigg_id
