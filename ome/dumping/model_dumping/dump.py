@@ -115,7 +115,6 @@ def dump_model(bigg_id):
          .join(Compartment)
          .join(ModelCompartmentalizedComponent)
          .filter(ModelCompartmentalizedComponent.model_id == model_db.id)
-         .filter(Component.type == 'metabolite')
          .order_by(Component.bigg_id)
          )
     metabolites = []
@@ -148,7 +147,6 @@ def dump_model(bigg_id):
                  .join(Reaction)
                  .join(ModelReaction)
                  .filter(ModelReaction.model_id == model_db.id)
-                 .filter(Component.type == 'metabolite')
                  .distinct())  # make sure we don't duplicate
 
     # load metabolites
@@ -207,7 +205,6 @@ def dump_model(bigg_id):
 #                        Reaction.id == ModelReaction.reaction_id)
 #                  .join(Model,
 #                        ModelReaction.model_id == Model.id)
-#                  .filter(Component.type == 'metabolite')
 #                  # .limit(100)
 #                  .all())
 
