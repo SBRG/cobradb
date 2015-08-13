@@ -114,19 +114,7 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
             id_string = id_string.replace(s, '')
         return id_string.strip()
 
-    linkouts = ['KEGGID', 
-                'CASNUMBER', 
-                'SEED',
-                'METACYC',
-                'CHEBI',
-                'BRENDA',
-                'UPA',
-                'HMDB',
-                'BIOPATH',
-                'REACTOME',
-                'LIPIDMAPS', 
-                'CASID',
-                'PUBCHEM ID']
+    data_source_fix = {'KEGG_ID' : 'KEGGID', 'CHEBI_ID': 'CHEBI'}
     db_xref_data_source_id = { data_source.name: data_source.id for data_source
                                    in session.query(base.DataSource).all() }
     for external_source, v in cobra_metabolite.notes.iteritems():
@@ -136,10 +124,8 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
         # check if linkout matches the list
         external_source = external_source.upper()
         v = v[0]
-        if not external_source in linkouts:
-            logging.warning('The linkout type {} is not in our list'
-                            .format(external_source))
-            continue
+        if external_source in data_source_fix:
+            external_source = data_source_syn[external_source]
         if '&apos' in v:
             ids = [parse_linkout_str(x) for x in v.split(',')]
         else:
