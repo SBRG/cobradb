@@ -101,7 +101,7 @@ class GenomeRegion(Base):
 
     def __repr__(self):
         return ('<ome GenomeRegion(id={self.id}, leftpos={self.leftpos}, rightpos={self.rightpos})>'
-                .format(self.leftpos, self.rightpos, self.strand))
+                .format(self=self))
 
     def __init__(self, bigg_id, chromosome_id, leftpos=None, rightpos=None,
                  strand=None):
@@ -196,7 +196,7 @@ class Synonym(Base):
     )
 
     def __repr__(self):
-        return ('<ome Synonym(id=%d, synonym="%s", type="%s, ome_id=%d)>' %
+        return ('<ome Synonym(id=%d, synonym="%s", type="%s", ome_id=%d)>' %
                 (self.id, self.synonym, self.type, self.ome_id))
 
     def __init__(self, ome_id, synonym, type, synonym_data_source_id):

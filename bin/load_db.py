@@ -10,9 +10,9 @@ def configure_logger(log_file=None, level=logging.INFO, overwrite_log=True,
     if log_file is None:
         logging.basicConfig(stream=sys.stdout, level=level, format=format)
     else:
-        logging.basicConfig(filename=log_file, level=level, 
-                            filemode=('w' if overwrite_log else 'a'), 
-                            format=format) 
+        logging.basicConfig(filename=log_file, level=level,
+                            filemode=('w' if overwrite_log else 'a'),
+                            format=format)
         console = logging.StreamHandler()
         console.setLevel(level)
         console.setFormatter(logging.Formatter(format))
@@ -62,9 +62,9 @@ def drop_all_tables(engine):
         rop type synonym_type cascade;
 
     """
-    
+
     from sqlalchemy.sql.expression import text
-     
+
     table_sql = ("SELECT table_name FROM information_schema.tables "
                  "WHERE table_schema='public' AND table_name NOT LIKE 'pg_%%'")
 
@@ -78,9 +78,9 @@ if __name__ == "__main__":
 
         try:
             base.omics_database.genome_data.drop()
-        except: 
+        except:
             pass
-    
+
     logging.info("Building the database models")
     base.Base.metadata.create_all()
 
@@ -107,20 +107,20 @@ if __name__ == "__main__":
     for line in lines:
         if line.strip() == '':
             continue
-        val = (x.strip() for x in line.split(','))
+        val = (x.strip() for x in line.split('\t'))
         val_nones = [(x if x.strip() != '' else None) for x in val]
-        if len(val_nones) == 3:
-            model_filename, bioproject_id, timestamp = val_nones
+        if len(val_nones) == 2:
+            model_filename, bioproject_id = val_nones
             pub_ref = None
-        elif len(val_nones) == 4:
-            model_filename, bioproject_id, timestamp, pub_ref = val_nones
+        elif len(val_nones) == 3:
+            model_filename, bioproject_id, pub_ref = val_nones
         else:
             logging.error('Bad line in model-genome CSV file {!s}'.format(line))
             continue
         if bioproject_id is not None:
             found_genomes[bioproject_id] = False
         if model_filename.strip() != '':
-            models_list.append((model_filename, bioproject_id, timestamp, pub_ref))
+            models_list.append((model_filename, bioproject_id, pub_ref))
 
 
     if not args.skip_genomes:
@@ -163,25 +163,21 @@ if __name__ == "__main__":
             for chromosome in genome.chromosomes:
                 component_loading.write_chromosome_annotation_gff(base, components,
                                                                   chromosome)
-    
+
     if not args.skip_models:
         logging.info("Loading models")
         n = len(models_list)
-        for i, (model_filename, bioproject_id, timestamp, pub_ref) in enumerate(models_list):
+        for i, (model_filename, bioproject_id, pub_ref) in enumerate(models_list):
             logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_filename))
             try:
                 model_loading.load_model(join(model_dir, model_filename),
-                                         bioproject_id, timestamp, pub_ref, session)
+                                         bioproject_id, pub_ref, session)
             except AlreadyLoadedError as e:
                 logging.info(e.message)
             except Exception as e:
                 logging.error('Could not load model %s.' % model_filename)
                 logging.exception(e)
 
-        # run model polisher
-        if settings.model_polished_directory:
-            model_loading.run_model_polisher(settings.model_polished_directory)
-                    
     logging.info("Loading Escher maps")
     map_loading.load_maps_from_server(session, drop_maps=(args.drop_models or
                                                           args.drop_maps))

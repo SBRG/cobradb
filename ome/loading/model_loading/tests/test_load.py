@@ -20,29 +20,26 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     # preferences. TODO these would be better as arguments to load_model
     settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
     settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
+    settings.gene_reaction_rule_prefs = test_prefs['gene_reaction_rule_prefs']
 
-    timestamp = '2014-9-16 14:26:22'
     pmid = 'pmid:25575024'
     # can't load the model without the genome
     with pytest.raises(Exception):
         for x in range(2):
-            load_model(test_model[x], test_genbank[x]['genome_id'], timestamp,
-                       pmid, session, dump_directory=None,
-                       published_directory=None, polished_directory=None)
-    
+            load_model(test_model[x], test_genbank[x]['genome_id'],
+                       pmid, session)
+
     for x in range(2):
         # load the test genomes
         load_genome(test_genbank[x]['path'], session)
         # load the models
         load_model(test_model[x]['path'], test_genbank[x]['genome_id'],
-                   timestamp, pmid, session, dump_directory=None,
-                   published_directory=None, polished_directory=None)
-        
+                   pmid, session)
+
     # load the third model
-    load_model(test_model[2]['path'], test_genbank[0]['genome_id'], timestamp,
-               pmid, session, dump_directory=None, published_directory=None,
-               polished_directory=None)
-    
+    load_model(test_model[2]['path'], test_genbank[0]['genome_id'],
+               pmid, session)
+
     # test the model
     assert session.query(Model).count() == 3
     assert session.query(Genome).count() == 2
@@ -54,7 +51,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     assert session.query(Metabolite).count() == 55
     assert session.query(Gene).count() == 281 # b4151 and b4152 are in genome1 but not in model1
     assert session.query(ModelGene).count() == 414
-    
+
     # test linkouts
     result = (session
               .query(Synonym.synonym, Synonym.ome_id)
@@ -69,7 +66,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
 
     # check s0001
     assert session.query(Gene).filter(Gene.bigg_id == 's0001').count() == 3
-    
+
     # check alternate transcripts
     # these are in model 2 but not in model 1:
     assert (session
@@ -98,7 +95,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
             .count()) == 1
     assert session.query(Synonym).filter(Synonym.synonym == '904').count() == 3 # 3 in first model, 0 in second model
     assert session.query(Gene).filter(Gene.name == 'focA').count() == 3 # 3 in first model, 0 in second model
-    
+
     assert session.query(Gene).filter(Gene.bigg_id == '904_AT1').count() == 1
     assert session.query(Gene).filter(Gene.bigg_id == '904_AT12').count() == 1
     assert session.query(Gene).filter(Gene.bigg_id == 'b0904').count() == 2
@@ -107,7 +104,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
     assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904_AT1').count() == 1
     assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904_AT12').count() == 1
     assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == 'gene_with_period_AT22').count() == 1
-    
+
     assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904_AT1').first().id).count() == 8
     assert session.query(Synonym).filter(Synonym.ome_id == session.query(Gene).filter(Gene.bigg_id == '904_AT12').first().id).count() == 8
 
@@ -176,7 +173,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
             .join(ModelReaction, ModelReaction.id == OldIDSynonym.ome_id)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
             .filter(Reaction.bigg_id == 'ATPM')
-            .count() == 1) 
+            .count() == 1)
     assert (session
             .query(ModelReaction)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
@@ -203,7 +200,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
             .join(ModelReaction, ModelReaction.id == OldIDSynonym.ome_id)
             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
             .filter(Reaction.bigg_id == 'NTP1')
-            .count() == 1) 
+            .count() == 1)
 
     # gene reaction matrix
     mr_db = (session
@@ -226,6 +223,15 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
              .filter(ModelReaction.gene_reaction_rule == '(b0650) or (b4161)')
              .all())
     assert len(mr_db) == 2
+
+    # gene_reaction_rule_prefs to fix reaction rules
+    mr_db = (session
+             .query(ModelReaction)
+             .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+             .filter(Model.bigg_id == 'Ecoli_core_model')
+             .filter(Reaction.bigg_id == 'ACKr')
+             .first())
+    assert mr_db.gene_reaction_rule == '(b1849 or b2296 or b3115)'
 
     # old ids
     assert (session
@@ -284,7 +290,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
             .query(Metabolite)
             .filter(Metabolite.bigg_id == 'atp')
             .first()).formula == 'C10H12N5O13P3'
-    
+
     # test reaction attributes
     r_db =  (session.query(ModelReaction)
              .join(Reaction)
@@ -296,6 +302,5 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
 
     # can't load the same model twice
     with pytest.raises(AlreadyLoadedError):
-        load_model(test_model[0]['path'], test_genbank[0]['genome_id'],
-                   timestamp, pmid, session, dump_directory=None,
-                   published_directory=None, polished_directory=None)
+        load_model(test_model[0]['path'], test_genbank[0]['genome_id'], pmid,
+                   session)

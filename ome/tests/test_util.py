@@ -43,3 +43,16 @@ def test_scrub_gene_id():
     assert scrub_gene_id('1234.56') == '1234_AT56'
     assert scrub_gene_id('1234.56a') == '1234_56a'
     assert scrub_gene_id('asdkf@#%*(@#$sadf') == 'asdkf________sadf'
+
+
+def test_load_tsv(tmpdir):
+    # test file
+    a_file = tmpdir.join('temp.txt')
+    a_file.write('# ignore\tignore\na\ttest  \n\n')
+    # run the test
+    rows = load_tsv(str(a_file))
+    assert rows == [['a', 'test']]
+
+    # with required_column_num
+    rows = load_tsv(str(a_file), required_column_num=3)
+    assert rows == []

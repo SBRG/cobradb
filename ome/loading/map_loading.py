@@ -9,6 +9,7 @@ import json
 import escher
 import logging
 import sys
+import re
 
 def load_maps_from_server(session, drop_maps=False):
     if drop_maps:
@@ -32,7 +33,7 @@ def load_maps_from_server(session, drop_maps=False):
                        if x[0] in [m['model_name'] for m in index['models']]
                           # TODO remove: trick for matching E coli core to e_coli_core
                           or x[0] == 'e_coli_core' and 'E coli core' in [m['model_name'] for m in index['models']]]
-                       
+
     for model_bigg_id, model_id in matching_models:
         maps = [(m['map_name'], m['organism']) for m in index['maps'] if
                 m['map_name'].split('.')[0] == model_bigg_id or
@@ -41,7 +42,7 @@ def load_maps_from_server(session, drop_maps=False):
         for map_name, org in maps:
             map_json = escher.plots.map_json_for_name(map_name)
             load_the_map(session, model_id, map_name, map_json)
-            
+
 def load_the_map(session, model_id, map_name, map_json):
     size = sys.getsizeof(map_json)
     if size > 1e6:
@@ -75,29 +76,31 @@ def load_the_map(session, model_id, map_name, map_json):
                                                              model_bigg_id))
 
     map_object = json.loads(map_json)
-            
+
     logging.info('Adding reactions')
     reaction_warnings = 0
     for element_id, reaction in map_object[1]['reactions'].iteritems():
+        # deal with reaction copies
+        map_reaction_bigg_id = re.sub(r'_copy[0-9]+$', '', reaction['bigg_id'])
         # check for an existing mat row
         mat_db = (session
                   .query(EscherMapMatrix)
                   .join(ModelReaction, ModelReaction.id == EscherMapMatrix.ome_id)
                   .join(Reaction)
                   .filter(EscherMapMatrix.escher_map_id == escher_map_db.id)
-                  .filter(Reaction.bigg_id == reaction['bigg_id'])
+                  .filter(Reaction.bigg_id == map_reaction_bigg_id)
                   .first())
         if mat_db is None:
             # find the model reaction
             model_reaction_db = (session
                                  .query(ModelReaction.id)
                                  .join(Reaction)
-                                 .filter(Reaction.bigg_id == reaction['bigg_id'])
+                                 .filter(Reaction.bigg_id == map_reaction_bigg_id)
                                  .filter(ModelReaction.model_id == model_id)
                                  .first())
             if model_reaction_db is None:
                 if reaction_warnings <= warning_num:
-                    msg = ('Could not find reaction %s in model for map %s' % (reaction['bigg_id'],
+                    msg = ('Could not find reaction %s in model for map %s' % (map_reaction_bigg_id,
                                                                                map_name))
                     if reaction_warnings == warning_num:
                         msg += ' (Warnings limited to %d)' % warning_num
@@ -106,18 +109,18 @@ def load_the_map(session, model_id, map_name, map_json):
                 continue
             model_reaction_id = model_reaction_db[0]
             mat_db = EscherMapMatrix(escher_map_id=escher_map_db.id,
-                                     ome_id=model_reaction_id, 
+                                     ome_id=model_reaction_id,
                                      escher_map_element_id=element_id,
                                      type='model_reaction')
             session.add(mat_db)
-            
+
     logging.info('Adding metabolites')
     comp_comp_warnings = 0
     for element_id, node in map_object[1]['nodes'].iteritems():
         if node['node_type'] != 'metabolite':
             continue
         metabolite = node
-            
+
         # split the bigg_id
         try:
             met_id, comp_id = parse.split_compartment(metabolite['bigg_id'])

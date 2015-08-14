@@ -17,7 +17,7 @@ brew install postgresql
 
 ```
 sudo apt-get install postgresql postgresql-contrib postgresql-server-dev-all 
-sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-dev gfortran
+sudo apt-get install python-dev zlib1g-dev samtools g++ libblas-dev liblapack-dev gfortran libglpk-dev
 ```
 
 ## Setting up the database
@@ -39,13 +39,9 @@ ahead of time.
 
 * [cobrapy](https://github.com/opencobra/cobrapy/blob/master/README.md) for which you may want to refer to the [installation docs](https://github.com/opencobra/cobrapy/blob/master/INSTALL.md).
 
-For SBML3 output, need to manually install https://github.com/aebrahim/cobrapy/commit/242949bc313b696e1eabf1609730cf20dc7983c0
+For SBML3 output, need to manually install cobrapy 0.4.0b1 or later.
 ```
-pip install cython
-git clone git@github.com:aebrahim/cobrapy.git cobrapy-sbml3
-cd cobrapy-sbml3
-git checkout 242949bc313b696e1eabf1609730cf20dc7983c0
-python setup.py develop
+pip install cobra --upgrade --pre
 ```
 
 * [pysam](https://github.com/pysam-developers/pysam) which depends on [samtools](http://samtools.sourceforge.net/)

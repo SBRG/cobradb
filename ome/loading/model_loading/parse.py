@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from ome.base import NotFoundError
-from ome.util import scrub_gene_id
+from ome.util import scrub_gene_id, load_tsv
+from ome import settings
 
 import re
 import cobra
@@ -45,6 +46,22 @@ def load_and_normalize(model_filepath):
 
     return model, old_ids
 
+
+def _get_rule_prefs():
+    """Get gene_reaction_rule prefs."""
+    return load_tsv(settings.gene_reaction_rule_prefs, required_column_num=2)
+
+
+def _check_rule_prefs(rule_prefs, rule):
+    """Check the gene_reaction_rule against the prefs file, and return an existing
+    rule or the fixed one."""
+    for row in rule_prefs:
+        old_rule, new_rule = row
+        if old_rule == rule:
+            return new_rule
+    return rule
+
+
 def convert_ids(model):
     """Converts metabolite and reaction ids to the new style.
 
@@ -81,11 +98,16 @@ def convert_ids(model):
                 break
     model.metabolites._generate_index()
 
+    # load fixes for gene_reaction_rule's
+    rule_prefs = _get_rule_prefs()
+
     # separate ids and compartments, and convert to the new_id_style
     for reaction in model.reactions:
         new_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
         reaction_id_dict[new_id] = reaction.id
         reaction.id = new_id
+        # fix the gene reaction rules
+        reaction.gene_reaction_rule = _check_rule_prefs(rule_prefs, reaction.gene_reaction_rule)
     model.reactions._generate_index()
 
     # update the genes 
@@ -95,6 +117,7 @@ def convert_ids(model):
         for reaction in gene.reactions:
             reaction.gene_reaction_rule = re.sub(r'\b'+gene.id+r'\b', new_id,
                                                  reaction.gene_reaction_rule)
+
     # remove old genes
     for gene in list(model.genes):
         if len(gene.reactions) == 0:
@@ -282,5 +305,3 @@ def split_compartment(component_id):
     met = component_id[0:match.start()]
     compartment = component_id[match.start()+1:]
     return met, compartment
-
-    
