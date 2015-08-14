@@ -165,33 +165,29 @@ class DataSource(Base):
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
     name = Column(String(100))
-    lab = Column(String(100))
-    institution = Column(String(100))
-    #data_sets = relationship("DataSet")
+    url_prefix = Column(String)
 
     __table_args__ = (UniqueConstraint('name'),{})
 
     def __repr__(self):
-        return "Data Source %s (#%d)" % (self.name, self.id)
+        return "Data Source %s (#%d)" % (self.name, self.id, self.url_prefix)
 
     def __repr__dict__(self):
-        return {"name":self.name,"wid":self.id,"values":{"lab":self.lab,"institution":self.institution}}
+        return {"name":self.name,"wid":self.id, "url_prefix": self.url_prefix}
 
     def __repr__json__(self):
         return json.dumps(self.__repr__dict__())
 
-    def __init__(self, name, lab=None, institution=None):
+    def __init__(self, name, url_prefix=None):
         self.name = name
-        self.lab = lab
-        self.institution = institution
-
+        self.url_prefix = url_prefix
 
 class Synonym(Base):
     __tablename__ = "synonym"
     id = Column(Integer, Sequence('wids'), primary_key=True)
     ome_id = Column(Integer)
     synonym = Column(String)
-    type = Column(Enum('reaction', 'metabolite', 'gene', name='synonym_type'))
+    type = Column(Enum('component', 'reaction', 'gene', 'compartmentalized_component',  name='synonym_type'))
     synonym_data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
     synonym_data_source = relationship("DataSource")
 
@@ -208,7 +204,6 @@ class Synonym(Base):
         self.synonym = synonym
         self.type = type
         self.synonym_data_source_id = synonym_data_source_id
-
 
 class Publication(Base):
     __tablename__ = "publication"
@@ -233,21 +228,11 @@ class PublicationModel(Base):
     __table_args__ = (
         UniqueConstraint('model_id', 'publication_id'),
     )
-    
-
-class LinkOut(Base):
-    __tablename__="link_out"
-    id = Column(Integer, Sequence('wids'), primary_key=True) 
-    external_id = Column(String)
-    external_source = Column(String)
-    ome_id = Column(Integer)
-    type = Column(String)
-
 
 class OldIDSynonym(Base):
     __tablename__ = "old_id_model_synonym"
     id = Column(Integer, Sequence('wids'), primary_key=True) 
-    type = Column(Enum('model_reaction', 'model_compartmentalized_component', 'model_gene',
+    type = Column(Enum( 'model_reaction', 'model_compartmentalized_component', 'model_gene',
                        name='old_id_synonym_type'))
     synonym_id = Column(Integer,
                         ForeignKey('synonym.id', ondelete='CASCADE'),

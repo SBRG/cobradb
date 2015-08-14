@@ -44,7 +44,7 @@ except ImportError:
     MONGO_INSTALLED = False
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--drop-all', help='Empty database and reload data', action='store_true')
+parser.add_argument('--drop-all', help='Empty database and reload data. NOTE: Does not drop types (e.g. enum categories)', action='store_true')
 parser.add_argument('--drop-models', help='Empty model and map data', action='store_true')
 parser.add_argument('--drop-maps', help='Empty map data', action='store_true')
 parser.add_argument('--skip-genomes', help='Skip genome loading', action='store_true')
@@ -56,6 +56,10 @@ def drop_all_tables(engine):
     """Drops all tables from a postgres database.
 
     Adapted from: http://www.siafoo.net/snippet/85
+
+    TODO: Also drop enum types, e.g. Synonym.synonym_type. To do this manually, run:
+
+        rop type synonym_type cascade;
 
     """
     

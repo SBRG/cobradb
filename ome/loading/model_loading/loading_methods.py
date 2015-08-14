@@ -5,7 +5,7 @@ from ome.base import NotFoundError
 from ome.models import *
 from ome.components import *
 from ome.loading.model_loading import parse
-from ome.util import increment_id, check_pseudoreaction
+from ome.util import increment_id, check_pseudoreaction, create_data_source, check_and_update_url, format_formula
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
@@ -114,20 +114,9 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
             id_string = id_string.replace(s, '')
         return id_string.strip()
 
-    linkouts = ['KEGGID', 
-                'CASNUMBER', 
-                'SEED',
-                'METACYC',
-                'CHEBI',
-                'BRENDA',
-                'UPA',
-                'HMDB',
-                'BIOPATH',
-                'REACTOME',
-                'LIPIDMAPS', 
-                'CASID',
-                'PUBCHEM ID']
-
+    data_source_fix = {'KEGG_ID' : 'KEGGID', 'CHEBI_ID': 'CHEBI'}
+    db_xref_data_source_id = { data_source.name: data_source.id for data_source
+                                   in session.query(base.DataSource).all() }
     for external_source, v in cobra_metabolite.notes.iteritems():
         # ignore formulas
         if external_source.lower() in ['formula', 'formula1', 'none']:
@@ -135,10 +124,8 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
         # check if linkout matches the list
         external_source = external_source.upper()
         v = v[0]
-        if not external_source in linkouts:
-            logging.warning('The linkout type {} is not in our list'
-                            .format(external_source))
-            continue
+        if external_source in data_source_fix:
+            external_source = data_source_syn[external_source]
         if '&apos' in v:
             ids = [parse_linkout_str(x) for x in v.split(',')]
         else:
@@ -148,19 +135,24 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
             if external_id.lower() in ['na', 'none']:
                 continue
             exists = (session
-                      .query(LinkOut)
-                      .filter(LinkOut.external_id == external_id)
-                      .filter(LinkOut.external_source == external_source)
-                      .filter(LinkOut.type == 'metabolite')
-                      .filter(LinkOut.ome_id == metabolite_database_id)
+                      .query(base.Synonym)
+                      .filter(base.Synonym.synonym == external_id)
+                      .filter(base.Synonym.type == 'component')
+                      .filter(base.Synonym.ome_id == metabolite_database_id)
                       .count() > 0)
             if not exists:
-                linkout = LinkOut(external_id=external_id, 
-                                  external_source=external_source, 
-                                  type='metabolite', 
-                                  ome_id=metabolite_database_id)
-                session.add(linkout)
-
+                ome_linkout = {'type': 'component'}
+                ome_linkout['ome_id'] = metabolite_database_id
+                ome_linkout['synonym'] = external_id
+                try:
+                    data_source_id = db_xref_data_source_id[external_source]
+                except KeyError:
+                    data_source_id = create_data_source(session, external_source)
+                    db_xref_data_source_id[external_source] = data_source_id
+                check_and_update_url(session, data_source_id) 
+                ome_linkout['synonym_data_source_id'] = data_source_id 
+                synonym = base.Synonym(**ome_linkout)
+                session.add(synonym)
 
 def load_metabolites(session, model_id, model, compartment_names,
                      old_metabolite_ids):
@@ -211,8 +203,7 @@ def load_metabolites(session, model_id, model, compartment_names,
         values = (ignore_empty_str(strip_str_or_none(formula_fn(metabolite)))
                   for formula_fn in formula_fns)
         # Get the first non-null result. Otherwise _formula = None.
-        _formula = next(ifilter(None, values), None)
-
+        _formula = format_formula(next(ifilter(None, values), None))
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
             # check for missing info
@@ -277,13 +268,13 @@ def load_metabolites(session, model_id, model, compartment_names,
         old_bigg_id_c = old_metabolite_ids[metabolite.id]
         synonym_db = (session
                       .query(base.Synonym)
-                      .filter(base.Synonym.ome_id == metabolite_db.id)
+                      .filter(base.Synonym.ome_id == comp_component_db.id)
                       .filter(base.Synonym.synonym == old_bigg_id_c)
-                      .filter(base.Synonym.type == 'metabolite')
+                      .filter(base.Synonym.type == 'compartmentalized_component')
                       .first())
         if synonym_db is None:
-            synonym_db = base.Synonym(type='metabolite',
-                                      ome_id=metabolite_db.id,
+            synonym_db = base.Synonym(type='compartmentalized_component',
+                                      ome_id=comp_component_db.id,
                                       synonym=old_bigg_id_c,
                                       synonym_data_source_id=data_source_id)
             session.add(synonym_db)
