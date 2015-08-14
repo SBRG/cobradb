@@ -110,26 +110,9 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
             id_string = id_string.replace(s, '')
         return id_string.strip()
 
-<<<<<<< HEAD
     data_source_fix = {'KEGG_ID' : 'KEGGID', 'CHEBI_ID': 'CHEBI'}
     db_xref_data_source_id = { data_source.name: data_source.id for data_source
                                    in session.query(base.DataSource).all() }
-=======
-    linkouts = ['KEGGID',
-                'CASNUMBER',
-                'SEED',
-                'METACYC',
-                'CHEBI',
-                'BRENDA',
-                'UPA',
-                'HMDB',
-                'BIOPATH',
-                'REACTOME',
-                'LIPIDMAPS',
-                'CASID',
-                'PUBCHEM ID']
-
->>>>>>> 0598fa31f5922579031164b0382708dbda844b22
     for external_source, v in cobra_metabolite.notes.iteritems():
         # ignore formulas
         if external_source.lower() in ['formula', 'formula1', 'none']:
@@ -154,7 +137,6 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
                       .filter(base.Synonym.ome_id == metabolite_database_id)
                       .count() > 0)
             if not exists:
-<<<<<<< HEAD
                 ome_linkout = {'type': 'component'}
                 ome_linkout['ome_id'] = metabolite_database_id
                 ome_linkout['synonym'] = external_id
@@ -167,14 +149,6 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
                 ome_linkout['synonym_data_source_id'] = data_source_id 
                 synonym = base.Synonym(**ome_linkout)
                 session.add(synonym)
-=======
-                linkout = LinkOut(external_id=external_id,
-                                  external_source=external_source,
-                                  type='metabolite',
-                                  ome_id=metabolite_database_id)
-                session.add(linkout)
-
->>>>>>> 0598fa31f5922579031164b0382708dbda844b22
 
 def load_metabolites(session, model_id, model, compartment_names,
                      old_metabolite_ids):
