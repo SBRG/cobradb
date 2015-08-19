@@ -1,0 +1,1 @@
+KEGGID    http://identifiers.org/kegg.compound/
