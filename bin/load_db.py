@@ -21,7 +21,7 @@ configure_logger('%s OME load_db.log' % time.strftime('%Y-%m-%d %H:%M:%S'),
                  level=logging.INFO)
 
 
-from ome import base, settings, components, datasets, models, timing
+from ome import base, settings, components, datasets, models, timing, util
 from ome.loading import AlreadyLoadedError
 from ome.loading import dataset_loading
 from ome.loading import component_loading
@@ -52,14 +52,17 @@ parser.add_argument('--skip-models', help='Skip model loading', action='store_tr
 
 args = parser.parse_args()
 
-def drop_all_tables(engine):
-    """Drops all tables from a postgres database.
+def drop_all_tables(engine, enums_to_drop=None):
+    """Drops all tables and, optionally, user enums from a postgres database.
 
     Adapted from: http://www.siafoo.net/snippet/85
 
-    TODO: Also drop enum types, e.g. Synonym.synonym_type. To do this manually, run:
 
-        rop type synonym_type cascade;
+    NOTE: To list all the user defined enums, use something like this:
+
+        SELECT DISTINCT t.typname
+        FROM pg_catalog.pg_type t
+        JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid;
 
     """
 
@@ -71,10 +74,15 @@ def drop_all_tables(engine):
     for table in [name for (name, ) in engine.execute(text(table_sql))]:
         engine.execute(text('DROP TABLE %s CASCADE' % table))
 
+    # drop the enum types
+    if enums_to_drop is not None:
+        for enum in enums_to_drop:
+            engine.execute(text('DROP TYPE IF EXISTS %s CASCADE' % enum))
+
 if __name__ == "__main__":
     if args.drop_all:
         logging.info("Dropping everything from the database")
-        drop_all_tables(base.engine)
+        drop_all_tables(base.engine, base.custom_enums.keys())
 
         try:
             base.omics_database.genome_data.drop()
@@ -101,26 +109,14 @@ if __name__ == "__main__":
     model_dir = join(settings.data_directory, 'models')
     model_genome_path = settings.model_genome
     logging.info('Loading models and genomes using %s' % model_genome_path)
-    with open(model_genome_path, 'r') as f:
-        lines = f.readlines()
+    lines = util.load_tsv(model_genome_path, required_column_num=3)
     models_list = []; found_genomes = {}
     for line in lines:
-        if line.strip() == '':
-            continue
-        val = (x.strip() for x in line.split('\t'))
-        val_nones = [(x if x.strip() != '' else None) for x in val]
-        if len(val_nones) == 2:
-            model_filename, bioproject_id = val_nones
-            pub_ref = None
-        elif len(val_nones) == 3:
-            model_filename, bioproject_id, pub_ref = val_nones
-        else:
-            logging.error('Bad line in model-genome CSV file {!s}'.format(line))
-            continue
+        val_nones = [(x if x.strip() != '' else None) for x in line]
+        model_filename, bioproject_id, pub_ref = val_nones
         if bioproject_id is not None:
             found_genomes[bioproject_id] = False
-        if model_filename.strip() != '':
-            models_list.append((model_filename, bioproject_id, pub_ref))
+        models_list.append((model_filename, bioproject_id, pub_ref))
 
 
     if not args.skip_genomes:

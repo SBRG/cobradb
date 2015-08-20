@@ -43,15 +43,9 @@ def check_and_update_url(session, data_source_id):
         session.flush()
 
 def read_data_source_preferences():
-    if os.path.exists(settings.data_source_preferences):
-        with open(settings.data_source_preferences, 'r') as f:
-            url_prefs = [[x.strip() for x in line.split('\t')]
-                          for line in f.readlines()]
-    else:
-        url_prefs = []
-    return url_prefs
+    return load_tsv(settings.data_source_preferences)
 
-def create_data_source(session, data_source_name):    
+def create_data_source(session, data_source_name):
     # get gene url_prefs
     url_prefs = read_data_source_preferences()
 
@@ -94,6 +88,7 @@ def load_tsv(filename, required_column_num=None):
         rows = [[x.strip() for x in line.split('\t')]
                 for line in f.readlines()
                 if line.strip() != '' and line[0] != '#']
+
     # check rows
     if required_column_num is not None:
         def check_row(row):

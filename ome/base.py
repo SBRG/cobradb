@@ -31,6 +31,17 @@ engine = create_engine("postgresql://%s:%s@%s/%s" %
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 
+# make the enums
+_enum_l = [
+    Enum('component', 'reaction', 'gene', 'compartmentalized_component',
+         name='synonym_type'),
+    Enum('pmid', 'doi',
+         name='reference_type'),
+    Enum('model_reaction', 'model_compartmentalized_component', 'model_gene',
+         name='old_id_synonym_type')
+]
+custom_enums = {x.name: x for x in _enum_l}
+
 # exceptions
 class NotFoundError(Exception):
     pass
@@ -111,7 +122,7 @@ class GenomeRegion(Base):
         self.rightpos = rightpos
         self.strand = strand
 
-        
+
 class Component(Base):
     __tablename__ = 'component'
 
@@ -135,7 +146,7 @@ class Component(Base):
         return "Component (#%d):  %s" % \
             (self.id, self.name)
 
-        
+
 class Reaction(Base):
     __tablename__ = 'reaction'
 
@@ -187,7 +198,7 @@ class Synonym(Base):
     id = Column(Integer, Sequence('wids'), primary_key=True)
     ome_id = Column(Integer)
     synonym = Column(String)
-    type = Column(Enum('component', 'reaction', 'gene', 'compartmentalized_component',  name='synonym_type'))
+    type = Column(custom_enums['synonym_type'])
     synonym_data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
     synonym_data_source = relationship("DataSource")
 
@@ -208,13 +219,13 @@ class Synonym(Base):
 class Publication(Base):
     __tablename__ = "publication"
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    reference_type = Column(Enum('pmid', 'doi', name='reference_type'))
+    reference_type = Column(custom_enums['reference_type'])
     reference_id = Column(String)
-    
+
     __table_args__=(
         UniqueConstraint('reference_type', 'reference_id'),
     )
-    
+
 
 class PublicationModel(Base):
     __tablename__ = "publication_model"
@@ -231,14 +242,13 @@ class PublicationModel(Base):
 
 class OldIDSynonym(Base):
     __tablename__ = "old_id_model_synonym"
-    id = Column(Integer, Sequence('wids'), primary_key=True) 
-    type = Column(Enum( 'model_reaction', 'model_compartmentalized_component', 'model_gene',
-                       name='old_id_synonym_type'))
+    id = Column(Integer, Sequence('wids'), primary_key=True)
+    type = Column(custom_enums['old_id_synonym_type'])
     synonym_id = Column(Integer,
                         ForeignKey('synonym.id', ondelete='CASCADE'),
                         nullable=False)
     ome_id = Column(Integer, nullable=False)
-    
+
     __table_args__ = (
         UniqueConstraint('synonym_id', 'ome_id'),
     )
@@ -247,7 +257,7 @@ class OldIDSynonym(Base):
         return ('<ome OldIDSynonym(id=%d, type="%s", ome_id=%d, synonym_id=%d)>' %
                 (self.id, self.type, self.ome_id, self.synonym_id))
 
-        
+
 class GenomeRegionMap(Base):
         __tablename__ = 'genome_region_map'
 
