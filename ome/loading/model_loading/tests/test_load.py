@@ -231,7 +231,7 @@ def test_load_model(test_genbank, test_model, test_db, test_prefs, setup_logger)
              .filter(Model.bigg_id == 'Ecoli_core_model')
              .filter(Reaction.bigg_id == 'ACKr')
              .first())
-    assert mr_db.gene_reaction_rule == '(b1849 or b2296 or b3115)'
+    assert mr_db.gene_reaction_rule == '(b3115 or b2296 or b1849)'
 
     # old ids
     assert (session

@@ -122,7 +122,6 @@ if __name__ == "__main__":
         if model_filename.strip() != '':
             models_list.append((model_filename, bioproject_id, pub_ref))
 
-
     if not args.skip_genomes:
         logging.info('Finding matching GenBank files')
         genbank_dir = join(settings.data_directory, 'annotation', 'genbank')
@@ -163,7 +162,6 @@ if __name__ == "__main__":
             for chromosome in genome.chromosomes:
                 component_loading.write_chromosome_annotation_gff(base, components,
                                                                   chromosome)
-
     if not args.skip_models:
         logging.info("Loading models")
         n = len(models_list)
