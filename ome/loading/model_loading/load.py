@@ -46,7 +46,6 @@ def load_model(model_filepath, bioproject_id, pub_ref, session):
         pmid:21988831
 
     """
-
     # apply id normalization
     logging.debug('Parsing SBML')
     model, old_parsed_ids = parse.load_and_normalize(model_filepath)

@@ -407,14 +407,14 @@ def get_bioproject_id(genbank_filepath, fast=False):
 @timing
 def load_genome(genbank_filepath, session):
     bioproject_id, gb_file = get_bioproject_id(genbank_filepath)
-
+    old_locus_tag_id = create_data_source(session, 'refseq_old_locus_tag')
     organism = gb_file.annotations['organism']
     genome = (session
               .query(base.Genome)
               .filter(base.Genome.bioproject_id == bioproject_id)
               .filter(base.Genome.organism == organism)
               .first())
-
+    
     if not genome:
         logging.debug('Adding new genome: %s' % bioproject_id)
         ome_genome = { 'bioproject_id': bioproject_id,
@@ -465,11 +465,25 @@ def load_genome(genbank_filepath, session):
         bigg_id = None
         gene_name = None
         locus_tag = None
-
+        old_bigg_id = None
+        def load_old_id(gene_db, old_bigg_id):
+            if old_bigg_id is not None:
+                data_source = session.query(base.DataSource).filter(base.DataSource.name == 'old_id').first()
+                if data_source is None:
+                    data_source_id = create_data_source(session, 'old_id')
+                else:
+                    data_source_id = data_source.id
+                synonym_db = base.Synonym(type='gene',
+                                      ome_id=gene_db.id,
+                                      synonym=old_bigg_id,
+                                      synonym_data_source_id=data_source_id)
+                session.add(synonym_db)
+                session.flush()
+        
         if 'locus_tag' in feature.qualifiers:
             locus_tag = feature.qualifiers['locus_tag'][0]
             bigg_id = scrub_gene_id(locus_tag)
-
+            old_bigg_id = locus_tag
         if 'gene' in feature.qualifiers:
             gene_name = feature.qualifiers['gene'][0]
 
@@ -482,6 +496,7 @@ def load_genome(genbank_filepath, session):
                 bigg_id_warnings += 1
             bigg_id = scrub_gene_id(gene_name)
             gene_name = None
+            old_bigg_id = gene_name
         elif bigg_id is None:
             logging.error(('No locus_tag or gene name for gene %d in chromosome '
                            '%s' % (i, chromosome.genbank_id)))
@@ -530,7 +545,7 @@ def load_genome(genbank_filepath, session):
                     msg += ' (Warnings limited to %d)' % warning_num
                 logging.warn(msg)
                 duplicate_genes_warnings += 1
-
+        load_old_id(gene, old_bigg_id)
         # get the protein
         if 'protein_id' in feature.qualifiers and len(feature.qualifiers['protein_id']) > 0:
 
@@ -599,7 +614,12 @@ def load_genome(genbank_filepath, session):
                     ome_synonym = {'type': 'gene'}
                     ome_synonym['ome_id'] = gene.id
                     ome_synonym['synonym'] = value.strip()
-                    ome_synonym['synonym_data_source_id'] = None
+                    #old_id_data_source = old_locus_tag_id 
+                    
+                    if old_locus_tag_id:
+                        ome_synonym['synonym_data_source_id'] = old_locus_tag_id 
+                    else:
+                        ome_synonym['synonym_data_source_id'] = None
                     found_synonym = (session
                                      .query(base.Synonym)
                                      .filter(base.Synonym.ome_id == gene.id)
