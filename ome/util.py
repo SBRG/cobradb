@@ -50,11 +50,15 @@ def create_data_source(session, data_source_name):
     url_prefs = read_data_source_preferences()
 
     url = find_data_source_url(data_source_name, url_prefs)
-    data_source = base.DataSource(name=data_source_name, url_prefix = url)
-    session.add(data_source)
-    session.flush()
-    data_source_id = data_source.id
-    return data_source_id
+    data_source_query = session.query(base.DataSource).filter(base.DataSource.name == data_source_name).filter(base.DataSource.url_prefix == url).first()
+    if not data_source_query:
+        data_source = base.DataSource(name=data_source_name, url_prefix = url)
+        session.add(data_source)
+        session.flush()
+        data_source_id = data_source.id
+        return data_source_id
+    else:
+        return data_source_query.id
 
 def format_formula(formula):
     if formula is not None:

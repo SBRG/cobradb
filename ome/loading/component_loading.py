@@ -479,7 +479,6 @@ def load_genome(genbank_filepath, session):
                                       synonym_data_source_id=data_source_id)
                 session.add(synonym_db)
                 session.flush()
-        
         if 'locus_tag' in feature.qualifiers:
             locus_tag = feature.qualifiers['locus_tag'][0]
             bigg_id = scrub_gene_id(locus_tag)
