@@ -183,17 +183,7 @@ class DataSource(Base):
     )
 
     def __repr__(self):
-        return "Data Source %s (#%d)" % (self.name, self.id, self.url_prefix)
-
-    def __repr__dict__(self):
-        return {"name":self.name,"wid":self.id, "url_prefix": self.url_prefix}
-
-    def __repr__json__(self):
-        return json.dumps(self.__repr__dict__())
-
-    def __init__(self, name, url_prefix=None):
-        self.name = name
-        self.url_prefix = url_prefix
+        return '<ome DataSource(id={self.id}, name={self.name}, url_prefix={self.url_prefix})>'.format(self=self)
 
 
 class Synonym(Base):
@@ -202,22 +192,16 @@ class Synonym(Base):
     ome_id = Column(Integer)
     synonym = Column(String)
     type = Column(custom_enums['synonym_type'])
-    synonym_data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
-    synonym_data_source = relationship("DataSource")
+    data_source_id = Column(Integer, ForeignKey('data_source.id', ondelete='CASCADE'))
 
     __table_args__ = (
-        UniqueConstraint('ome_id', 'synonym', 'type'),
+        UniqueConstraint('ome_id', 'synonym', 'type', 'data_source_id'),
     )
 
     def __repr__(self):
-        return ('<ome Synonym(id=%d, synonym="%s", type="%s", ome_id=%d)>' %
-                (self.id, self.synonym, self.type, self.ome_id))
+        return ('<ome Synonym(id=%d, synonym="%s", type="%s", ome_id=%d, data_source_id=%d)>' %
+                (self.id, self.synonym, self.type, self.ome_id, self.data_source_id))
 
-    def __init__(self, ome_id, synonym, type, synonym_data_source_id):
-        self.ome_id = ome_id
-        self.synonym = synonym
-        self.type = type
-        self.synonym_data_source_id = synonym_data_source_id
 
 class Publication(Base):
     __tablename__ = "publication"

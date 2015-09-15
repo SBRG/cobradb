@@ -152,6 +152,7 @@ FEATURES             Location/Qualifiers
                      /gene_synonym="ECK0113; JW0110"
                      /EC_number="1.2.4.1"
                      /note="pyruvate dehydrogenase (decarboxylase component)"
+                     /db_xref="tests_dup_syn:b0114"
                      /db_xref="GI:16128107"
                      /db_xref="ASAP:ABE-0000397"
                      /db_xref="UniProtKB/Swiss-Prot:P0AFG8"

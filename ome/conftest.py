@@ -29,7 +29,6 @@ def session(request):
 
 @pytest.fixture(scope='session')
 def setup_logger():
-    print 'setting up logger'
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 
@@ -62,7 +61,6 @@ def test_prefs():
 
 @pytest.fixture(scope='session')
 def test_db_create(setup_logger):
-    print 'creating db'
     user = settings.postgres_user
     test_db = settings.postgres_test_database
     # make sure the test database is clean
@@ -94,20 +92,21 @@ def test_db(request, test_db_create):
 
 
 @pytest.fixture(scope='session')
-def load_genomes(test_db, test_genbank_files, session):
+def load_genomes(test_db, test_genbank_files, test_prefs, session):
+    # preferences
+    settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
+    settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
+    settings.gene_reaction_rule_prefs = test_prefs['gene_reaction_rule_prefs']
+    settings.data_source_preferences = test_prefs['data_source_preferences']
+
     # load the test genomes
     for gb in test_genbank_files:
         load_genome(gb, session)
 
 
 @pytest.fixture(scope='session')
-def load_models(load_genomes, test_model_files, test_prefs, session):
+def load_models(load_genomes, test_model_files, session):
     # fixture load_genomes will have loaded 2 genomes
-
-    # preferences
-    settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
-    settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
-    settings.gene_reaction_rule_prefs = test_prefs['gene_reaction_rule_prefs']
 
     out = []
     for model_details in test_model_files:
@@ -115,8 +114,6 @@ def load_models(load_genomes, test_model_files, test_prefs, session):
         out.append(load_model(model_details['path'], model_details['genome_id'],
                               model_details['pmid'], session))
     assert out == ['Ecoli_core_model', 'Ecoli_core_model_2', 'Ecoli_core_model_3']
-
-
 
 
 # Session

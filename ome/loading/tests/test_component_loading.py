@@ -40,12 +40,21 @@ class TestWithGenomes():
                 .count()) == 2
 
 
-    def test_genome_synonyms_dbxref(self, session):
+    def test_genome_synonyms_db_xref(self, session):
         assert (session.query(Synonym)
                 .join(DataSource)
                 .filter(DataSource.name == 'GI')
                 .filter(Synonym.synonym == '16128107')
                 .count()) == 2
+
+
+    def test_genome_synonyms_db_xref_duplicate(self, session):
+        # this causes an error when we are not dealing with duplicates correctly
+        assert (session.query(Synonym)
+                .join(DataSource)
+                .filter(DataSource.name == 'tests_dup_syn')
+                .filter(Synonym.synonym == 'b0114')
+                .count()) == 1
 
 
     # only in core.gb:

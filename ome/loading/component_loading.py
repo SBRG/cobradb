@@ -3,7 +3,7 @@
 from ome import settings, timing, base
 from ome.base import *
 from ome.components import Gene, Protein
-from ome.util import scrub_gene_id, get_or_create_data_source, check_and_update_url
+from ome.util import scrub_gene_id, get_or_create_data_source
 
 import sys, os, math, re
 from warnings import warn
@@ -74,14 +74,14 @@ def load_gene_synonym(session, gene_db, synonym, data_source_name):
                   .query(Synonym)
                   .filter(Synonym.ome_id == gene_db.id)
                   .filter(Synonym.synonym == synonym)
-                  .filter(Synonym.synonym_data_source_id == data_source_id)
+                  .filter(Synonym.data_source_id == data_source_id)
                   .first())
 
     if synonym_db is None:
         synonym_db = Synonym(type='gene',
                              ome_id=gene_db.id,
                              synonym=synonym,
-                             synonym_data_source_id=data_source_id)
+                             data_source_id=data_source_id)
         session.add(synonym_db)
         session.flush()
 

@@ -36,16 +36,12 @@ class TestsWithModels:
         assert session.query(Gene).count() == 281 # b4151 and b4152 are in genome1 but not in model1
         assert session.query(ModelGene).count() == 414
 
-    def tests_linkouts(self, session):
-        # test linkouts
-        result = (session
-                .query(Synonym.synonym, Synonym.ome_id)
-                .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.synonym_data_source_id)
-                .filter(DataSource.name == 'KEGGID')
-                .filter(Metabolite.bigg_id == '13dpg')
-                .all())
-        assert len(result) == 2
+    def test_no_charge_in_linkouts(self, session):
+        assert (session
+                .query(Synonym)
+                .join(DataSource)
+                .filter(DataSource.name == 'CHARGE')
+                .count()) == 0
 
     def test_s0001(self, session):
         assert session.query(Gene).filter(Gene.bigg_id == 's0001').count() == 3
@@ -258,25 +254,43 @@ class TestsWithModels:
                 .filter(Metabolite.bigg_id == '_13dpg')
                 .first()) is None
 
+    def test_linkout_urls(self, session):
+        # with url
+        res_db = (session
+                  .query(DataSource)
+                  .filter(DataSource.name == 'KEGGID')
+                  .all())
+        assert len(res_db) == 1
+        assert res_db[0].url_prefix == 'http://identifiers.org/kegg.compound/'
+
+    def test_linkout_no_url(self, session):
+        # with url
+        res_db = (session
+                  .query(DataSource)
+                  .filter(DataSource.name == 'BIOPATH')
+                  .all())
+        assert len(res_db) == 1
+        assert res_db[0].url_prefix is None
+
     def tests_linkouts(self, session):
         assert (session
                 .query(Synonym)
                 .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.synonym_data_source_id)
+                .join(DataSource, DataSource.id == Synonym.data_source_id)
                 .filter(Metabolite.bigg_id == '13dpg')
                 .filter(DataSource.name == 'KEGGID')
                 .count()) == 2
         assert (session
                 .query(Synonym)
                 .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.synonym_data_source_id)
+                .join(DataSource, DataSource.id == Synonym.data_source_id)
                 .filter(Metabolite.bigg_id == '13dpg')
                 .filter(DataSource.name == 'BIOPATH')
                 .count()) == 1
         assert (session
                 .query(Synonym)
                 .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.synonym_data_source_id)
+                .join(DataSource, DataSource.id == Synonym.data_source_id)
                 .filter(Metabolite.bigg_id == '13dpg')
                 .filter(DataSource.name  == 'CHEBI')
                 .count()) == 5

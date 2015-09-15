@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from ome.base import *
+from ome import settings
+
 import re
 import os
-from ome import base
-from ome import settings
 import logging
 
 
@@ -27,6 +28,7 @@ def check_pseudoreaction(reaction_id):
             return True
     return False
 
+
 def find_data_source_url(a_name, url_prefs):
     """Return the url prefix for data source name, or None."""
     for row in url_prefs:
@@ -34,31 +36,18 @@ def find_data_source_url(a_name, url_prefs):
             return row[1]
     return None
 
-def check_and_update_url(session, data_source_id):
-    data_query =  session.query(base.DataSource).filter(base.DataSource.id == data_source_id).first()
-    if data_query.url_prefix is None or data_query.url_prefix == '':
-        url_prefs = read_data_source_preferences()
-        url = find_data_source_url(data_query.name, url_prefs)
-        data_query.url_prefix = url
-        session.flush()
-
-
-def read_data_source_preferences():
-    return load_tsv(settings.data_source_preferences)
-
 
 def get_or_create_data_source(session, data_source_name):
-    # get gene url_prefs
-    url_prefs = read_data_source_preferences()
-
     data_source_db = (session
-                      .query(base.DataSource)
-                      .filter(base.DataSource.name == data_source_name)
+                      .query(DataSource)
+                      .filter(DataSource.name == data_source_name)
                       .first())
     if not data_source_db:
-        url = find_data_source_url(data_source_name, url_prefs)
-        data_source_db = base.DataSource(name=data_source_name,
-                                         url_prefix=url)
+        # get gene url_prefs
+        url_prefs = load_tsv(settings.data_source_preferences)
+        url_prefix = find_data_source_url(data_source_name, url_prefs)
+        data_source_db = DataSource(name=data_source_name,
+                                         url_prefix=url_prefix)
         session.add(data_source_db)
         session.flush()
 
