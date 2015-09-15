@@ -4,6 +4,8 @@
 # setup
 import logging
 import time
+import sys
+
 def configure_logger(log_file=None, level=logging.INFO, overwrite_log=True,
                      format=logging.BASIC_FORMAT):
     # console and file
@@ -29,19 +31,16 @@ from ome.loading.component_loading import BadGenomeError
 from ome.loading import model_loading
 from ome.loading import map_loading
 
-from sqlalchemy.schema import Sequence, CreateSequence
-from warnings import warn
-import sys
 import os
 from os.path import join
 import argparse
 
-try:
-    from pymongo import ASCENDING
-    MONGO_INSTALLED = True
-except ImportError:
-    logging.warn('pymongo not installed')
-    MONGO_INSTALLED = False
+# try:
+#     from pymongo import ASCENDING
+#     MONGO_INSTALLED = True
+# except ImportError:
+#     logging.warn('pymongo not installed')
+#     MONGO_INSTALLED = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--drop-all', help='Empty database and reload data. NOTE: Does not drop types (e.g. enum categories)', action='store_true')
@@ -106,7 +105,7 @@ if __name__ == "__main__":
     session = base.Session()
 
     # get the models and genomes
-    model_dir = join(settings.data_directory, 'models')
+    model_dir = settings.model_directory
     model_genome_path = settings.model_genome
     logging.info('Loading models and genomes using %s' % model_genome_path)
     lines = util.load_tsv(model_genome_path, required_column_num=3)
@@ -120,7 +119,7 @@ if __name__ == "__main__":
 
     if not args.skip_genomes:
         logging.info('Finding matching GenBank files')
-        genbank_dir = join(settings.data_directory, 'annotation', 'genbank')
+        genbank_dir = settings.refseq_directory
         # get the genbank files with matching bioproject ids
         genome_files = []
         for filename in os.listdir(genbank_dir):
@@ -147,17 +146,18 @@ if __name__ == "__main__":
             except Exception as e:
                 logging.exception(e)
 
-        # chromosome gffs
-        data_genomes = (session
-                        .query(base.Genome)
-                        .filter(base.Genome.bioproject_id.in_(['PRJNA57779']))
-                        .all())
-        raw_flag = False
-        normalize_flag = False
-        for genome in data_genomes:
-            for chromosome in genome.chromosomes:
-                component_loading.write_chromosome_annotation_gff(base, components,
-                                                                  chromosome)
+        # # chromosome gffs
+        # data_genomes = (session
+        #                 .query(base.Genome)
+        #                 .filter(base.Genome.bioproject_id.in_(['PRJNA57779']))
+        #                 .all())
+        # raw_flag = False
+        # normalize_flag = False
+        # for genome in data_genomes:
+        #     for chromosome in genome.chromosomes:
+        #         component_loading.write_chromosome_annotation_gff(base, components,
+        #                                                           chromosome)
+
     if not args.skip_models:
         logging.info("Loading models")
         n = len(models_list)
@@ -176,10 +176,10 @@ if __name__ == "__main__":
     map_loading.load_maps_from_server(session, drop_maps=(args.drop_models or
                                                           args.drop_maps))
 
-    if MONGO_INSTALLED and base.omics_database is not None:
-        genome_data = base.omics_database.genome_data
-        genome_data.create_index([("data_set_id", ASCENDING),
-                                  ("leftpos", ASCENDING)])
+    # if MONGO_INSTALLED and base.omics_database is not None:
+    #     genome_data = base.omics_database.genome_data
+    #     genome_data.create_index([("data_set_id", ASCENDING),
+    #                               ("leftpos", ASCENDING)])
 
     session.close()
     base.Session.close_all()

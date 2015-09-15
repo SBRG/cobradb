@@ -1,6 +1,11 @@
+# -*- coding: utf-8 -*-
+
 from ome.util import *
-from ome import base
+from ome.base import *
+
 import pytest
+
+
 def test_increment_id():
     assert increment_id('ACALD_1') == 'ACALD_2'
     assert increment_id('ACALD_1a') == 'ACALD_1a_1'
@@ -22,21 +27,26 @@ def test_check_pseudoreaction():
     assert check_pseudoreaction('BiomassEcoli') is True
     assert check_pseudoreaction('DM_8') is True
 
+
 def test_find_data_source_url():
     url_prefs = [['KEGGID', 'http://identifiers.org/kegg.compound/']]
     assert find_data_source_url('KEGGID', url_prefs) == 'http://identifiers.org/kegg.compound/'
 
-def test_read_data_source_preferences(test_prefs):
-    settings.data_source_preferences = test_prefs['data_source_preferences']
-    urls_dictionary = read_data_source_preferences()
-    assert urls_dictionary[0][0].split()[0] == 'KEGGID'
-    assert urls_dictionary[0][0].split()[1] == 'http://identifiers.org/kegg.compound/'
 
-def test_create_data_source(test_db):
-    session = base.Session()
-    create_data_source(session, 'KEGGID')
-    assert session.query(base.DataSource).count() == 1
-    session.close()
+def test_get_or_create_data_source(test_db, session, test_prefs, tmpdir):
+    prefsfile = str(tmpdir.join('data_source_preferences.txt'))
+    with open(prefsfile, 'w') as f:
+        f.write('my_data_source\tmy_url_prefix')
+
+    settings.data_source_preferences = prefsfile
+
+    get_or_create_data_source(session, 'my_data_source')
+    assert (session
+            .query(DataSource)
+            .filter(DataSource.name == 'my_data_source')
+            .filter(DataSource.url_prefix == 'my_url_prefix')
+            .count()) == 1
+
 
 def test_scrub_gene_id():
     assert scrub_gene_id('1234.5') == '1234_AT5'

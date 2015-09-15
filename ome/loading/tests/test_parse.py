@@ -1,10 +1,10 @@
-from ome.loading.model_loading.parse import *
+from ome.loading.parse import *
 
 from cobra.core import Reaction, Metabolite
 from cobra.io import read_sbml_model
 
-def test_convert_ids(test_model):
-    model_in = read_sbml_model(test_model[0]['path'])
+def test_convert_ids(test_model_files):
+    model_in = read_sbml_model(test_model_files[0]['path'])
     model_in.id = 'A bad id'
     model_in.description = 'throw away'
 
@@ -50,7 +50,7 @@ M_lipidA_core_e_p
         new = id_for_new_id_style(case, is_metabolite=True)
         met, compartment = split_compartment(new)
 
-    # strip leading underscores 
+    # strip leading underscores
     assert id_for_new_id_style('_13dpg_c') == '13dpg_c'
     assert id_for_new_id_style('__13dpg_c') == '13dpg_c'
 
@@ -69,19 +69,19 @@ M_lipidA_core_e_p
     assert id_for_new_id_style('a()[]c*&^%b') == 'a_c_b'
 
 
-def test_hash_reaction(test_model):
+def test_hash_reaction(test_model_files):
     # there are no conflicts in model 2
-    model, _ = load_and_normalize(test_model[1]['path'])
+    model, _ = load_and_normalize(test_model_files[1]['path'])
 
     # just the string
     string = hash_reaction(model.reactions.GAPD, string_only=True)
     assert string == '13dpg_c1.000g3p_c-1.000h_c1.000nad_c-1.000nadh_c1.000pi_c-1.000'
-    
+
     # no conflicts
     num = 20
     hashes = {r.id: hash_reaction(r) for r in model.reactions[:20]}
     assert len(set(hashes.values())) == 20
-    
+
     # repeatable
     k1, h1 = hashes.iteritems().next()
     assert h1 == hash_reaction(model.reactions.get_by_id(k1))

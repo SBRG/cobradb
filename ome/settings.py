@@ -52,7 +52,7 @@ config.add_section("DATA")
 config.add_section("EXECUTABLES")
 
 # overwrite defaults settings with settings from the file
-def load_settings_from_file(filepath="settings.ini", in_omelib=True):
+def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
     """Reload settings from a different settings file.
 
     Arguments
@@ -60,12 +60,12 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
 
     filepath: The path to the settings file to use.
 
-    in_omelib: Whether or not the path given is a relative path from the omelib
+    in_ome_dir: Whether or not the path given is a relative path from the ome
     directory.
 
     """
-    if in_omelib:
-        filepath = join(omelib_directory, filepath)
+    if in_ome_dir:
+        filepath = join(ome_directory, filepath)
     config.read(filepath)
 
     # attempt to intellegently determine more difficult settings
@@ -117,19 +117,25 @@ def load_settings_from_file(filepath="settings.ini", in_omelib=True):
     # make a psql string with the database options included
     self.psql_full = "%s --host=%s --username=%s --port=%s " % \
                      (self.psql, self.postgres_host, self.postgres_user, self.postgres_port)
+
+    # these are required
     try:
-        self.data_directory = expanduser(config.get('DATA', 'data_directory'))
+        self.model_directory = expanduser(config.get('DATA', 'model_directory'))
     except NoOptionError:
-        raise Exception('data_directory was not supplied in settings.ini')
-    # set default here, after getting the data directory
+        raise Exception('model_directory was not supplied in settings.ini')
+    try:
+        self.refseq_directory = expanduser(config.get('DATA', 'refseq_directory'))
+    except NoOptionError:
+        raise Exception('refseq_directory was not supplied in settings.ini')
     try:
         self.model_genome = expanduser(config.get('DATA', 'model_genome'))
     except NoOptionError:
         raise Exception('model_genome path was not supplied in settings.ini')
+
     # these are optional
     for data_pref in ['compartment_names', 'reaction_id_prefs',
-                      'reaction_hash_prefs', 'gene_reaction_rule_prefs', 'data_source_preferences', 'model_dump_directory',
-                      'model_published_directory', 'model_polished_directory']:
+                      'reaction_hash_prefs', 'gene_reaction_rule_prefs',
+                      'data_source_preferences']:
         try:
             setattr(self, data_pref, expanduser(config.get('DATA', data_pref)))
         except NoOptionError:

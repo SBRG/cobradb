@@ -17,8 +17,15 @@ cuffquant = /usr/local/bin/cuffquant
 java = /Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home/bin/java
 
 [DATA]
-data_directory = ~/path/to/ome_data/
+# The directory containing the genome-scale models
+model_directory = ~/path/to/ome_data/models
+# The directory containing the reference sequences (as Genbank files)
+refseq_directory = ~/path/to/ome_data/refseq
+# A tab-delimited text file containing models, reference sequences, and
+# publication IDs
 model_genome = ~/path/to/ome_data/model-genome.txt
+# A tab-delimited text file containing compartment IDs and their corresponding
+# names
 compartment_names = ~/path/to/ome_data/compartment-names.txt
 reaction_id_prefs = ~/path/to/ome_data/reaction-id-prefs.txt
 reaction_hash_prefs = ~/path/to/ome_data/reaction-hash-prefs.txt
