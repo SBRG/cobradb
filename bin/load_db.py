@@ -106,7 +106,7 @@ if __name__ == "__main__":
     session = base.Session()
 
     # get the models and genomes
-    model_dir = join(settings.data_directory, 'models')
+    model_dir = settings.model_directory
     model_genome_path = settings.model_genome
     logging.info('Loading models and genomes using %s' % model_genome_path)
     lines = util.load_tsv(model_genome_path, required_column_num=3)
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     if not args.skip_genomes:
         logging.info('Finding matching GenBank files')
-        genbank_dir = join(settings.data_directory, 'annotation', 'genbank')
+        genbank_dir = settings.refseq_directory
         # get the genbank files with matching bioproject ids
         genome_files = []
         for filename in os.listdir(genbank_dir):

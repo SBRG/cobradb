@@ -2,6 +2,8 @@
 
 from ome import settings
 from ome import base
+from ome.loading.component_loading import load_genome
+from ome.loading.model_loading import load_model
 
 import pytest
 from sqlalchemy import create_engine
@@ -12,7 +14,10 @@ import cobra.io
 import logging
 
 
-@pytest.fixture(scope='function')
+test_data_dir = realpath(join(dirname(__file__), 'test_data'))
+
+
+@pytest.fixture(scope='session')
 def session(request):
     """Make a session"""
     def teardown():
@@ -24,47 +29,49 @@ def session(request):
 
 @pytest.fixture(scope='session')
 def setup_logger():
+    print 'setting up logger'
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
-@pytest.fixture(scope='session')
-def test_genbank():
-    return [{ 'genome_id': 'PRJNA57779-core',
-             'path': realpath(join(dirname(__file__), 'test_data', 'core.gb')) },
-             { 'genome_id': 'PRJNA57779-core-2',
-             'path': realpath(join(dirname(__file__), 'test_data', 'core_2.gb'))}]
 
 @pytest.fixture(scope='session')
-def test_model():
-    return [{ 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model.xml')) },
-             { 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model_2.xml')) },
-             { 'path': realpath(join(dirname(__file__), 'test_data', 'ecoli_core_model_3.xml')) }]
+def test_genbank_files():
+    return [join(test_data_dir, 'core.gb'),
+            join(test_data_dir, 'core_2.gb')]
+
+
+@pytest.fixture(scope='session')
+def test_model_files():
+    return [{'path': join(test_data_dir, 'ecoli_core_model.xml'),
+             'genome_id': 'PRJNA57779-core',
+             'pmid': 'pmid:25575024'},
+            {'path': join(test_data_dir, 'ecoli_core_model_2.xml'),
+             'genome_id': 'PRJNA57779-core-2',
+             'pmid': 'pmid:25575024'},
+            {'path': join(test_data_dir, 'ecoli_core_model_3.xml'),
+             'genome_id': 'PRJNA57779-core',
+             'pmid': 'pmid:25575024'}]
+
 
 @pytest.fixture(scope='session')
 def test_prefs():
-    return {'reaction_id_prefs': realpath(join(dirname(__file__),
-                                               'test_data',
-                                               'reaction-id-prefs.txt')),
-            'reaction_hash_prefs': realpath(join(dirname(__file__),
-                                                 'test_data',
-                                                 'reaction-hash-prefs.txt')),
-            'data_source_preferences': realpath(join(dirname(__file__),
-                                                 'test_data',
-                                                 'data-source-prefs.txt')),
-            'gene_reaction_rule_prefs': realpath(join(dirname(__file__),
-                                                 'test_data',
-                                                 'gene-reaction-rule-prefs.txt'))
-            }
+    return {'reaction_id_prefs': join(test_data_dir, 'reaction-id-prefs.txt'),
+            'reaction_hash_prefs': join(test_data_dir, 'reaction-hash-prefs.txt'),
+            'data_source_preferences': join(test_data_dir, 'data-source-prefs.txt'),
+            'gene_reaction_rule_prefs': join(test_data_dir, 'gene-reaction-rule-prefs.txt')}
+
 
 @pytest.fixture(scope='session')
 def test_db_create(setup_logger):
+    print 'creating db'
     user = settings.postgres_user
     test_db = settings.postgres_test_database
     # make sure the test database is clean
     os.system('dropdb %s' % test_db)
     os.system('createdb %s -U %s' % (test_db, user))
     logging.info('Dropped and created database %s' % test_db)
-    
-@pytest.fixture(scope='function')
+
+
+@pytest.fixture(scope='session')
 def test_db(request, test_db_create):
     user = settings.postgres_user
     test_db = settings.postgres_test_database
@@ -85,6 +92,33 @@ def test_db(request, test_db_create):
         logging.info('Dropped database schema')
     request.addfinalizer(teardown)
 
+
+@pytest.fixture(scope='session')
+def load_genomes(test_db, test_genbank_files, session):
+    # load the test genomes
+    for gb in test_genbank_files:
+        load_genome(gb, session)
+
+
+@pytest.fixture(scope='session')
+def load_models(load_genomes, test_model_files, test_prefs, session):
+    # fixture load_genomes will have loaded 2 genomes
+
+    # preferences
+    settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
+    settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
+    settings.gene_reaction_rule_prefs = test_prefs['gene_reaction_rule_prefs']
+
+    out = []
+    for model_details in test_model_files:
+        # load the models
+        out.append(load_model(model_details['path'], model_details['genome_id'],
+                              model_details['pmid'], session))
+    assert out == ['Ecoli_core_model', 'Ecoli_core_model_2', 'Ecoli_core_model_3']
+
+
+
+
 # Session
 #  - test_db_create
 #     -> dropbd
@@ -102,5 +136,3 @@ def test_db(request, test_db_create):
 
 # py.test --capture=no # gives you the logs
 # py.test --capture=no -k load # only runs tests with 'load' in the name
-
-

@@ -39,15 +39,17 @@ def dump_model(bigg_id):
     # genes
     logging.debug('Dumping genes')
     gene_names = (session
-                  .query(Gene.bigg_id, Gene.name)
+                  .query(Gene.bigg_id, Gene.name, Synonym.synonym)
                   .join(ModelGene)
+                  .join(OldIDSynonym, OldIDSynonym.ome_id == ModelGene.id)
+                  .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
                   .filter(ModelGene.model_id == model_db.id)
-                  .order_by(Gene.bigg_id)
-                  )
+                  .order_by(Gene.bigg_id))
 
-    for gene_id, gene_name in gene_names:
+    for gene_id, gene_name, original_gene_id in gene_names:
         gene = cobra.core.Gene(gene_id)
         gene.name = gene_name
+        gene.notes = {'original_bigg_id': original_gene_id}
         model.genes.append(gene)
 
     # reactions
@@ -58,8 +60,7 @@ def dump_model(bigg_id):
                     .join(OldIDSynonym, OldIDSynonym.ome_id == ModelReaction.id)
                     .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
                     .filter(ModelReaction.model_id == model_db.id)
-                    .order_by(Reaction.bigg_id)
-                    )
+                    .order_by(Reaction.bigg_id))
 
     # make dictionaries and cast results
     result_dicts = []
@@ -108,23 +109,23 @@ def dump_model(bigg_id):
 
     # metabolites
     logging.debug('Dumping metabolites')
-    metabolites_db = \
-        (session
-         .query(Component.bigg_id, Compartment.bigg_id, Component.name)
-         .join(CompartmentalizedComponent)
-         .join(Compartment)
-         .join(ModelCompartmentalizedComponent)
-         .filter(ModelCompartmentalizedComponent.model_id == model_db.id)
-         .order_by(Component.bigg_id)
-         )
+    metabolites_db = (session
+                      .query(Component.bigg_id, Compartment.bigg_id, Component.name, Synonym.synonym)
+                      .join(CompartmentalizedComponent)
+                      .join(Compartment)
+                      .join(ModelCompartmentalizedComponent)
+                      .join(OldIDSynonym, OldIDSynonym.ome_id == ModelCompartmentalizedComponent.id)
+                      .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
+                      .filter(ModelCompartmentalizedComponent.model_id == model_db.id)
+                      .order_by(Component.bigg_id))
     metabolites = []
     compartments = set()
-    for component_id, compartment_id, component_name in metabolites_db:
+    for component_id, compartment_id, component_name, original_met_id in metabolites_db:
         if component_id is not None and compartment_id is not None:
-            m = cobra.core.Metabolite(
-                id=component_id + '_' + compartment_id,
-                compartment=compartment_id)
+            m = cobra.core.Metabolite(id=component_id + '_' + compartment_id,
+                                      compartment=compartment_id)
             m.name = component_name
+            m.notes = {'original_bigg_id': original_met_id}
             compartments.add(compartment_id)
             metabolites.append(m)
     model.add_metabolites(metabolites)

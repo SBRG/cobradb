@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
-  <model id="Ecoli_core_model_3" name="Ecoli_core_model">
+  <model id="Ecoli_core_model_3" name="Ecoli_core_model_3">
     <notes>
       <html xmlns="http://www.w3.org/1999/xhtml"><p>COBRA_Toolbox</p></html>
     </notes>

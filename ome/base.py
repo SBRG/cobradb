@@ -178,7 +178,9 @@ class DataSource(Base):
     name = Column(String(100))
     url_prefix = Column(String)
 
-    __table_args__ = (UniqueConstraint('name'),{})
+    __table_args__ = (
+        UniqueConstraint('name'),
+    )
 
     def __repr__(self):
         return "Data Source %s (#%d)" % (self.name, self.id, self.url_prefix)
@@ -192,6 +194,7 @@ class DataSource(Base):
     def __init__(self, name, url_prefix=None):
         self.name = name
         self.url_prefix = url_prefix
+
 
 class Synonym(Base):
     __tablename__ = "synonym"

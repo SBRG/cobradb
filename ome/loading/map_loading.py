@@ -2,7 +2,7 @@
 
 from ome import base
 from ome.models import *
-from ome.loading.model_loading import parse
+from ome.loading import parse
 
 from tornado.escape import url_escape
 import json

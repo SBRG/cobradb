@@ -1,1 +1,1 @@
-from model_dumping.dump import dump_model
+from model_dumping import dump_model

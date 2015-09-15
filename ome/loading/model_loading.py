@@ -1,36 +1,142 @@
 # -*- coding: utf-8 -*-
 
-from ome import base
+from ome import base, settings, components, timing
 from ome.base import NotFoundError
+from ome.loading import AlreadyLoadedError
+from ome.dumping.model_dumping import dump_model
 from ome.models import *
 from ome.components import *
-from ome.loading.model_loading import parse
-from ome.util import increment_id, check_pseudoreaction, load_tsv, create_data_source, check_and_update_url, format_formula
+from ome.loading import parse
+from ome.util import (increment_id, check_pseudoreaction, load_tsv,
+                      get_or_create_data_source, check_and_update_url, format_formula)
+
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
 import re
 import logging
 from collections import defaultdict
 import os
+from os.path import join, basename, abspath, dirname
 from itertools import ifilter
+import cobra.io
+
+
+class GenbankNotFound(Exception):
+    pass
+
+
+def get_model_list():
+    """Get the models that are available, as SBML, in ome_data/models"""
+    return [x.replace('.xml', '').replace('.mat', '') for x in
+            os.listdir(join(settings.data_directory, 'models'))
+            if '.xml' in x or '.mat' in x]
+
+
+def check_for_model(name):
+    """Check for model, case insensitive, and ignore periods and underscores"""
+    def min_name(n):
+        return n.lower().replace('.','').replace(' ','').replace('_','')
+    for x in get_model_list():
+        if min_name(name)==min_name(x):
+            return x
+    return None
+
+
+@timing
+def load_model(model_filepath, bioproject_id, pub_ref, session):
+    """Load a model into the database. Returns the bigg_id for the new model.
+
+    Arguments
+    ---------
+
+    model_filepath: the path to the file where model is stored.
+
+    bioproject_id: id for the loaded genome annotation.
+
+    pub_ref: a publication PMID or doi for the model, as a string like this:
+
+        doi:10.1128/ecosalplus.10.2.1
+
+        pmid:21988831
+
+    """
+    # apply id normalization
+    logging.debug('Parsing SBML')
+    model, old_parsed_ids = parse.load_and_normalize(model_filepath)
+    model_bigg_id = model.id
+
+    # check that the model doesn't already exist
+    if session.query(Model).filter_by(bigg_id=model_bigg_id).count() > 0:
+        raise AlreadyLoadedError('Model %s already loaded' % model_bigg_id)
+
+    # check for a genome annotation for this model
+    if bioproject_id is not None:
+        genome_db = session.query(base.Genome).filter_by(bioproject_id=bioproject_id).first()
+        if bioproject_id == 'PRJNA224116':
+            logging.warn('THIS IS A TERRIBLE SOLUTION. SEE https://github.com/SBRG/BIGG2/issues/68')
+            if model_bigg_id == 'iHN637':
+                organism = 'Clostridium ljungdahlii DSM 13528'
+            elif model_bigg_id == 'iSB619':
+                organism = 'Staphylococcus aureus subsp. aureus N315'
+            elif model_bigg_id == 'iY75_1357':
+                organism = 'Escherichia coli str. K-12 substr. W3110'
+            else:
+                raise Exception('My terrible fix broke for model {}'.format(model_bigg_id))
+            genome_db = (session
+                        .query(base.Genome)
+                        .filter(base.Genome.bioproject_id == bioproject_id)
+                        .filter(base.Genome.organism == organism)
+                        .first())
+        if genome_db is None:
+            raise GenbankNotFound('Genbank file %s for model %s not found in the database' %
+                                  (bioproject_id, model_bigg_id))
+        genome_id = genome_db.id
+    else:
+        logging.info('No BioProject ID provided for model {}'.format(model_bigg_id))
+        genome_id = None
+
+    # Load the model objects. Remember: ORDER MATTERS! So don't mess around.
+    logging.debug('Loading objects for model {}'.format(model.id))
+    published_filename = os.path.basename(model_filepath)
+    model_database_id = load_new_model(session, model, genome_id, pub_ref,
+                                       published_filename)
+
+    # metabolites/components and linkouts
+    # get compartment names
+    if os.path.exists(settings.compartment_names):
+        with open(settings.compartment_names, 'r') as f:
+            compartment_names = {}
+            for line in f.readlines():
+                sp = [x.strip() for x in line.split('\t')]
+                try:
+                    compartment_names[sp[0]] = sp[1]
+                except IndexError:
+                    continue
+    else:
+        logging.warn('No compartment names file')
+        compartment_names = {}
+    load_metabolites(session, model_database_id, model, compartment_names,
+                     old_parsed_ids['metabolites'])
+
+    # reactions
+    model_db_rxn_ids = load_reactions(session, model_database_id, model,
+                                      old_parsed_ids['reactions'])
+
+    # genes
+    load_genes(session, model_database_id, model, model_db_rxn_ids,
+               old_parsed_ids['genes'])
+
+    # count model objects for the model summary web page
+    load_model_count(session, model_database_id)
+
+    session.commit()
+
+    return model_bigg_id
 
 
 def _fix_name(name):
     """Clean up descriptive names"""
     return name.strip('_ ')
-
-
-def _get_data_source(session, name):
-    """Get or create a DataSource."""
-    data_source_db = (session
-                      .query(base.DataSource)
-                      .filter(base.DataSource.name == name)
-                      .first())
-    if data_source_db is None:
-        data_source_db = base.DataSource(name=name)
-        session.add(data_source_db)
-        session.commit()
-    return data_source_db.id
 
 
 def load_new_model(session, model, genome_db_id, pub_ref, published_filename):
@@ -143,10 +249,10 @@ def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id)
                 try:
                     data_source_id = db_xref_data_source_id[external_source]
                 except KeyError:
-                    data_source_id = create_data_source(session, external_source)
+                    data_source_id = get_or_create_data_source(session, external_source)
                     db_xref_data_source_id[external_source] = data_source_id
-                check_and_update_url(session, data_source_id) 
-                ome_linkout['synonym_data_source_id'] = data_source_id 
+                check_and_update_url(session, data_source_id)
+                ome_linkout['synonym_data_source_id'] = data_source_id
                 synonym = base.Synonym(**ome_linkout)
                 session.add(synonym)
 
@@ -169,7 +275,7 @@ def load_metabolites(session, model_id, model, compartment_names,
     """
 
     # only grab this once
-    data_source_id = _get_data_source(session, 'old_id')
+    data_source_id = get_or_create_data_source(session, 'old_id')
 
     # for each metabolite in the model
     for metabolite in model.metabolites:
@@ -200,6 +306,17 @@ def load_metabolites(session, model_id, model, compartment_names,
                   for formula_fn in formula_fns)
         # Get the first non-null result. Otherwise _formula = None.
         _formula = format_formula(next(ifilter(None, values), None))
+
+        # get charge:
+        try:
+            charge = int(metabolite.charge)
+        except AttributeError:
+            charge = None
+        except ValueError:
+            logging.debug('Could not convert charge to integer for metabolite {} in model {}: {}'
+                          .format(metabolite.id, model.id, metabolite.charge))
+            charge = None
+
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
             # check for missing info
@@ -212,7 +329,8 @@ def load_metabolites(session, model_id, model, compartment_names,
             # make the new metabolite
             metabolite_db = Metabolite(bigg_id=component_bigg_id,
                                        name=_fix_name(metabolite.name),
-                                       formula=_formula)
+                                       formula=_formula,
+                                       charge=charge)
             session.add(metabolite_db)
             session.commit()
 
@@ -375,7 +493,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
     """
 
     # only grab this once
-    data_source_id = _get_data_source(session, 'old_id')
+    data_source_id = get_or_create_data_source(session, 'old_id')
 
     # get reaction id_prefs
     id_prefs = load_tsv(settings.reaction_id_prefs)
@@ -668,7 +786,7 @@ def _replace_gene_str(rule, old_gene, new_gene):
     return re.sub(r'\b'+old_gene+r'\b', new_gene, rule)
 
 
-def load_genes(session, model_db_id, model, model_db_rxn_ids):
+def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
     """Load the genes for this model.
 
     Arguments:
@@ -683,7 +801,13 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids):
     model_db_rxn_ids: A dictionary with keys for reactions in the model and
     values for the associated bigg_id in the database.
 
+    old_gene_ids: A dictionary where keys are new IDs and values are old IDs for
+    genes.
+
     """
+    # only grab this once
+    data_source_id = get_or_create_data_source(session, 'old_id')
+
     # find the model in the db
     model_db = session.query(Model).get(model_db_id)
 
@@ -790,6 +914,34 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids):
             model_gene_db = ModelGene(gene_id=gene_db.id,
                                       model_id=model_db_id)
             session.add(model_gene_db)
+            session.commit()
+
+        # add old gene synonym
+        old_bigg_id = old_gene_ids[gene.id]
+        synonym_db = (session
+                      .query(base.Synonym)
+                      .filter(base.Synonym.type == 'gene')
+                      .filter(base.Synonym.ome_id == gene_db.id)
+                      .filter(base.Synonym.synonym == old_bigg_id)
+                      .first())
+        if synonym_db is None:
+            synonym_db = base.Synonym(type='gene',
+                                      ome_id=gene_db.id,
+                                      synonym=old_bigg_id,
+                                      synonym_data_source_id=data_source_id)
+            session.add(synonym_db)
+            session.commit()
+        # add OldIDSynonym
+        old_id_db = (session
+                     .query(OldIDSynonym)
+                     .filter(OldIDSynonym.ome_id == model_gene_db.id)
+                     .filter(OldIDSynonym.synonym_id == synonym_db.id)
+                     .first())
+        if old_id_db is None:
+            old_id_db = base.OldIDSynonym(type='model_gene',
+                                          ome_id=model_gene_db.id,
+                                          synonym_id=synonym_db.id)
+            session.add(old_id_db)
             session.commit()
 
         # find model reaction

@@ -1,7 +1,7 @@
 LOCUS       NC_000913                  0 bp    DNA              CON 22-JUL-2013
 DEFINITION  Escherichia coli str. K-12 substr. MG1655, complete genome.
 ACCESSION   NC_000913
-VERSION     NC_000913.2  GI:49175990
+VERSION     NC_000913.2  GI:49175990-core
 DBLINK      Project:57779 BioProject:PRJNA57779-core
 KEYWORDS    RefSeq.
 SOURCE      Escherichia coli str. K-12 substr. MG1655
@@ -145,6 +145,8 @@ FEATURES             Location/Qualifiers
                      /function="enzyme; Energy metabolism, carbon: Pyruvate
                      dehydrogenase"
                      /locus_tag="b0114"
+                     /old_locus_tag="test_b0114"
+                     /note="ORF_ID:test_orf"
                      /gene="aceE"
                      /codon_start=1
                      /gene_synonym="ECK0113; JW0110"

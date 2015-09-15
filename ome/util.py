@@ -42,23 +42,28 @@ def check_and_update_url(session, data_source_id):
         data_query.url_prefix = url
         session.flush()
 
+
 def read_data_source_preferences():
     return load_tsv(settings.data_source_preferences)
 
-def create_data_source(session, data_source_name):
+
+def get_or_create_data_source(session, data_source_name):
     # get gene url_prefs
     url_prefs = read_data_source_preferences()
 
-    url = find_data_source_url(data_source_name, url_prefs)
-    data_source_query = session.query(base.DataSource).filter(base.DataSource.name == data_source_name).filter(base.DataSource.url_prefix == url).first()
-    if not data_source_query:
-        data_source = base.DataSource(name=data_source_name, url_prefix = url)
-        session.add(data_source)
+    data_source_db = (session
+                      .query(base.DataSource)
+                      .filter(base.DataSource.name == data_source_name)
+                      .first())
+    if not data_source_db:
+        url = find_data_source_url(data_source_name, url_prefs)
+        data_source_db = base.DataSource(name=data_source_name,
+                                         url_prefix=url)
+        session.add(data_source_db)
         session.flush()
-        data_source_id = data_source.id
-        return data_source_id
-    else:
-        return data_source_query.id
+
+    return data_source_db.id
+
 
 def format_formula(formula):
     if formula is not None:
