@@ -138,10 +138,6 @@ class Component(Base):
         'polymorphic_on': type
     }
 
-    def __init__(self, bigg_id, name):
-        self.bigg_id = bigg_id
-        self.name = name
-
     def __repr__(self):
         return "Component (#%d):  %s" % \
             (self.id, self.name)

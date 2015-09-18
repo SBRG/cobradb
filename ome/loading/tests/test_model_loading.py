@@ -185,28 +185,46 @@ class TestsWithModels:
                 .filter(Reaction.bigg_id == 'NTP1')
                 .count() == 1)
 
-    def tests_gene_reaction_matrix(self, session):
-        mr_db = (session
-                .query(GeneReactionMatrix, ModelReaction)
-                .join(ModelReaction, ModelReaction.id == GeneReactionMatrix.model_reaction_id)
-                .join(Model, Model.id == ModelReaction.model_id)
-                .join(Reaction, Reaction.id == ModelReaction.reaction_id)
-                .filter(Model.bigg_id == 'Ecoli_core_model')
-                .filter(Reaction.bigg_id == 'ATPM')
-                .filter(ModelReaction.gene_reaction_rule == '')
-                .all())
-        assert len(mr_db) == 0
-        mr_db = (session
-                .query(GeneReactionMatrix, ModelReaction)
-                .join(ModelReaction, ModelReaction.id == GeneReactionMatrix.model_reaction_id)
-                .join(Model, Model.id == ModelReaction.model_id)
-                .join(Reaction, Reaction.id == ModelReaction.reaction_id)
-                .filter(Model.bigg_id == 'Ecoli_core_model')
-                .filter(Reaction.bigg_id == 'NTP1')
-                .filter(ModelReaction.gene_reaction_rule == '(b0650) or (b4161)')
-                .all())
-        assert len(mr_db) == 2
+    def test_gene_reaction_matrix(self, session):
+        len_mr_db = (session
+                     .query(GeneReactionMatrix, ModelReaction)
+                     .join(ModelReaction, ModelReaction.id == GeneReactionMatrix.model_reaction_id)
+                     .join(Model, Model.id == ModelReaction.model_id)
+                     .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+                     .filter(Model.bigg_id == 'Ecoli_core_model')
+                     .filter(Reaction.bigg_id == 'ATPM')
+                     .filter(ModelReaction.gene_reaction_rule == '')
+                     .count())
+        assert len_mr_db == 0
+        len_mr_db = (session
+                     .query(GeneReactionMatrix, ModelReaction)
+                     .join(ModelReaction, ModelReaction.id == GeneReactionMatrix.model_reaction_id)
+                     .join(Model, Model.id == ModelReaction.model_id)
+                     .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+                     .filter(Model.bigg_id == 'Ecoli_core_model')
+                     .filter(Reaction.bigg_id == 'NTP1')
+                     .filter(ModelReaction.gene_reaction_rule == '(b0650) or (b4161)')
+                     .count())
+        assert len_mr_db == 2
 
+    def test_gene_reaction_matrix_multiple_reaction_copies(self, session):
+        res_db = (session
+                  .query(GeneReactionMatrix, Gene, ModelReaction)
+                  .join(ModelGene)
+                  .join(Gene)
+                  .join(ModelReaction)
+                  .join(Reaction)
+                  .join(Model, Model.id == ModelReaction.model_id)
+                  .filter(Reaction.bigg_id == 'ADK1')
+                  .filter(Model.bigg_id == 'Ecoli_core_model')
+                  .all())
+        # two genes
+        assert len(res_db) == 2
+        assert {x[1].bigg_id for x in res_db} == {'b0474', 'b0474_test_copy'}
+        # should be separate entries for each ModelReaction
+        assert res_db[0][2].id != res_db[1][2].id
+
+    def test_gene_reaction_rule_prefs(self, session):
         # gene_reaction_rule_prefs to fix reaction rules
         mr_db = (session
                 .query(ModelReaction)
@@ -216,7 +234,7 @@ class TestsWithModels:
                 .first())
         assert mr_db.gene_reaction_rule == '(b1849 or b2296 or b3115)'
 
-    def test_reaction_multiple_copies(self, session):
+    def test_multiple_reaction_copies(self, session):
         # make sure both copies of ADK1 are here
         res = (session
                .query(ModelReaction)
@@ -231,6 +249,34 @@ class TestsWithModels:
         assert res[0].lower_bound == -1000
         assert res[1].copy_number == 2
         assert res[1].lower_bound == 0
+
+    def test_multiple_metabolite_copies(self, session):
+        # e.g. ID collision
+        res = (session
+               .query(Synonym.synonym, Component, Compartment)
+               .join(OldIDSynonym)
+               .join(ModelCompartmentalizedComponent, ModelCompartmentalizedComponent.id == OldIDSynonym.ome_id)
+               .join(CompartmentalizedComponent)
+               .join(Component)
+               .join(Compartment)
+               .join(Model)
+               .filter(Component.bigg_id == 'glc__D')
+               .filter(Compartment.bigg_id == 'e')
+               .filter(Model.bigg_id == 'Ecoli_core_model'))
+        assert res.count() == 2
+
+    def test_multiple_gene_copies(self, session):
+        # for T. maritima, the genes TM0846 and TM_0846 were the same, so
+        # multiple OldIdSynonyms
+        res_db = (session
+                  .query(Synonym.synonym)
+                  .join(OldIDSynonym)
+                  .join(ModelGene, ModelGene.id == OldIDSynonym.ome_id)
+                  .join(Gene)
+                  .join(Model)
+                  .filter(Gene.bigg_id == 'b3528')
+                  .filter(Model.bigg_id == 'Ecoli_core_model'))
+        assert [x[0] for x in res_db] == ['b3528', 'b_3528']
 
     def test_old_reaction_id(self, session):
         assert (session
@@ -265,20 +311,6 @@ class TestsWithModels:
                 .join(Gene, Gene.id == ModelGene.gene_id)
                 .filter(Gene.bigg_id == 'gene_with_period_AT22')
                 .count()) == 1
-
-    def test_old_gene_id_multiple(self, session):
-        # for T. maritima, the genes TM0846 and TM_0846 were the same, so
-        # multiple OldIdSynonyms
-        res_db = (session
-                  .query(Synonym.synonym)
-                  .join(OldIDSynonym, OldIDSynonym.synonym_id == Synonym.id)
-                  .join(ModelGene, ModelGene.id == OldIDSynonym.ome_id)
-                  .join(Gene, Gene.id == ModelGene.gene_id)
-                  .join(Model)
-                  .filter(Gene.bigg_id == 'b3528')
-                  .filter(Model.bigg_id == 'Ecoli_core_model')
-                  .all())
-        assert [x[0] for x in res_db] == ['b3528', 'b_3528']
 
     def test_leading_underscores(self, session):
         # remove leading underscores (_13dpg in Model 1)

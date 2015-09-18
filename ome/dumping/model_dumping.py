@@ -101,7 +101,7 @@ def dump_model(bigg_id):
         # duplicates have multiple ModelReactions
         duplicates = {k: v for k, v in tups_by_bigg_id.iteritems() if len(v) > 1}
         for bigg_id, dup_dicts in duplicates.iteritems():
-            # add -copy1, copy2, etc. to the bigg ids for the duplicates
+            # add _copy1, copy2, etc. to the bigg ids for the duplicates
             for d in dup_dicts:
                 d['bigg_id'] = make_reaction_copy_id(bigg_id, d['copy_number'])
 
@@ -126,8 +126,8 @@ def dump_model(bigg_id):
     logging.debug('Dumping metabolites')
     # get original bigg ids (might be multiple)
     metabolites_db = (session
-                      .query(Component.bigg_id, Component.name, Compartment.bigg_id, Synonym.synonym)
-                      .join(CompartmentalizedComponent, CompartmentalizedComponent.component_id == Component.id)
+                      .query(Metabolite.bigg_id, Metabolite.name, Metabolite.formula, Compartment.bigg_id, Synonym.synonym)
+                      .join(CompartmentalizedComponent, CompartmentalizedComponent.component_id == Metabolite.id)
                       .join(Compartment, Compartment.id == CompartmentalizedComponent.compartment_id)
                       .join(ModelCompartmentalizedComponent,
                             ModelCompartmentalizedComponent.compartmentalized_component_id == CompartmentalizedComponent.id)
@@ -136,17 +136,18 @@ def dump_model(bigg_id):
                       .filter(ModelCompartmentalizedComponent.model_id == model_db.id))
     metabolite_names = []
     old_metabolite_ids_dict = defaultdict(list)
-    for metabolite_id, metabolite_name, compartment_id, old_id in metabolites_db:
+    for metabolite_id, metabolite_name, formula, compartment_id, old_id in metabolites_db:
         if metabolite_id + '_' + compartment_id not in old_metabolite_ids_dict:
-            metabolite_names.append((metabolite_id, metabolite_name, compartment_id))
+            metabolite_names.append((metabolite_id, metabolite_name, formula, compartment_id))
         old_metabolite_ids_dict[metabolite_id + '_' + compartment_id].append(old_id)
 
     metabolites = []
     compartments = set()
-    for component_id, component_name, compartment_id in metabolite_names:
+    for component_id, component_name, formula, compartment_id in metabolite_names:
         if component_id is not None and compartment_id is not None:
             m = cobra.core.Metabolite(id=component_id + '_' + compartment_id,
-                                      compartment=compartment_id)
+                                      compartment=compartment_id,
+                                      formula=formula)
             m.name = component_name
             m.notes = {'original_bigg_ids': old_metabolite_ids_dict[component_id + '_' + compartment_id]}
             compartments.add(compartment_id)

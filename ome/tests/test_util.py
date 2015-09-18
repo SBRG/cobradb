@@ -12,13 +12,10 @@ def test_increment_id():
     assert increment_id('ACALD') == 'ACALD_1'
     assert increment_id('ACALD_9') == 'ACALD_10'
     assert increment_id('ACALD_10') == 'ACALD_11'
-    # name
-    assert increment_id('ACALD_1', 'copy') == 'ACALD_1_copy1'
-    assert increment_id('ACALD_copy1', 'copy') == 'ACALD_copy2'
 
 
 def test_make_reaction_copy_id():
-    assert make_reaction_copy_id('ACALD', 3) == 'ACALD-copy3'
+    assert make_reaction_copy_id('ACALD', 3) == 'ACALD_copy3'
 
 
 def test_check_pseudoreaction():

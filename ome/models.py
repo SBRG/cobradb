@@ -70,7 +70,7 @@ class ModelReaction(Base):
 
 
 class GeneReactionMatrix(Base):
-    __tablename__='gene_reaction_matrix'
+    __tablename__ = 'gene_reaction_matrix'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
     model_gene_id = Column(Integer,
@@ -80,11 +80,13 @@ class GeneReactionMatrix(Base):
                                ForeignKey('model_reaction.id', onupdate="CASCADE", ondelete="CASCADE"),
                                nullable=False)
 
-    __table_args__ = (UniqueConstraint('model_gene_id', 'model_reaction_id'), {})
+    __table_args__ = (
+        UniqueConstraint('model_gene_id', 'model_reaction_id'),
+    )
 
     def __repr__(self):
-        return ('<ome GeneReactionMatrix(id=%d, model_gene_id=%d, model_reaction_id=%d)>' %
-                (self.id, self.model_gene_id, self.model_reaction_id))
+        return ('<ome GeneReactionMatrix(id={self.id}, model_gene_id={self.model_gene_id}, model_reaction_id={self.model_reaction_id})>'
+                .format(self=self))
 
 
 class CompartmentalizedComponent(Base):
@@ -122,6 +124,10 @@ class Compartment(Base):
     id = Column(Integer, Sequence('wids'), primary_key=True)
     bigg_id  = Column(String, unique = True)
     name = Column(String)
+
+    def __repr__(self):
+        return ('<ome Compartment(id={self.id}, bigg_id={self.bigg_id})>'
+                .format(self=self))
 
 
 class ReactionMatrix(Base):

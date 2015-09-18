@@ -11,6 +11,8 @@ from cobra.core import Formula
 from os.path import join
 import hashlib
 import logging
+from collections import defaultdict
+
 
 def hash_reaction(reaction, string_only=False):
     """Generate a unique hash for the metabolites and coefficients of the
@@ -20,13 +22,14 @@ def hash_reaction(reaction, string_only=False):
     def sorted_mets(reaction):
         return sorted([(m.id, v) for m, v in reaction.metabolites.iteritems()],
                       key=lambda x: x[0])
-        
+
     if string_only:
         hash_fn = lambda s: s
     else:
         hash_fn = lambda s: hashlib.md5(s).hexdigest()
 
     return hash_fn(''.join(['%s%.3f' % t for t in sorted_mets(reaction)]))
+
 
 def load_and_normalize(model_filepath):
     """Load a model, and give it a particular id style"""
@@ -73,15 +76,15 @@ def convert_ids(model):
 
     """
     # loop through the ids:
-    metabolite_id_dict = {}
-    reaction_id_dict = {}
-    gene_id_dict = {}
+    metabolite_id_dict = defaultdict(list)
+    reaction_id_dict = defaultdict(list)
+    gene_id_dict = defaultdict(list)
 
     # fix metabolites
     for metabolite in model.metabolites:
         new_id = id_for_new_id_style(fix_legacy_id(metabolite.id, use_hyphens=False),
                                      is_metabolite=True)
-        metabolite_id_dict[new_id] = metabolite.id
+        metabolite_id_dict[new_id].append(metabolite.id)
         metabolite.id = new_id
     model.metabolites._generate_index()
 
@@ -104,16 +107,16 @@ def convert_ids(model):
     # separate ids and compartments, and convert to the new_id_style
     for reaction in model.reactions:
         new_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
-        reaction_id_dict[new_id] = reaction.id
+        reaction_id_dict[new_id].append(reaction.id)
         reaction.id = new_id
         # fix the gene reaction rules
         reaction.gene_reaction_rule = _check_rule_prefs(rule_prefs, reaction.gene_reaction_rule)
     model.reactions._generate_index()
 
-    # update the genes 
+    # update the genes
     for gene in list(model.genes):
         new_id = scrub_gene_id(gene.id)
-        gene_id_dict[new_id] = gene.id
+        gene_id_dict[new_id].append(gene.id)
         for reaction in gene.reactions:
             reaction.gene_reaction_rule = re.sub(r'\b'+gene.id+r'\b', new_id,
                                                  reaction.gene_reaction_rule)
@@ -130,7 +133,7 @@ def convert_ids(model):
 
     old_ids = {'metabolites': metabolite_id_dict,
                'reactions': reaction_id_dict,
-               'genes':gene_id_dict}
+               'genes': gene_id_dict}
     return model, old_ids
 
 # the regex to separate the base id, the chirality ('_L') and the compartment ('_c')
@@ -154,7 +157,7 @@ def id_for_new_id_style(old_id, is_metabolite=False):
 
     # remove parentheses and brackets, for SBML & BiGG spec compatibility
     new_id = re.sub(r'[^a-zA-Z0-9_]', '_', new_id)
-    
+
     # strip leading and trailing underscores
     # new_id = re.sub(r'^_+', '', new_id)
     # new_id = re.sub(r'_+$', '', new_id)
@@ -172,7 +175,7 @@ def id_for_new_id_style(old_id, is_metabolite=False):
             new_base = '%s__%s' % (_remove_d_underscore(chirality_match.group(1)),
                                    chirality_match.group(2))
             new_id = _join_parts(new_base, compartment)
-    
+
     return new_id
 
 
@@ -289,15 +292,15 @@ def fix_legacy_id(id, use_hyphens=False):
     else:
         id = id.replace("-", "__")
     return id
-    
+
 def split_compartment(component_id):
     """Split the metabolite bigg_id into a metabolite and a compartment id.
-    
+
     Arguments
     ---------
-    
+
     component_id: the bigg_id of the metabolite.
-    
+
     """
     match = re.search(r'_[a-z][a-z0-9]?$', component_id)
     if match is None:

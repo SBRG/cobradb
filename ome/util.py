@@ -17,7 +17,7 @@ def increment_id(id, increment_name=''):
 
 
 def make_reaction_copy_id(bigg_id, copy_number):
-    return '{}-copy{}'.format(bigg_id, copy_number)
+    return '{}_copy{}'.format(bigg_id, copy_number)
 
 
 def check_pseudoreaction(reaction_id):

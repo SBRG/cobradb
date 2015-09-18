@@ -364,33 +364,33 @@ def load_metabolites(session, model_id, model, compartment_names,
             session.commit()
 
         # add synonyms
-        old_bigg_id_c = old_metabolite_ids[metabolite.id]
-        synonym_db = (session
-                      .query(Synonym)
-                      .filter(Synonym.ome_id == comp_component_db.id)
-                      .filter(Synonym.synonym == old_bigg_id_c)
-                      .filter(Synonym.type == 'compartmentalized_component')
-                      .first())
-        if synonym_db is None:
-            synonym_db = Synonym(type='compartmentalized_component',
-                                      ome_id=comp_component_db.id,
-                                      synonym=old_bigg_id_c,
-                                      data_source_id=data_source_id)
-            session.add(synonym_db)
-            session.commit()
+        for old_bigg_id_c in old_metabolite_ids[metabolite.id]:
+            synonym_db = (session
+                        .query(Synonym)
+                        .filter(Synonym.ome_id == comp_component_db.id)
+                        .filter(Synonym.synonym == old_bigg_id_c)
+                        .filter(Synonym.type == 'compartmentalized_component')
+                        .first())
+            if synonym_db is None:
+                synonym_db = Synonym(type='compartmentalized_component',
+                                        ome_id=comp_component_db.id,
+                                        synonym=old_bigg_id_c,
+                                        data_source_id=data_source_id)
+                session.add(synonym_db)
+                session.commit()
 
-        # add OldIDSynonym
-        old_id_db = (session
-                     .query(OldIDSynonym)
-                     .filter(OldIDSynonym.ome_id == model_comp_comp_db.id)
-                     .filter(OldIDSynonym.synonym_id == synonym_db.id)
-                     .first())
-        if old_id_db is None:
-            old_id_db = OldIDSynonym(type='model_compartmentalized_component',
-                                          ome_id=model_comp_comp_db.id,
-                                          synonym_id=synonym_db.id)
-            session.add(old_id_db)
-            session.commit()
+            # add OldIDSynonym
+            old_id_db = (session
+                        .query(OldIDSynonym)
+                        .filter(OldIDSynonym.ome_id == model_comp_comp_db.id)
+                        .filter(OldIDSynonym.synonym_id == synonym_db.id)
+                        .first())
+            if old_id_db is None:
+                old_id_db = OldIDSynonym(type='model_compartmentalized_component',
+                                            ome_id=model_comp_comp_db.id,
+                                            synonym_id=synonym_db.id)
+                session.add(old_id_db)
+                session.commit()
 
 
 def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
@@ -470,8 +470,8 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
     Returns
     -------
 
-    A dictionary with keys for reactions in the model and values for the
-    associated bigg_id in the database.
+    A dictionary with keys for reaction BiGG IDs in the model and values for the
+    associated ModelReaction.id in the database.
 
     """
 
@@ -602,9 +602,6 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
         else:
             raise Exception('Should not get here')
 
-        # remember the changed ids
-        model_db_rxn_ids[reaction.id] = reaction_db.bigg_id
-
         # get the model reaction
         model_reaction_db = (session
                              .query(ModelReaction)
@@ -634,36 +631,39 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
             session.add(model_reaction_db)
             session.commit()
 
+        # remember the changed ids
+        model_db_rxn_ids[reaction.id] = model_reaction_db.id
+
         # add synonyms
         #
         # get the id from the published model
-        old_bigg_id = old_reaction_ids[reaction.id]
-        # add a synonym
-        synonym_db = (session
-                      .query(Synonym)
-                      .filter(Synonym.ome_id == reaction_db.id)
-                      .filter(Synonym.synonym == old_bigg_id)
-                      .first())
-        if synonym_db is None:
-            synonym_db = Synonym(type='reaction',
-                                      ome_id=reaction_db.id,
-                                      synonym=old_bigg_id,
-                                      data_source_id=data_source_id)
-            session.add(synonym_db)
-            session.commit()
+        for old_bigg_id in old_reaction_ids[reaction.id]:
+            # add a synonym
+            synonym_db = (session
+                        .query(Synonym)
+                        .filter(Synonym.ome_id == reaction_db.id)
+                        .filter(Synonym.synonym == old_bigg_id)
+                        .first())
+            if synonym_db is None:
+                synonym_db = Synonym(type='reaction',
+                                        ome_id=reaction_db.id,
+                                        synonym=old_bigg_id,
+                                        data_source_id=data_source_id)
+                session.add(synonym_db)
+                session.commit()
 
-        # add OldIDSynonym
-        old_id_db = (session
-                     .query(OldIDSynonym)
-                     .filter(OldIDSynonym.ome_id == model_reaction_db.id)
-                     .filter(OldIDSynonym.synonym_id == synonym_db.id)
-                     .first())
-        if old_id_db is None:
-            old_id_db = OldIDSynonym(type='model_reaction',
-                                          ome_id=model_reaction_db.id,
-                                          synonym_id=synonym_db.id)
-            session.add(old_id_db)
-            session.commit()
+            # add OldIDSynonym
+            old_id_db = (session
+                        .query(OldIDSynonym)
+                        .filter(OldIDSynonym.ome_id == model_reaction_db.id)
+                        .filter(OldIDSynonym.synonym_id == synonym_db.id)
+                        .first())
+            if old_id_db is None:
+                old_id_db = OldIDSynonym(type='model_reaction',
+                                            ome_id=model_reaction_db.id,
+                                            synonym_id=synonym_db.id)
+                session.add(old_id_db)
+                session.commit()
 
     return model_db_rxn_ids
 
@@ -789,7 +789,7 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
     model: The COBRApy model.
 
     model_db_rxn_ids: A dictionary with keys for reactions in the model and
-    values for the associated bigg_id in the database.
+    values for the associated ModelReaction.id in the database.
 
     old_gene_ids: A dictionary where keys are new IDs and values are old IDs for
     genes.
@@ -816,17 +816,13 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
         # the model
         model_reaction_db = (session
                              .query(ModelReaction)
-                             .join(Reaction)
-                             .filter(ModelReaction.model_id == model_db_id)
-                             .filter(Reaction.bigg_id == model_db_rxn_ids[reaction.id])
-                             .all())
+                             .get(model_db_rxn_ids[reaction.id]))
         if model_reaction_db is None:
-            logging.error('Could not find ModelReaction of {} (originally {}) in model {}. Cannot load GeneReactionMatrix entries'
+            logging.error('Could not find ModelReaction {} for {} in model {}. Cannot load GeneReactionMatrix entries'
                           .format(model_db_rxn_ids[reaction.id], reaction.id, model.id))
             continue
         for gene in reaction.genes:
-            for mr in model_reaction_db:
-                gene_bigg_id_to_model_reaction_db_ids[gene.id].add(mr.id)
+            gene_bigg_id_to_model_reaction_db_ids[gene.id].add(model_reaction_db.id)
 
     # load the genes
     for gene in model.genes:
@@ -905,32 +901,32 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
             session.commit()
 
         # add old gene synonym
-        old_bigg_id = old_gene_ids[gene.id]
-        synonym_db = (session
-                      .query(Synonym)
-                      .filter(Synonym.type == 'gene')
-                      .filter(Synonym.ome_id == gene_db.id)
-                      .filter(Synonym.synonym == old_bigg_id)
-                      .first())
-        if synonym_db is None:
-            synonym_db = Synonym(type='gene',
-                                      ome_id=gene_db.id,
-                                      synonym=old_bigg_id,
-                                      data_source_id=data_source_id)
-            session.add(synonym_db)
-            session.commit()
-        # add OldIDSynonym
-        old_id_db = (session
-                     .query(OldIDSynonym)
-                     .filter(OldIDSynonym.ome_id == model_gene_db.id)
-                     .filter(OldIDSynonym.synonym_id == synonym_db.id)
-                     .first())
-        if old_id_db is None:
-            old_id_db = OldIDSynonym(type='model_gene',
-                                          ome_id=model_gene_db.id,
-                                          synonym_id=synonym_db.id)
-            session.add(old_id_db)
-            session.commit()
+        for old_bigg_id in old_gene_ids[gene.id]:
+            synonym_db = (session
+                        .query(Synonym)
+                        .filter(Synonym.type == 'gene')
+                        .filter(Synonym.ome_id == gene_db.id)
+                        .filter(Synonym.synonym == old_bigg_id)
+                        .first())
+            if synonym_db is None:
+                synonym_db = Synonym(type='gene',
+                                        ome_id=gene_db.id,
+                                        synonym=old_bigg_id,
+                                        data_source_id=data_source_id)
+                session.add(synonym_db)
+                session.commit()
+            # add OldIDSynonym
+            old_id_db = (session
+                        .query(OldIDSynonym)
+                        .filter(OldIDSynonym.ome_id == model_gene_db.id)
+                        .filter(OldIDSynonym.synonym_id == synonym_db.id)
+                        .first())
+            if old_id_db is None:
+                old_id_db = OldIDSynonym(type='model_gene',
+                                        ome_id=model_gene_db.id,
+                                        synonym_id=synonym_db.id)
+                session.add(old_id_db)
+                session.commit()
 
         # find model reaction
         try:

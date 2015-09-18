@@ -31,7 +31,7 @@ class Gene(GenomeRegion):
 
     def __init__(self, bigg_id, leftpos=None, rightpos=None,
                  mapped_to_genbank=False, strand=None, chromosome_id=None,
-                 info=None, name=None, alternative_transcript_of=None, 
+                 info=None, name=None, alternative_transcript_of=None,
                  locus_tag=None):
 
         super(Gene, self).__init__(bigg_id=bigg_id, chromosome_id=chromosome_id,
@@ -231,25 +231,17 @@ class TU(RNA):
 class Protein(Component):
     __tablename__ = 'protein'
 
-    __mapper_args__ = { 'polymorphic_identity': 'protein' }
+    __mapper_args__ ={ 'polymorphic_identity': 'protein'}
 
     id = Column(Integer, ForeignKey('component.id'), primary_key=True)
     gene_id = Column(Integer, ForeignKey('gene.id'))
     gene = relationship('Gene', backref='protein')
 
-    def __init__(self, bigg_id, name, gene_id=None):
-        super(Protein, self).__init__(bigg_id, name)
-        self.gene_id = gene_id
-        
-    def __repr__(self):
-        return "Protein (#%d, %s)" % \
-            (self.id, self.bigg_id)
-
 
 class Metabolite(Component):
     __tablename__ = 'metabolite'
 
-    __mapper_args__ = { 'polymorphic_identity': 'metabolite' }
+    __mapper_args__ = {'polymorphic_identity': 'metabolite'}
 
     id = Column(Integer,
                 ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"),
@@ -259,15 +251,9 @@ class Metabolite(Component):
     smiles = Column(String(200), nullable=True)
     charge = Column(Integer, nullable=True)
 
-    def __init__(self, bigg_id, name, formula, charge=None, smiles=None):
-        super(Metabolite, self).__init__(bigg_id, name)
-        self.charge = charge
-        self.formula = formula
-        self.smiles = smiles
-
-
     def __repr__(self):
-        return "Small Molecule (#%d, %s)" % (self.id, self.bigg_id)
+        return ('<ome Metabolite(id={self.id}, bigg_id={self.bigg_id}>'
+                .format(self=self))
 
 
 class GeneGrouping(Base):
@@ -300,10 +286,3 @@ class GeneGroup(Base):
 
     def __init__(self, name):
         self.name = name
-
-
-
-
-
-
-

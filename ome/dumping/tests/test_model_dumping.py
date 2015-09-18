@@ -46,6 +46,15 @@ def test_dumped_model(dumped_model):
     assert dumped_model.metabolites.get_by_id('g3p_c').name == 'Glyceraldehyde-3-phosphate'
 
 
+def test_compartment_names(dumped_model):
+    assert dumped_model.compartments['c'] == 'cytosol'
+    assert dumped_model.compartments['e'] == 'extracellular space'
+
+
+def test_formula(dumped_model):
+    assert str(dumped_model.metabolites.get_by_id('glc__D_e').formula) == 'C6H12O6'
+
+
 def test_solve_model(dumped_model):
     # test solve
     dumped_model.reactions.get_by_id('EX_glc__D_e').lower_bound = -10
@@ -83,15 +92,20 @@ def test_dumped_pseudoreactions(dumped_model):
 
 
 def test_dump_reaction_multiple_copies(dumped_model):
-    r1 = dumped_model.reactions.get_by_id('ADK1-copy1')
+    r1 = dumped_model.reactions.get_by_id('ADK1_copy1')
     assert r1.gene_reaction_rule == 'b0474'
     assert r1.lower_bound == -1000
     assert r1.notes['original_bigg_ids'] == ['ADK1', 'ADK1_copy']
 
-    r2 = dumped_model.reactions.get_by_id('ADK1-copy2')
+    r2 = dumped_model.reactions.get_by_id('ADK1_copy2')
     assert r2.gene_reaction_rule == 'b0474_test_copy'
     assert r2.lower_bound == 0
     assert r2.notes['original_bigg_ids'] == ['ADK1', 'ADK1_copy']
+
+
+def test_dump_multiple_metabolite_copies(dumped_model):
+    m = dumped_model.metabolites.get_by_id('glc__D_e')
+    assert set(m.notes['original_bigg_ids']) == {'glc_D_e', 'glc_DASH_D_e'}
 
 
 # Old IDs
