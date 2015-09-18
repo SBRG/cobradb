@@ -29,12 +29,12 @@ class TestsWithModels:
         assert session.query(Genome).count() == 2
         assert session.query(Chromosome).count() == 2
         assert session.query(Reaction).count() == 98
-        assert session.query(ModelReaction).count() == 286
+        assert session.query(ModelReaction).count() == 287
         assert session.query(CompartmentalizedComponent).count() == 73
         assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3 + 1
         assert session.query(Metabolite).count() == 55
-        assert session.query(Gene).count() == 281 # b4151 and b4152 are in genome1 but not in model1
-        assert session.query(ModelGene).count() == 414
+        assert session.query(Gene).count() == 282
+        assert session.query(ModelGene).count() == 415
 
     def test_no_charge_in_linkouts(self, session):
         assert (session
@@ -45,6 +45,9 @@ class TestsWithModels:
 
     def test_s0001(self, session):
         assert session.query(Gene).filter(Gene.bigg_id == 's0001').count() == 3
+
+    def test_name_scrubbing(self, session):
+        assert session.query(Reaction).filter(Reaction.bigg_id == 'ACALD').first().name == 'Acetaldehyde dehydrogenase (acetylating)'
 
     def test_alternative_transcripts(self, session):
         # check alternate transcripts
@@ -213,6 +216,22 @@ class TestsWithModels:
                 .first())
         assert mr_db.gene_reaction_rule == '(b1849 or b2296 or b3115)'
 
+    def test_reaction_multiple_copies(self, session):
+        # make sure both copies of ADK1 are here
+        res = (session
+               .query(ModelReaction)
+               .join(Reaction)
+               .join(Model)
+               .filter(Reaction.bigg_id == 'ADK1')
+               .filter(Model.bigg_id == 'Ecoli_core_model')
+               .order_by(ModelReaction.copy_number)
+               .all())
+        assert len(res) == 2
+        assert res[0].copy_number == 1
+        assert res[0].lower_bound == -1000
+        assert res[1].copy_number == 2
+        assert res[1].lower_bound == 0
+
     def test_old_reaction_id(self, session):
         assert (session
                 .query(OldIDSynonym)
@@ -246,6 +265,20 @@ class TestsWithModels:
                 .join(Gene, Gene.id == ModelGene.gene_id)
                 .filter(Gene.bigg_id == 'gene_with_period_AT22')
                 .count()) == 1
+
+    def test_old_gene_id_multiple(self, session):
+        # for T. maritima, the genes TM0846 and TM_0846 were the same, so
+        # multiple OldIdSynonyms
+        res_db = (session
+                  .query(Synonym.synonym)
+                  .join(OldIDSynonym, OldIDSynonym.synonym_id == Synonym.id)
+                  .join(ModelGene, ModelGene.id == OldIDSynonym.ome_id)
+                  .join(Gene, Gene.id == ModelGene.gene_id)
+                  .join(Model)
+                  .filter(Gene.bigg_id == 'b3528')
+                  .filter(Model.bigg_id == 'Ecoli_core_model')
+                  .all())
+        assert [x[0] for x in res_db] == ['b3528', 'b_3528']
 
     def test_leading_underscores(self, session):
         # remove leading underscores (_13dpg in Model 1)

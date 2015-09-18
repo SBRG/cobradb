@@ -8,11 +8,13 @@ import pytest
 
 @pytest.mark.usefixtures('load_genomes')
 class TestWithGenomes():
+    def test_genome_taxon(self, session):
+        assert session.query(Genome).first().taxon_id == '511145'
+
     def test_genome_genes(self, session):
         assert (session.query(Gene)
                 .filter(Gene.bigg_id == 'b0114')
                 .count()) == 2
-
 
     def test_genome_synonyms_locus_tag(self, session):
         assert (session.query(Synonym)
@@ -23,6 +25,11 @@ class TestWithGenomes():
                 .filter(Gene.bigg_id == 'b0114')
                 .count()) == 2
 
+    def test_genome_empty_name(self, session):
+        gene_db = (session.query(Gene)
+                   .filter(Gene.bigg_id == 'b0720')
+                   .first())
+        assert gene_db.name is None
 
     def test_genome_synonyms_name(self, session):
         assert (session.query(Synonym)
@@ -30,7 +37,6 @@ class TestWithGenomes():
                 .filter(DataSource.name == 'refseq_name')
                 .filter(Synonym.synonym == 'aceE')
                 .count()) == 2
-
 
     def test_genome_synonyms_synonyms(self, session):
         assert (session.query(Synonym)

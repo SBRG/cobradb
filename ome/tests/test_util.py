@@ -17,6 +17,10 @@ def test_increment_id():
     assert increment_id('ACALD_copy1', 'copy') == 'ACALD_copy2'
 
 
+def test_make_reaction_copy_id():
+    assert make_reaction_copy_id('ACALD', 3) == 'ACALD-copy3'
+
+
 def test_check_pseudoreaction():
     assert check_pseudoreaction('ATPM') is True
     assert check_pseudoreaction('ATPM_NGAM') is True
@@ -53,6 +57,13 @@ def test_scrub_gene_id():
     assert scrub_gene_id('1234.56') == '1234_AT56'
     assert scrub_gene_id('1234.56a') == '1234_56a'
     assert scrub_gene_id('asdkf@#%*(@#$sadf') == 'asdkf________sadf'
+
+
+def test_scrub_name():
+    assert scrub_name('R_ammonia_reversible_transport') == 'Ammonia reversible transport'
+    assert scrub_name('_ammonia_reversible_transport') == 'Ammonia reversible transport'
+    assert scrub_name(None) == None
+    assert scrub_name('_ ') == None
 
 
 def test_load_tsv(tmpdir):

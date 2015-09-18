@@ -3,7 +3,7 @@
 from ome import base, settings, components, timing
 from ome.base import Session
 from ome.models import *
-from ome.util import increment_id
+from ome.util import increment_id, make_reaction_copy_id
 
 import cobra.core
 import logging
@@ -38,33 +38,48 @@ def dump_model(bigg_id):
 
     # genes
     logging.debug('Dumping genes')
-    gene_names = (session
-                  .query(Gene.bigg_id, Gene.name, Synonym.synonym)
-                  .join(ModelGene)
-                  .join(OldIDSynonym, OldIDSynonym.ome_id == ModelGene.id)
-                  .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
-                  .filter(ModelGene.model_id == model_db.id)
-                  .order_by(Gene.bigg_id))
+    # get genes and original bigg ids (might be multiple)
+    genes_db = (session
+                .query(Gene.bigg_id, Gene.name, Synonym.synonym)
+                .join(ModelGene, ModelGene.gene_id == Gene.id)
+                .join(OldIDSynonym, OldIDSynonym.ome_id == ModelGene.id)
+                .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
+                .filter(ModelGene.model_id == model_db.id))
+    gene_names = []
+    old_gene_ids_dict = defaultdict(list)
+    for gene_id, gene_name, old_id in genes_db:
+        if gene_id not in old_gene_ids_dict:
+            gene_names.append((gene_id, gene_name))
+        old_gene_ids_dict[gene_id].append(old_id)
 
-    for gene_id, gene_name, original_gene_id in gene_names:
+    for gene_id, gene_name in gene_names:
         gene = cobra.core.Gene(gene_id)
         gene.name = gene_name
-        gene.notes = {'original_bigg_id': original_gene_id}
+        gene.notes = {'original_bigg_ids': old_gene_ids_dict[gene_id]}
         model.genes.append(gene)
 
     # reactions
     logging.debug('Dumping reactions')
+    # get original bigg ids (might be multiple)
     reactions_db = (session
-                    .query(Reaction, ModelReaction, Synonym)
-                    .join(ModelReaction)
+                    .query(ModelReaction, Reaction, Synonym.synonym)
+                    .join(Reaction)
                     .join(OldIDSynonym, OldIDSynonym.ome_id == ModelReaction.id)
                     .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
-                    .filter(ModelReaction.model_id == model_db.id)
-                    .order_by(Reaction.bigg_id))
+                    .filter(ModelReaction.model_id == model_db.id))
+    reactions_model_reactions = []
+    found_model_reactions = set()
+    old_reaction_ids_dict = defaultdict(list)
+    for model_reaction, reaction, old_id in reactions_db:
+        # there may be multiple model reactions for a given bigg_id
+        if model_reaction.id not in found_model_reactions:
+            reactions_model_reactions.append((model_reaction, reaction))
+            found_model_reactions.add(model_reaction.id)
+        old_reaction_ids_dict[reaction.bigg_id].append(old_id)
 
     # make dictionaries and cast results
     result_dicts = []
-    for r_db, mr_db, synonym_db in reactions_db:
+    for mr_db, r_db in reactions_model_reactions:
         d = {}
         d['bigg_id'] = r_db.bigg_id
         d['name'] = r_db.name
@@ -72,7 +87,8 @@ def dump_model(bigg_id):
         d['lower_bound'] = float(mr_db.lower_bound)
         d['upper_bound'] = float(mr_db.upper_bound)
         d['objective_coefficient'] = float(mr_db.objective_coefficient)
-        d['original_bigg_id'] = synonym_db.synonym
+        d['original_bigg_ids'] = old_reaction_ids_dict[r_db.bigg_id]
+        d['copy_number'] = int(mr_db.copy_number)
         result_dicts.append(d)
 
     def filter_duplicates(result_dicts):
@@ -86,10 +102,9 @@ def dump_model(bigg_id):
         duplicates = {k: v for k, v in tups_by_bigg_id.iteritems() if len(v) > 1}
         for bigg_id, dup_dicts in duplicates.iteritems():
             # add -copy1, copy2, etc. to the bigg ids for the duplicates
-            last = bigg_id
             for d in dup_dicts:
-                last = increment_id(last, 'copy')
-                d['bigg_id'] = last
+                d['bigg_id'] = make_reaction_copy_id(bigg_id, d['copy_number'])
+
         return result_dicts
 
     # fix duplicates
@@ -103,29 +118,37 @@ def dump_model(bigg_id):
         r.lower_bound = result_dict['lower_bound']
         r.upper_bound = result_dict['upper_bound']
         r.objective_coefficient = result_dict['objective_coefficient']
-        r.notes = {'original_bigg_id': result_dict['original_bigg_id']}
+        r.notes = {'original_bigg_ids': result_dict['original_bigg_ids']}
         reactions.append(r)
     model.add_reactions(reactions)
 
     # metabolites
     logging.debug('Dumping metabolites')
+    # get original bigg ids (might be multiple)
     metabolites_db = (session
-                      .query(Component.bigg_id, Compartment.bigg_id, Component.name, Synonym.synonym)
-                      .join(CompartmentalizedComponent)
-                      .join(Compartment)
-                      .join(ModelCompartmentalizedComponent)
+                      .query(Component.bigg_id, Component.name, Compartment.bigg_id, Synonym.synonym)
+                      .join(CompartmentalizedComponent, CompartmentalizedComponent.component_id == Component.id)
+                      .join(Compartment, Compartment.id == CompartmentalizedComponent.compartment_id)
+                      .join(ModelCompartmentalizedComponent,
+                            ModelCompartmentalizedComponent.compartmentalized_component_id == CompartmentalizedComponent.id)
                       .join(OldIDSynonym, OldIDSynonym.ome_id == ModelCompartmentalizedComponent.id)
                       .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
-                      .filter(ModelCompartmentalizedComponent.model_id == model_db.id)
-                      .order_by(Component.bigg_id))
+                      .filter(ModelCompartmentalizedComponent.model_id == model_db.id))
+    metabolite_names = []
+    old_metabolite_ids_dict = defaultdict(list)
+    for metabolite_id, metabolite_name, compartment_id, old_id in metabolites_db:
+        if metabolite_id + '_' + compartment_id not in old_metabolite_ids_dict:
+            metabolite_names.append((metabolite_id, metabolite_name, compartment_id))
+        old_metabolite_ids_dict[metabolite_id + '_' + compartment_id].append(old_id)
+
     metabolites = []
     compartments = set()
-    for component_id, compartment_id, component_name, original_met_id in metabolites_db:
+    for component_id, component_name, compartment_id in metabolite_names:
         if component_id is not None and compartment_id is not None:
             m = cobra.core.Metabolite(id=component_id + '_' + compartment_id,
                                       compartment=compartment_id)
             m.name = component_name
-            m.notes = {'original_bigg_id': original_met_id}
+            m.notes = {'original_bigg_ids': old_metabolite_ids_dict[component_id + '_' + compartment_id]}
             compartments.add(compartment_id)
             metabolites.append(m)
     model.add_metabolites(metabolites)

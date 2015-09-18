@@ -163,14 +163,15 @@ if __name__ == "__main__":
         n = len(models_list)
         for i, (model_filename, bioproject_id, pub_ref) in enumerate(models_list):
             logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_filename))
-            try:
+            # try:
+            if True:
                 model_loading.load_model(join(model_dir, model_filename),
                                          bioproject_id, pub_ref, session)
-            except AlreadyLoadedError as e:
-                logging.info(e.message)
-            except Exception as e:
-                logging.error('Could not load model %s.' % model_filename)
-                logging.exception(e)
+            # except AlreadyLoadedError as e:
+            #     logging.info(e.message)
+            # except Exception as e:
+            #     logging.error('Could not load model %s.' % model_filename)
+            #     logging.exception(e)
 
     logging.info("Loading Escher maps")
     map_loading.load_maps_from_server(session, drop_maps=(args.drop_models or

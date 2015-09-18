@@ -416,7 +416,7 @@
       <species id="M_succ_b" name="succ_b" compartment="C_e"/>
     </listOfSpecies>
     <listOfReactions>
-      <reaction id="R_ACALD" name="acetaldehyde dehydrogenase (acetylating)">
+      <reaction id="R_ACALD" name="R_acetaldehyde_dehydrogenase (acetylating)">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (b0351 or b1241)</p><p>GENE_LIST: b0351 b1241</p><p>SUBSYSTEM: Pyruvate Metabolism</p></html>
         </notes>
@@ -575,6 +575,29 @@
           </math>
           <listOfParameters>
             <parameter id="LOWER_BOUND" value="-1000" units="mmol_per_gDW_per_hr"/>
+            <parameter id="UPPER_BOUND" value="1000" units="mmol_per_gDW_per_hr"/>
+            <parameter id="OBJECTIVE_COEFFICIENT" value="0"/>
+            <parameter id="FLUX_VALUE" value="0" units="mmol_per_gDW_per_hr"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R_ADK1_copy" name="adenylate kinase">
+        <notes>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: b0474_test_copy</p><p>GENE_LIST: b0474_test_copy</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
+        </notes>
+        <listOfReactants>
+          <speciesReference species="M_amp_c"/>
+          <speciesReference species="M_atp_c"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="M_adp_c" stoichiometry="2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> FLUX_VALUE </ci>
+          </math>
+          <listOfParameters>
+            <parameter id="LOWER_BOUND" value="0" units="mmol_per_gDW_per_hr"/>
             <parameter id="UPPER_BOUND" value="1000" units="mmol_per_gDW_per_hr"/>
             <parameter id="OBJECTIVE_COEFFICIENT" value="0"/>
             <parameter id="FLUX_VALUE" value="0" units="mmol_per_gDW_per_hr"/>
@@ -2505,7 +2528,7 @@
       </reaction>
       <reaction id="R_SUCCt2_2" name="succinate transport via proton symport (2 H)" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: b3528</p><p>GENE_LIST: b3528</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: b_3528</p><p>GENE_LIST: b_3528</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_h_e" stoichiometry="2"/>

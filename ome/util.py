@@ -16,6 +16,10 @@ def increment_id(id, increment_name=''):
         return '%s_%s%d' % (id, increment_name, 1)
 
 
+def make_reaction_copy_id(bigg_id, copy_number):
+    return '{}-copy{}'.format(bigg_id, copy_number)
+
+
 def check_pseudoreaction(reaction_id):
     patterns = [
         r'^ATPM$', r'^ATPM_NGAM$',
@@ -61,11 +65,25 @@ def format_formula(formula):
     else:
         return formula
 
+
 def scrub_gene_id(the_id):
     """Get a new style gene ID."""
     the_id = re.sub(r'(.*)\.([0-9]{1,2})$', r'\1_AT\2', the_id)
     the_id = re.sub(r'\W', r'_', the_id)
     return the_id
+
+
+def scrub_name(the_name):
+    """Make a nice looking name."""
+    if the_name is None:
+        return None
+    the_name = re.sub(r'^[RMG]?_', '', the_name)
+    the_name = re.sub(r'_', ' ', the_name)
+    # uppercase
+    the_name = re.sub('^([a-z])', lambda x: x.group(1).upper(), the_name)
+    if the_name.strip() == '':
+        return None
+    return the_name
 
 
 def load_tsv(filename, required_column_num=None):

@@ -8,7 +8,7 @@ from ome.models import *
 from ome.components import *
 from ome.loading import parse
 from ome.util import (increment_id, check_pseudoreaction, load_tsv,
-                      get_or_create_data_source, format_formula)
+                      get_or_create_data_source, format_formula, scrub_name)
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
@@ -132,11 +132,6 @@ def load_model(model_filepath, bioproject_id, pub_ref, session):
     session.commit()
 
     return model_bigg_id
-
-
-def _fix_name(name):
-    """Clean up descriptive names"""
-    return name.strip('_ ')
 
 
 def load_new_model(session, model, genome_db_id, pub_ref, published_filename):
@@ -304,28 +299,20 @@ def load_metabolites(session, model_id, model, compartment_names,
         # Get the first non-null result. Otherwise _formula = None.
         _formula = format_formula(next(ifilter(None, values), None))
 
-        # get charge:
+        # get charge
         try:
             charge = int(metabolite.charge)
-        except AttributeError:
-            charge = None
-        except ValueError:
-            logging.debug('Could not convert charge to integer for metabolite {} in model {}: {}'
-                          .format(metabolite.id, model.id, metabolite.charge))
+        except Exception:
+            if hasattr(metabolite, 'charge') and metabolite.charge is not None:
+                logging.debug('Could not convert charge to integer for metabolite {} in model {}: {}'
+                              .format(metabolite.id, model.id, metabolite.charge))
             charge = None
 
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
-            # check for missing info
-            name = getattr(metabolite, 'name', None)
-            if name is None or name.strip == '':
-                metabolite.name = ''
-                logging.warn('No name for metabolite {} in model {}. TODO Solution: Add name from other models.'
-                             .format(metabolite.id, model.id))
-
             # make the new metabolite
             metabolite_db = Metabolite(bigg_id=component_bigg_id,
-                                       name=_fix_name(metabolite.name),
+                                       name=scrub_name(getattr(metabolite, 'name', None)),
                                        formula=_formula,
                                        charge=charge)
             session.add(metabolite_db)
@@ -411,9 +398,8 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
     """Add a new universal reaction with reaction matrix rows."""
 
     # name is optional in cobra 0.4b2. This will probably change back.
-    name = getattr(reaction, 'name', '')
-    if name is None: name = ''
-    reaction_db = Reaction(bigg_id=bigg_id, name=_fix_name(name),
+    name = getattr(reaction, 'name', None)
+    reaction_db = Reaction(bigg_id=bigg_id, name=scrub_name(name),
                            reaction_hash=reaction_hash,
                            pseudoreaction=is_pseudoreaction)
     session.add(reaction_db)
@@ -630,6 +616,12 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                              .filter(ModelReaction.objective_coefficient == reaction.objective_coefficient)
                              .first())
         if model_reaction_db is None:
+            # get the number of existing copies of this reaction in the model
+            copy_number = (session
+                           .query(ModelReaction)
+                           .filter(ModelReaction.reaction_id == reaction_db.id)
+                           .filter(ModelReaction.model_id == model_db_id)
+                           .count()) + 1
             # make a new reaction
             model_reaction_db = ModelReaction(model_id=model_db_id,
                                               reaction_id=reaction_db.id,
@@ -637,7 +629,8 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                                               original_gene_reaction_rule=reaction.gene_reaction_rule,
                                               upper_bound=reaction.upper_bound,
                                               lower_bound=reaction.lower_bound,
-                                              objective_coefficient=reaction.objective_coefficient)
+                                              objective_coefficient=reaction.objective_coefficient,
+                                              copy_number=copy_number)
             session.add(model_reaction_db)
             session.commit()
 
@@ -856,9 +849,7 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
             ome_gene = {}
             ome_gene['bigg_id'] = gene.id
             # name is optional in cobra 0.4b2. This will probably change back.
-            name = getattr(gene, 'name', '')
-            if name is None: name = ''
-            ome_gene['name'] = (name if name.strip() != gene.id.strip() else None)
+            ome_gene['name'] = scrub_name(getattr(gene, 'name', None))
             ome_gene['leftpos'] = None
             ome_gene['rightpos'] = None
             ome_gene['chromosome_id'] = None

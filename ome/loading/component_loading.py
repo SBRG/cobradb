@@ -88,6 +88,27 @@ def load_gene_synonym(session, gene_db, synonym, data_source_name):
     return synonym_db.id
 
 
+def _get_qual(feat, name, get_first=False):
+    """Get a non-null attribute from the feature."""
+    try:
+        qual = feat.qualifiers[name]
+    except KeyError:
+        if get_first:
+            return None
+        else:
+            return []
+
+    def nonempty_str(s):
+        s = s.strip()
+        return None if s == '' else s
+
+    if get_first:
+        return nonempty_str(qual[0])
+    else:
+        return [y for y in (nonempty_str(x) for x in qual)
+                if y is not None]
+
+
 @timing
 def load_genome(genbank_filepath, session):
     bioproject_id, gb_file = get_bioproject_id(genbank_filepath)
@@ -132,9 +153,10 @@ def load_genome(genbank_filepath, session):
     for i, feature in enumerate(gb_file.features):
         # get the source information
         if feature.type == 'source':
-            if 'db_xref' in feature.qualifiers:
-                if 'taxon' == feature.qualifiers['db_xref'][0].split(':')[0]:
-                    genome.taxon_id = feature.qualifiers['db_xref'][0].split(':')[1]
+            for ref in _get_qual(feature, 'db_xref'):
+                if 'taxon' == ref.split(':')[0]:
+                    genome.taxon_id = ref.split(':')[1]
+                    break
             continue
 
         # only read in CDSs
@@ -147,13 +169,15 @@ def load_genome(genbank_filepath, session):
         refseq_name = None
         locus_tag = None
 
-        if 'locus_tag' in feature.qualifiers:
-            locus_tag = feature.qualifiers['locus_tag'][0]
-            bigg_id = scrub_gene_id(locus_tag)
+        t = _get_qual(feature, 'locus_tag', True)
+        if t is not None:
+            locus_tag = t
+            bigg_id = scrub_gene_id(t)
 
-        if 'gene' in feature.qualifiers:
-            gene_name = feature.qualifiers['gene'][0]
-            refseq_name = gene_name
+        t = _get_qual(feature, 'gene', True)
+        if t is not None:
+            gene_name = t
+            refseq_name = t
 
         if gene_name is not None and bigg_id is None:
             if bigg_id_warnings <= warning_num:
@@ -187,14 +211,6 @@ def load_genome(genbank_filepath, session):
             if feature.strand == 1: ome_gene['strand'] = '+'
             elif feature.strand == -1: ome_gene['strand'] = '-'
 
-            # record the notes in info
-            elif 'note' in feature.qualifiers:
-                ome_gene['info'] = feature.qualifiers['note'][0][0:300]
-
-            # record the function in info
-            if 'function' in feature.qualifiers:
-                ome_gene['info'] = ome_gene['info'] + ', ' + feature.qualifiers['function'][0]
-
             # finally, create the gene
             gene_db = Gene(**ome_gene)
             session.add(gene_db)
@@ -212,19 +228,6 @@ def load_genome(genbank_filepath, session):
                 logging.warn(msg)
                 duplicate_genes_warnings += 1
 
-
-        # # get the protein
-        # if 'protein_id' in feature.qualifiers and len(feature.qualifiers['protein_id']) > 0:
-        #     ome_protein = {}
-        #     ome_protein['bigg_id'] = scrub_gene_id(feature.qualifiers['protein_id'][0])
-        #     ome_protein['gene_id'] = gene_db.id
-        #     if 'product' in feature.qualifiers and len(feature.qualifiers['product']) > 0:
-        #         ome_protein['name'] = feature.qualifiers['product'][0]
-        #     else:
-        #         ome_protein['name'] = ''
-        #     session.get_or_create(Protein, **ome_protein)
-
-
         # load the synonyms for the gene
         if locus_tag is not None:
             load_gene_synonym(session, gene_db, locus_tag, 'locus_tag')
@@ -232,29 +235,26 @@ def load_genome(genbank_filepath, session):
         if refseq_name is not None:
             load_gene_synonym(session, gene_db, refseq_name, 'refseq_name')
 
-        if 'gene_synonym' in feature.qualifiers:
-            for ref in feature.qualifiers['gene_synonym']:
-                synonyms = [x.strip() for x in ref.split(';')]
-                for syn in synonyms:
-                    load_gene_synonym(session, gene_db, syn, 'refseq_synonym')
+        for ref in _get_qual(feature, 'gene_synonym'):
+            synonyms = [x.strip() for x in ref.split(';')]
+            for syn in synonyms:
+                load_gene_synonym(session, gene_db, syn, 'refseq_synonym')
 
-        if 'db_xref' in feature.qualifiers:
-            for ref in feature.qualifiers['db_xref']:
-                splitrefs = [x.strip() for x in ref.split(':')]
-                if len(splitrefs) == 2:
-                    load_gene_synonym(session, gene_db, splitrefs[1], splitrefs[0])
+        for ref in _get_qual(feature, 'db_xref'):
+            splitrefs = [x.strip() for x in ref.split(':')]
+            if len(splitrefs) == 2:
+                load_gene_synonym(session, gene_db, splitrefs[1], splitrefs[0])
 
-        if 'old_locus_tag' in feature.qualifiers:
-            for ref in feature.qualifiers['old_locus_tag']:
-                for syn in [x.strip() for x in ref.split(';')]:
-                    load_gene_synonym(session, gene_db, syn, 'refseq_old_locus_tag')
+        for ref in _get_qual(feature, 'old_locus_tag'):
+            for syn in [x.strip() for x in ref.split(';')]:
+                load_gene_synonym(session, gene_db, syn, 'refseq_old_locus_tag')
 
-        if 'note' in feature.qualifiers:
-            for ref in feature.qualifiers['note']:
-                for value in [x.strip() for x in ref.split(';')]:
-                    sp = value.split(':')
-                    if len(sp) == 2 and sp[0] == 'ORF_ID':
-                        load_gene_synonym(session, gene_db, sp[1], 'refseq_orf_id')
+
+        for ref in _get_qual(feature, 'note'):
+            for value in [x.strip() for x in ref.split(';')]:
+                sp = value.split(':')
+                if len(sp) == 2 and sp[0] == 'ORF_ID':
+                    load_gene_synonym(session, gene_db, sp[1], 'refseq_orf_id')
 
     session.commit()
 

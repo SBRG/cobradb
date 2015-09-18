@@ -119,6 +119,12 @@ COMMENT     REVIEWED REFSEQ: This record has been curated by NCBI staff. The
             Stock Center, EcoliHub, EcoCyc, RegulonDB and UniProtKB/Swiss-Prot.
             COMPLETENESS: full length.
 FEATURES             Location/Qualifiers
+     source          1..4641652
+                     /organism="Escherichia coli str. K-12 substr. MG1655"
+                     /mol_type="genomic DNA"
+                     /strain="K-12"
+                     /sub_strain="MG1655"
+                     /db_xref="taxon:511145"
      CDS             8238..9191
                      /function="enzyme; Central intermediary metabolism:
                      Non-oxidative branch, pentose pathway"
@@ -343,7 +349,7 @@ FEATURES             Location/Qualifiers
      CDS             complement(752408..753691)
                      /function="enzyme; Energy metabolism, carbon: TCA cycle"
                      /locus_tag="b0720"
-                     /gene="gltA"
+                     /gene="  "
                      /codon_start=1
                      /product="citrate synthase"
                      /gene_synonym="ECK0709; gluT; icdB; JW0710"

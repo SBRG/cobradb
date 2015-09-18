@@ -15,7 +15,7 @@ import shutil
 # Dumping
 @pytest.fixture(scope='session')
 def dumped_model(load_models, session):
-    bigg_id = session.query(Model).first().bigg_id
+    bigg_id = 'Ecoli_core_model'
     model = dump_model(bigg_id)
     return model
 
@@ -28,18 +28,18 @@ def test_cannot_dump_unknown_model(dumped_model, session):
 
 # Model content
 def test_dumped_model(dumped_model):
-    # COBRApy uses the description as the ID sometimes. See https://github.com/opencobra/cobrapy/pull/152
+   # COBRApy uses the description as the ID sometimes. See https://github.com/opencobra/cobrapy/pull/152
     assert dumped_model.description == dumped_model.id
 
-    assert len(dumped_model.reactions) == 96
+    assert len(dumped_model.reactions) == 97
     assert len(dumped_model.metabolites) == 73
-    assert len(dumped_model.genes) == 140
+    assert len(dumped_model.genes) == 141
     assert dumped_model.genes.get_by_id('b0114').name == 'aceE'
     assert dumped_model.genes.get_by_id('b3528').name == 'dctA'
 
     # check reaction
     assert 'GAPD' in dumped_model.reactions
-    assert dumped_model.reactions.get_by_id('GAPD').name == 'glyceraldehyde-3-phosphate dehydrogenase'
+    assert dumped_model.reactions.get_by_id('GAPD').name == 'Glyceraldehyde-3-phosphate dehydrogenase'
 
     # check metabolite
     assert 'g3p_c' in dumped_model.metabolites
@@ -78,18 +78,31 @@ def test_dumped_pseudoreactions(dumped_model):
     r2 = dumped_model.reactions.get_by_id('ATPM')
     assert r1.lower_bound == 3.15
     assert r2.lower_bound == 8.39
-    assert r1.notes['original_bigg_id'] == 'NTP1'
-    assert r2.notes['original_bigg_id'] == 'ATPM(NGAM)'
+    assert r1.notes['original_bigg_ids'] == ['NTP1']
+    assert r2.notes['original_bigg_ids'] == ['ATPM(NGAM)']
+
+
+def test_dump_reaction_multiple_copies(dumped_model):
+    r1 = dumped_model.reactions.get_by_id('ADK1-copy1')
+    assert r1.gene_reaction_rule == 'b0474'
+    assert r1.lower_bound == -1000
+    assert r1.notes['original_bigg_ids'] == ['ADK1', 'ADK1_copy']
+
+    r2 = dumped_model.reactions.get_by_id('ADK1-copy2')
+    assert r2.gene_reaction_rule == 'b0474_test_copy'
+    assert r2.lower_bound == 0
+    assert r2.notes['original_bigg_ids'] == ['ADK1', 'ADK1_copy']
 
 
 # Old IDs
 def test_reaction_notes(dumped_model):
-    assert dumped_model.reactions.get_by_id('ATPM').notes['original_bigg_id'] == 'ATPM(NGAM)'
+    assert dumped_model.reactions.get_by_id('ATPM').notes['original_bigg_ids'] == ['ATPM(NGAM)']
 
 
 def test_metabolite_notes(dumped_model):
-    assert dumped_model.metabolites.get_by_id('13dpg_c').notes['original_bigg_id'] == '_13dpg_c'
+    assert dumped_model.metabolites.get_by_id('13dpg_c').notes['original_bigg_ids'] == ['_13dpg_c']
 
 
 def test_gene_notes(dumped_model):
-    assert dumped_model.genes.get_by_id('b0114').notes['original_bigg_id'] == 'b0114'
+    assert dumped_model.genes.get_by_id('b0114').notes['original_bigg_ids'] == ['b0114']
+    assert dumped_model.genes.get_by_id('b3528').notes['original_bigg_ids'] == ['b3528', 'b_3528']

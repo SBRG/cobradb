@@ -17,7 +17,7 @@ class Model(Base):
     genome = relationship('Genome', backref='model')
     description = Column(String, nullable=False)
     published_filename = Column(String, nullable=True)
-    
+
     __table_args__ = (
         UniqueConstraint('bigg_id', 'genome_id'),
     )
@@ -31,62 +31,72 @@ class ModelGene(Base):
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
     model_id = Column(Integer,
-                      ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), 
+                      ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"),
                       nullable=False)
-    gene_id = Column(Integer, 
-                     ForeignKey('gene.id', onupdate="CASCADE", ondelete="CASCADE"), 
+    gene_id = Column(Integer,
+                     ForeignKey('gene.id', onupdate="CASCADE", ondelete="CASCADE"),
                      nullable=False)
-    __table_args__ = (UniqueConstraint('model_id', 'gene_id'), {})
 
-    
+    __table_args__ = (
+        UniqueConstraint('model_id', 'gene_id'),
+    )
+
+
 class ModelReaction(Base):
     __tablename__='model_reaction'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    reaction_id = Column(Integer, 
-                         ForeignKey('reaction.id', onupdate="CASCADE", ondelete="CASCADE"), 
+    reaction_id = Column(Integer,
+                         ForeignKey('reaction.id', onupdate="CASCADE", ondelete="CASCADE"),
                          nullable=False)
-    model_id = Column(Integer, 
-                      ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"), 
+    model_id = Column(Integer,
+                      ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"),
                       nullable=False)
+    copy_number = Column(Integer, nullable=False)
+
     objective_coefficient = Column(Numeric, nullable=False)
     lower_bound = Column(Numeric, nullable=False)
     upper_bound = Column(Numeric, nullable=False)
     gene_reaction_rule = Column(String, nullable=False)
     original_gene_reaction_rule = Column(String, nullable=True)
 
+    __table_args__ = (
+        UniqueConstraint('reaction_id', 'model_id', 'copy_number'),
+    )
+
     def __repr__(self):
-        return ('<ome ModelReaction(id=%d, reaction_id=%d, model_id=%d)>' %
-                (self.id, self.reaction_id, self.model_id))
+        return ('<ome ModelReaction(id={self.id}, reaction_id={self.reaction_id}, model_id={self.model_id}, copy_number={self.copy_number})>'
+                .format(self=self))
+
 
 class GeneReactionMatrix(Base):
     __tablename__='gene_reaction_matrix'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    model_gene_id = Column(Integer, 
-                           ForeignKey('model_gene.id', onupdate="CASCADE", ondelete="CASCADE"), 
+    model_gene_id = Column(Integer,
+                           ForeignKey('model_gene.id', onupdate="CASCADE", ondelete="CASCADE"),
                            nullable=False)
-    model_reaction_id = Column(Integer, 
-                               ForeignKey('model_reaction.id', onupdate="CASCADE", ondelete="CASCADE"), 
+    model_reaction_id = Column(Integer,
+                               ForeignKey('model_reaction.id', onupdate="CASCADE", ondelete="CASCADE"),
                                nullable=False)
-    
+
     __table_args__ = (UniqueConstraint('model_gene_id', 'model_reaction_id'), {})
 
     def __repr__(self):
         return ('<ome GeneReactionMatrix(id=%d, model_gene_id=%d, model_reaction_id=%d)>' %
                 (self.id, self.model_gene_id, self.model_reaction_id))
-    
+
 
 class CompartmentalizedComponent(Base):
     __tablename__='compartmentalized_component'
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    component_id = Column(Integer, 
+    component_id = Column(Integer,
                           ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"),
                           nullable=False)
-    compartment_id = Column(Integer, 
+    compartment_id = Column(Integer,
                             ForeignKey('compartment.id', onupdate="CASCADE", ondelete="CASCADE"),
                             nullable=False)
-    
+
     __table_args__ = (
         UniqueConstraint('compartment_id', 'component_id'),
     )
@@ -140,7 +150,7 @@ class EscherMap(Base):
     __table_args__ = (
         UniqueConstraint('map_name'),
     )
-    
+
 
 class EscherMapMatrix(Base):
     __tablename__ = 'escher_map_matrix'
@@ -174,4 +184,3 @@ class ModelCount(Base):
     reaction_count = Column(Integer)
     gene_count = Column(Integer)
     metabolite_count = Column(Integer)
-    
