@@ -28,10 +28,7 @@ def test_cannot_dump_unknown_model(dumped_model, session):
 
 # Model content
 def test_dumped_model(dumped_model):
-   # COBRApy uses the description as the ID sometimes. See https://github.com/opencobra/cobrapy/pull/152
-    assert dumped_model.description == dumped_model.id
-
-    assert len(dumped_model.reactions) == 97
+    assert len(dumped_model.reactions) == 98
     assert len(dumped_model.metabolites) == 73
     assert len(dumped_model.genes) == 141
     assert dumped_model.genes.get_by_id('b0114').name == 'aceE'
@@ -69,7 +66,6 @@ def test_sbml_dump(dumped_model, tmpdir):
     loaded_model = cobra.io.read_sbml_model(m_file)
     # check dumped_model id
     assert loaded_model.id == dumped_model.id
-    assert loaded_model.description == dumped_model.description
 
     # Check for buggy metabolite. This was being saved without an ID in the SBML
     # dumped_model for some reason.
@@ -120,3 +116,5 @@ def test_metabolite_notes(dumped_model):
 def test_gene_notes(dumped_model):
     assert dumped_model.genes.get_by_id('b0114').notes['original_bigg_ids'] == ['b0114']
     assert dumped_model.genes.get_by_id('b3528').notes['original_bigg_ids'] == ['b3528', 'b_3528']
+    assert dumped_model.genes.get_by_id('gene_with_period_AT22').notes['original_bigg_ids'] == ['gene_with_period.22']
+    assert [x.notes != {} for x in dumped_model.genes]

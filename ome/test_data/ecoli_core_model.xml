@@ -1162,6 +1162,28 @@
           </math>
           <listOfParameters>
             <parameter id="LOWER_BOUND" value="0" units="mmol_per_gDW_per_hr"/>
+            <parameter id="UPPER_BOUND" value="50" units="mmol_per_gDW_per_hr"/>
+            <parameter id="OBJECTIVE_COEFFICIENT" value="0"/>
+            <parameter id="FLUX_VALUE" value="500" units="mmol_per_gDW_per_hr"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R_EX_gln__L_e" name="L-Glutamine exchange">
+        <notes>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>SUBSYSTEM: Exchange</p></html>
+        </notes>
+        <listOfReactants>
+          <speciesReference species="M_gln_L_e"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="M_gln_L_b"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> FLUX_VALUE </ci>
+          </math>
+          <listOfParameters>
+            <parameter id="LOWER_BOUND" value="0" units="mmol_per_gDW_per_hr"/>
             <parameter id="UPPER_BOUND" value="1000" units="mmol_per_gDW_per_hr"/>
             <parameter id="OBJECTIVE_COEFFICIENT" value="0"/>
             <parameter id="FLUX_VALUE" value="500" units="mmol_per_gDW_per_hr"/>
@@ -1169,6 +1191,50 @@
         </kineticLaw>
       </reaction>
       <reaction id="R_EX_glu_L_e" name="L-Glutamate exchange">
+        <notes>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>SUBSYSTEM: Exchange</p></html>
+        </notes>
+        <listOfReactants>
+          <speciesReference species="M_glu_L_e"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="M_glu_L_b"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> FLUX_VALUE </ci>
+          </math>
+          <listOfParameters>
+            <parameter id="LOWER_BOUND" value="0" units="mmol_per_gDW_per_hr"/>
+            <parameter id="UPPER_BOUND" value="1000" units="mmol_per_gDW_per_hr"/>
+            <parameter id="OBJECTIVE_COEFFICIENT" value="0"/>
+            <parameter id="FLUX_VALUE" value="500" units="mmol_per_gDW_per_hr"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R_EX_glu__L_e" name="L-Glutamate exchange">
+        <notes>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>SUBSYSTEM: Exchange</p></html>
+        </notes>
+        <listOfReactants>
+          <speciesReference species="M_glu_L_e"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="M_glu_L_b"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> FLUX_VALUE </ci>
+          </math>
+          <listOfParameters>
+            <parameter id="LOWER_BOUND" value="0" units="mmol_per_gDW_per_hr"/>
+            <parameter id="UPPER_BOUND" value="1000" units="mmol_per_gDW_per_hr"/>
+            <parameter id="OBJECTIVE_COEFFICIENT" value="0"/>
+            <parameter id="FLUX_VALUE" value="500" units="mmol_per_gDW_per_hr"/>
+          </listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R_EX_glu_DASH_L_e" name="L-Glutamate exchange">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>SUBSYSTEM: Exchange</p></html>
         </notes>
@@ -1461,7 +1527,7 @@
       </reaction>
       <reaction id="R_FORti" name="formate transport via diffusion" reversible="false">
         <notes>
-          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904.1 or b2492)</p><p>GENE_LIST: 904.1 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
+          <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (904_AT1 or b2492)</p><p>GENE_LIST: 904_AT1 b2492</p><p>SUBSYSTEM: Transport, Extracellular</p></html>
         </notes>
         <listOfReactants>
           <speciesReference species="M_for_c"/>

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from ome.base import NotFoundError
-from ome.util import scrub_gene_id, load_tsv
+from ome.util import scrub_gene_id, load_tsv, increment_id
 from ome import settings
 
 import re
@@ -65,6 +65,23 @@ def _check_rule_prefs(rule_prefs, rule):
     return rule
 
 
+def remove_boundary_metabolites(model):
+    """Remove boundary metabolites (end in _b and only present in exchanges). Be
+    sure to loop through a static list of ids so the list does not get shorter
+    as the metabolites are deleted.
+
+    """
+    for metabolite_id in [str(x) for x in model.metabolites]:
+        metabolite = model.metabolites.get_by_id(metabolite_id)
+        if not metabolite.id.endswith("_b"):
+            continue
+        for reaction in list(metabolite._reaction):
+            if reaction.id.startswith("EX_"):
+                metabolite.remove_from_model()
+                break
+    model.metabolites._generate_index()
+
+
 def convert_ids(model):
     """Converts metabolite and reaction ids to the new style.
 
@@ -88,18 +105,8 @@ def convert_ids(model):
         metabolite.id = new_id
     model.metabolites._generate_index()
 
-    # remove boundary metabolites (end in _b and only present in exchanges). Be
-    # sure to loop through a static list of ids so the list does not get shorter
-    # as the metabolites are deleted
-    for metabolite_id in [str(x) for x in model.metabolites]:
-        metabolite = model.metabolites.get_by_id(metabolite_id)
-        if not metabolite.id.endswith("_b"):
-            continue
-        for reaction in list(metabolite._reaction):
-            if reaction.id.startswith("EX_"):
-                metabolite.remove_from_model()
-                break
-    model.metabolites._generate_index()
+    # take out the _b metabolites
+    remove_boundary_metabolites(model)
 
     # load fixes for gene_reaction_rule's
     rule_prefs = _get_rule_prefs()
@@ -107,6 +114,9 @@ def convert_ids(model):
     # separate ids and compartments, and convert to the new_id_style
     for reaction in model.reactions:
         new_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
+        # don't merge reactions with conflicting new_id's
+        while new_id in reaction_id_dict:
+            new_id = increment_id(new_id)
         reaction_id_dict[new_id].append(reaction.id)
         reaction.id = new_id
         # fix the gene reaction rules
@@ -118,18 +128,21 @@ def convert_ids(model):
         new_id = scrub_gene_id(gene.id)
         gene_id_dict[new_id].append(gene.id)
         for reaction in gene.reactions:
-            reaction.gene_reaction_rule = re.sub(r'\b'+gene.id+r'\b', new_id,
+            reaction.gene_reaction_rule = re.sub(r'\b' + re.escape(gene.id) + r'\b', new_id,
                                                  reaction.gene_reaction_rule)
 
     # remove old genes
     for gene in list(model.genes):
         if len(gene.reactions) == 0:
             gene.remove_from_model()
+    # TODO switch to:
+    # from cobra.manipulation import remove_genes
+    # remove_genes(model, [gene for gene in model.genes
+    #                      if len(gene.reactions) == 0])
 
     # fix the model id
     bigg_id = re.sub(r'[^a-zA-Z0-9_]', '_', model.id)
     model.id = bigg_id
-    model.description = bigg_id
 
     old_ids = {'metabolites': metabolite_id_dict,
                'reactions': reaction_id_dict,
@@ -157,10 +170,6 @@ def id_for_new_id_style(old_id, is_metabolite=False):
 
     # remove parentheses and brackets, for SBML & BiGG spec compatibility
     new_id = re.sub(r'[^a-zA-Z0-9_]', '_', new_id)
-
-    # strip leading and trailing underscores
-    # new_id = re.sub(r'^_+', '', new_id)
-    # new_id = re.sub(r'_+$', '', new_id)
 
     compartment_match = reg_compartment.match(new_id)
     if compartment_match is None:

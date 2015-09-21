@@ -728,7 +728,6 @@ FEATURES             Location/Qualifiers
      CDS             1036963..1038507
                      /function="putative enzyme; Energy metabolism, carbon:
                      Electron transport"
-                     /locus_tag="b0978"
                      /gene="appC"
                      /GO_component="GO:0019866 - organelle inner membrane"
                      /codon_start=1

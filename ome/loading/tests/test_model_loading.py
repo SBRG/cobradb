@@ -29,11 +29,11 @@ class TestsWithModels:
         assert session.query(Genome).count() == 2
         assert session.query(Chromosome).count() == 2
         assert session.query(Reaction).count() == 98
-        assert session.query(ModelReaction).count() == 287
+        assert session.query(ModelReaction).count() == 288
         assert session.query(CompartmentalizedComponent).count() == 73
         assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3 + 1
         assert session.query(Metabolite).count() == 55
-        assert session.query(Gene).count() == 282
+        assert session.query(Gene).count() == 284
         assert session.query(ModelGene).count() == 415
 
     def test_no_charge_in_linkouts(self, session):
@@ -49,36 +49,10 @@ class TestsWithModels:
     def test_name_scrubbing(self, session):
         assert session.query(Reaction).filter(Reaction.bigg_id == 'ACALD').first().name == 'Acetaldehyde dehydrogenase (acetylating)'
 
-    def test_alternative_transcripts(self, session):
-        # check alternate transcripts
-        # these are in model 2 but not in model 1:
-        assert (session
-                .query(ModelGene)
-                .join(Gene)
-                .join(Model)
-                .filter(Gene.bigg_id.in_(['b4151', 'b4152']))
-                .filter(Model.bigg_id == 'Ecoli_core_model')
-                .count()) == 0
-        assert (session
-                .query(ModelGene)
-                .join(Gene)
-                .join(Model)
-                .filter(Gene.bigg_id.in_(['b4151', 'b4152']))
-                .filter(Model.bigg_id == 'Ecoli_core_model_2')
-                .count()) == 2
-
-        # these alt. transcripts in model 1:
-        GeneSource = aliased(Gene)
-        assert (session
-                .query(Gene)
-                .join(GeneSource,
-                    GeneSource.id == Gene.alternative_transcript_of)
-                .filter(Gene.bigg_id == '904_AT1')
-                .filter(GeneSource.bigg_id == 'b0904')
-                .count()) == 1
+    # alternative transcripts
+    def test_alternative_transcripts_counts(self, session):
         assert session.query(Synonym).filter(Synonym.synonym == '904').count() == 3 # 3 in first model, 0 in second model
         assert session.query(Gene).filter(Gene.name == 'focA').count() == 3 # 3 in first model, 0 in second model
-
         assert session.query(Gene).filter(Gene.bigg_id == '904_AT1').count() == 1
         assert session.query(Gene).filter(Gene.bigg_id == '904_AT12').count() == 1
         assert session.query(Gene).filter(Gene.bigg_id == 'b0904').count() == 2
@@ -87,6 +61,18 @@ class TestsWithModels:
         assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904_AT1').count() == 1
         assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == '904_AT12').count() == 1
         assert session.query(ModelGene).join(Gene).filter(Gene.bigg_id == 'gene_with_period_AT22').count() == 1
+
+    def test_alternative_transcripts(self, session):
+        # these alt. transcripts in model 1:
+        GeneSource = aliased(Gene)
+        res_db = (session
+                  .query(Gene)
+                  .join(GeneSource,
+                        GeneSource.id == Gene.alternative_transcript_of)
+                  .filter(Gene.bigg_id == '904_AT1')
+                  .filter(GeneSource.bigg_id == 'b0904'))
+        assert res_db.count() == 1
+        assert res_db.first().name == 'focA'
 
     def test_gene_reaction_rule_handling(self, session):
         # make sure the locus tag b4153 is back in this gene_reaction_rule (in place of frdB)
@@ -97,7 +83,7 @@ class TestsWithModels:
                 .first()).gene_reaction_rule == '(904_AT12 and gene_with_period_AT22 and b4153 and b4154)'
 
     def tests_reaction_collisions(self, session):
-        # (2 ny-n) Model 1 has a different ACALD from models 2 and 5. The
+        # (2 ny-n) Model 1 has a different ACALD from models 2 and 3. The
         # reaction-hash-prefs file should force the second and third models to have
         # ACALD, and increment the first model.
         assert (session
@@ -138,6 +124,25 @@ class TestsWithModels:
                 .join(Reaction, Reaction.id == ModelReaction.reaction_id)
                 .filter(Reaction.bigg_id == 'PDH')
                 .count() == 3)
+
+    def test_repeated_reaction_different_bounds(self, session):
+        # exact copies should get merged
+        assert (session
+                .query(Reaction)
+                .join(ModelReaction)
+                .join(Model)
+                .filter(Model.bigg_id == 'Ecoli_core_model')
+                .filter(Reaction.bigg_id == 'EX_glu__L_e')
+                .count()) == 1
+        # copies with different bounds should be separated
+        res_db = (session
+                  .query(Reaction, ModelReaction)
+                  .join(ModelReaction)
+                  .join(Model)
+                  .filter(Model.bigg_id == 'Ecoli_core_model')
+                  .filter(Reaction.bigg_id == 'EX_gln__L_e'))
+        assert res_db.count() == 2
+        assert {(x.lower_bound, x.upper_bound) for x in (y[1] for y in res_db)} == {(0, 50), (0, 1000)}
 
     def tests_pseudoreactions(self, session):
         # pseudoreactions. ATPM should be prefered to ATPM_NGAM based on

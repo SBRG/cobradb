@@ -32,9 +32,6 @@ def dump_model(bigg_id):
         raise Exception('Could not find model %s' % bigg_id)
 
     model = cobra.core.Model(bigg_id)
-    # COBRApy uses the description as the ID sometimes. See
-    # https://github.com/opencobra/cobrapy/pull/152
-    model.description = bigg_id
 
     # genes
     logging.debug('Dumping genes')

@@ -35,12 +35,6 @@ import os
 from os.path import join
 import argparse
 
-# try:
-#     from pymongo import ASCENDING
-#     MONGO_INSTALLED = True
-# except ImportError:
-#     logging.warn('pymongo not installed')
-#     MONGO_INSTALLED = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--drop-all', help='Empty database and reload data. NOTE: Does not drop types (e.g. enum categories)', action='store_true')
@@ -50,6 +44,7 @@ parser.add_argument('--skip-genomes', help='Skip genome loading', action='store_
 parser.add_argument('--skip-models', help='Skip model loading', action='store_true')
 
 args = parser.parse_args()
+
 
 def drop_all_tables(engine, enums_to_drop=None):
     """Drops all tables and, optionally, user enums from a postgres database.
@@ -78,15 +73,11 @@ def drop_all_tables(engine, enums_to_drop=None):
         for enum in enums_to_drop:
             engine.execute(text('DROP TYPE IF EXISTS %s CASCADE' % enum))
 
+
 if __name__ == "__main__":
     if args.drop_all:
         logging.info("Dropping everything from the database")
         drop_all_tables(base.engine, base.custom_enums.keys())
-
-        try:
-            base.omics_database.genome_data.drop()
-        except:
-            pass
 
     logging.info("Building the database models")
     base.Base.metadata.create_all()
@@ -128,7 +119,7 @@ if __name__ == "__main__":
                 bioproject_id, _ = component_loading.get_bioproject_id(join(genbank_dir, filename),
                                                                        fast=True)
             except BadGenomeError as e:
-                logging.warn(e.message)
+                logging.warn(str(e))
                 continue
             if bioproject_id in found_genomes:
                 found_genomes[bioproject_id] = True
@@ -146,41 +137,23 @@ if __name__ == "__main__":
             except Exception as e:
                 logging.exception(e)
 
-        # # chromosome gffs
-        # data_genomes = (session
-        #                 .query(base.Genome)
-        #                 .filter(base.Genome.bioproject_id.in_(['PRJNA57779']))
-        #                 .all())
-        # raw_flag = False
-        # normalize_flag = False
-        # for genome in data_genomes:
-        #     for chromosome in genome.chromosomes:
-        #         component_loading.write_chromosome_annotation_gff(base, components,
-        #                                                           chromosome)
-
     if not args.skip_models:
         logging.info("Loading models")
         n = len(models_list)
         for i, (model_filename, bioproject_id, pub_ref) in enumerate(models_list):
             logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_filename))
-            # try:
-            if True:
+            try:
                 model_loading.load_model(join(model_dir, model_filename),
                                          bioproject_id, pub_ref, session)
-            # except AlreadyLoadedError as e:
-            #     logging.info(e.message)
-            # except Exception as e:
-            #     logging.error('Could not load model %s.' % model_filename)
-            #     logging.exception(e)
+            except AlreadyLoadedError as e:
+                logging.info(str(e))
+            except Exception as e:
+                logging.error('Could not load model %s.' % model_filename)
+                logging.exception(e)
 
     logging.info("Loading Escher maps")
     map_loading.load_maps_from_server(session, drop_maps=(args.drop_models or
                                                           args.drop_maps))
-
-    # if MONGO_INSTALLED and base.omics_database is not None:
-    #     genome_data = base.omics_database.genome_data
-    #     genome_data.create_index([("data_set_id", ASCENDING),
-    #                               ("leftpos", ASCENDING)])
 
     session.close()
     base.Session.close_all()

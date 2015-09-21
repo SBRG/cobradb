@@ -161,7 +161,6 @@ def load_new_model(session, model, genome_db_id, pub_ref, published_filename):
 
     """
     model_db = Model(bigg_id=model.id, genome_id=genome_db_id,
-                     description=model.description,
                      published_filename=published_filename)
     session.add(model_db)
     if pub_ref is not None:
@@ -842,17 +841,10 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
             if len(chromosome_ids) > 0:
                 logging.warn('Gene not in genbank file: {} from model {}'
                             .format(gene.id, model.id))
-            ome_gene = {}
-            ome_gene['bigg_id'] = gene.id
-            # name is optional in cobra 0.4b2. This will probably change back.
-            ome_gene['name'] = scrub_name(getattr(gene, 'name', None))
-            ome_gene['leftpos'] = None
-            ome_gene['rightpos'] = None
-            ome_gene['chromosome_id'] = None
-            ome_gene['strand'] = None
-            ome_gene['info'] = str(gene.annotation)
-            ome_gene['mapped_to_genbank'] = False
-            gene_db = Gene(**ome_gene)
+            gene_db = Gene(bigg_id=gene.id,
+                           # name is optional in cobra 0.4b2. This will probably change back.
+                           name=scrub_name(getattr(gene, 'name', None)),
+                           mapped_to_genbank=False)
             session.add(gene_db)
             session.commit()
 
@@ -866,7 +858,6 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
             ome_gene['rightpos'] = old_gene_db.rightpos
             ome_gene['chromosome_id'] = old_gene_db.chromosome_id
             ome_gene['strand'] = old_gene_db.strand
-            ome_gene['info'] = old_gene_db.info
             ome_gene['mapped_to_genbank'] = True
             ome_gene['alternative_transcript_of'] = old_gene_db.id
             gene_db = Gene(**ome_gene)
@@ -910,9 +901,9 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
                         .first())
             if synonym_db is None:
                 synonym_db = Synonym(type='gene',
-                                        ome_id=gene_db.id,
-                                        synonym=old_bigg_id,
-                                        data_source_id=data_source_id)
+                                     ome_id=gene_db.id,
+                                     synonym=old_bigg_id,
+                                     data_source_id=data_source_id)
                 session.add(synonym_db)
                 session.commit()
             # add OldIDSynonym

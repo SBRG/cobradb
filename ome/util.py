@@ -50,8 +50,10 @@ def get_or_create_data_source(session, data_source_name):
         # get gene url_prefs
         url_prefs = load_tsv(settings.data_source_preferences)
         url_prefix = find_data_source_url(data_source_name, url_prefs)
+        if url_prefix is None:
+            logging.warn('No URL found for data source %' % data_source_name)
         data_source_db = DataSource(name=data_source_name,
-                                         url_prefix=url_prefix)
+                                    url_prefix=url_prefix)
         session.add(data_source_db)
         session.flush()
 

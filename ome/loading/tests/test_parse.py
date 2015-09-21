@@ -2,36 +2,80 @@ from ome.loading.parse import *
 
 from cobra.core import Reaction, Metabolite
 from cobra.io import read_sbml_model
+import pytest
 
 
-def test_convert_ids(test_model_files):
-    model_in = read_sbml_model(test_model_files[0]['path'])
-    model_in.id = 'A bad id'
-    model_in.description = 'throw away'
+@pytest.fixture(scope='session')
+def example_model(test_model_files):
+    return read_sbml_model(test_model_files[0]['path'])
 
-    model_in.add_reaction(Reaction('DADA'))
-    model_in.reactions.get_by_id('DADA').add_metabolites({
+
+@pytest.fixture(scope='session')
+def convert_ids_model(example_model):
+    example_model.id = 'A bad id'
+    example_model.add_reaction(Reaction('DADA'))
+    example_model.reactions.get_by_id('DADA').add_metabolites({
         Metabolite('dad_DASH_2_c'): -1
     })
-    returned, old_ids = convert_ids(model_in.copy())
+    return convert_ids(example_model.copy())
 
+
+def test_convert_ids_dad_2(convert_ids_model):
+    returned, old_ids = convert_ids_model
     assert returned.id == 'A_bad_id'
-    assert returned.description == 'A_bad_id'
     assert 'dad_2_c' in returned.metabolites
     assert 'dad_2_c' in [x.id for x in returned.reactions.get_by_id('DADA').metabolites]
     assert ('dad_2_c', ['dad_DASH_2_c']) in old_ids['metabolites'].items()
-    assert ('EX_gln__L_e', ['EX_gln_L_e']) in old_ids['reactions'].items()
 
-    # genes
+
+def test_convert_ids_repeats_reactions(convert_ids_model):
+    returned, old_ids = convert_ids_model
+    assert 'EX_glu__L_e' in returned.reactions
+    assert 'EX_glu__L_e_1' in returned.reactions
+    assert 'EX_glu__L_e_2' in returned.reactions
+    assert 'EX_gln__L_e' in returned.reactions
+    assert 'EX_gln__L_e_1' in returned.reactions
+
+    old_ids_list = old_ids['reactions'].items()
+    assert (
+        ('EX_gln__L_e', ['EX_gln_L_e']) in old_ids_list and
+        ('EX_gln__L_e_1', ['EX_gln__L_e']) in old_ids_list
+    ) or (
+        ('EX_gln__L_e', ['EX_gln__L_e']) in old_ids_list and
+        ('EX_gln__L_e_1', ['EX_gln_L_e']) in old_ids_list
+    )
+
+
+def test_convert_ids_repeats_metabolites(convert_ids_model):
+    # metabolites should get merged
+    returned, old_ids = convert_ids_model
+    assert set(old_ids['metabolites']['glc__D_e']) == {'glc_D_e', 'glc_DASH_D_e'}
+
+
+def test_convert_ids_repeats_gene(convert_ids_model):
+    # gene should get merged
+    returned, old_ids = convert_ids_model
+    assert '904_AT1' in [x.id for x in returned.reactions.get_by_id('FORt2').genes]
+    assert '904_AT1' in [x.id for x in returned.reactions.get_by_id('FORti').genes]
+    assert set(old_ids['genes']['904_AT1']) == {'904.1', '904_AT1'}
+
+
+def test_convert_ids_genes(convert_ids_model, example_model):
+    returned, old_ids = convert_ids_model
+
+    # lost a gene to merging
+    assert len(returned.genes) == len(example_model.genes) - 1
+
     assert 'gene_with_period_AT22' in [x.id for x in returned.genes]
-    assert returned.reactions.get_by_id('FRD7').gene_reaction_rule == model_in.reactions.get_by_id('FRD7').gene_reaction_rule.replace('.22', '_AT22').replace('.12', '_AT12')
+    assert (
+        returned.reactions.get_by_id('FRD7').gene_reaction_rule ==
+        returned.reactions.get_by_id('FRD7').gene_reaction_rule
+        .replace('.22', '_AT22').replace('.12', '_AT12')
+    )
     assert old_ids['genes']['gene_with_period_AT22'] == ['gene_with_period.22']
-    assert len(returned.genes) == len(model_in.genes)
 
     assert ['.22' not in x.id for x in returned.genes]
     assert ['.22' not in x.gene_reaction_rule for x in returned.reactions]
-
-    assert set(old_ids['metabolites']['glc__D_e']) == {'glc_D_e', 'glc_DASH_D_e'}
 
 
 def test_id_for_new_id_style():

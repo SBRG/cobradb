@@ -15,32 +15,18 @@ class Gene(GenomeRegion):
     id = Column(Integer,
                 ForeignKey('genome_region.id', onupdate="CASCADE", ondelete="CASCADE"),
                 primary_key=True)
-    info = Column(String(300))
-    name = Column(String)
-    locus_tag = Column(String)
-    mapped_to_genbank = Column(Boolean)
+    name = Column(String, nullable=True)
+    locus_tag = Column(String, nullable=True)
+    mapped_to_genbank = Column(Boolean, nullable=False)
     alternative_transcript_of = Column(Integer,
                                        ForeignKey('gene.id'),
                                        nullable=True)
 
-    __mapper_args__ = { 'polymorphic_identity': 'gene' }
+    __mapper_args__ = {'polymorphic_identity': 'gene'}
 
     def __repr__(self):
         return '<ome Gene(id=%d, bigg_id=%s, name=%s)>' % (self.id, self.bigg_id,
                                                          self.name)
-
-    def __init__(self, bigg_id, leftpos=None, rightpos=None,
-                 mapped_to_genbank=False, strand=None, chromosome_id=None,
-                 info=None, name=None, alternative_transcript_of=None,
-                 locus_tag=None):
-
-        super(Gene, self).__init__(bigg_id=bigg_id, chromosome_id=chromosome_id,
-                                   leftpos=leftpos, rightpos=rightpos, strand=strand)
-        self.name = name
-        self.info = info
-        self.mapped_to_genbank = mapped_to_genbank
-        self.alternative_transcript_of = alternative_transcript_of
-        self.locus_tag = locus_tag
 
 
 class Motif(GenomeRegion):
@@ -57,13 +43,6 @@ class Motif(GenomeRegion):
             (self.bound_component.name, self.leftpos, self.rightpos,\
                                  self.strand, self.pval)
 
-    def __init__(self, bigg_id, leftpos, rightpos, strand, pval=None, info=None):
-        super(Motif, self).__init__(bigg_id=bigg_id, leftpos=leftpos,
-                                    rightpos=rightpos, strand=strand,
-                                    chromosome_id=chromosome_id)
-        self.pval = pval
-        self.info = info
-
 
 class ComplexComposition(Base):
     __tablename__ = 'complex_composition'
@@ -73,11 +52,6 @@ class ComplexComposition(Base):
     stoichiometry = Column(Integer)
 
     __table_args__ = (UniqueConstraint('complex_id','component_id'),{})
-
-    def __init__(self, complex_id, component_id, stoichiometry):
-        self.complex_id = complex_id
-        self.component_id = component_id
-        self.stoichiometry = stoichiometry
 
 
 class Complex(Component):
@@ -111,9 +85,6 @@ class Complex(Component):
                 .join(included_components,
                       Component.id==included_components.c.component_id)
                 .all())
-
-    def __init__(self, bigg_id, name):
-        super(Complex, self).__init__(bigg_id, name)
 
     def __repr__(self):
         return "Complex (#%d):  %s" % \

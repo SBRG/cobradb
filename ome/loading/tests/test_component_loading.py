@@ -31,6 +31,14 @@ class TestWithGenomes():
                    .first())
         assert gene_db.name is None
 
+    def test_gene_name_no_locus_id(self, session):
+        """Keep the gene name when there is no locus ID, so that, if alternative
+        transcripts are used later to match agains a synonym, the gene name is still
+        around.
+
+        """
+        assert session.query(Gene).filter(Gene.bigg_id == 'appC').first().name == 'appC'
+
     def test_genome_synonyms_name(self, session):
         assert (session.query(Synonym)
                 .join(DataSource)
