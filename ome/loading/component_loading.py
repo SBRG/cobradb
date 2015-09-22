@@ -6,6 +6,7 @@ from ome.components import Gene, Protein
 from ome.util import scrub_gene_id, get_or_create_data_source
 
 import sys, os, math, re
+from os.path import basename
 from warnings import warn
 from sqlalchemy import text, or_, and_, func
 import logging
@@ -15,35 +16,17 @@ class BadGenomeError(Exception):
     pass
 
 
-def get_bioproject_id(genbank_filepath, fast=False):
-    """Load the file and return the Bioproject ID and the loaded file.
-
-    Returns a tuples of (BioProject ID, SeqIO object).
+def _load_gb_file(genbank_filepath):
+    """Load the Genbank file.
 
     Arguments
     ---------
 
     genbank_filepath: The path to the genbank file.
 
-    fast: If True, then only look in the first 100 lines for a BioProject ID,
-    and return a tuple of (BioProject ID, None)
-
     """
     # imports
     from Bio import SeqIO
-
-    if fast:
-        # try to find the BioProject ID in the first 100 lines. Otherwise, use
-        # the full SeqIO.read
-        line_limit = 100
-        with open(genbank_filepath, 'r') as f:
-            for i, line in enumerate(f.readlines()):
-                s = line.split('BioProject: ')
-                if len(s) > 1:
-                    return s[1].strip(), None
-                if i > line_limit:
-                    break
-        logging.debug('Could not use get_bioproject_id in fast mode. Falling back.')
 
     # load the genbank file
     logging.debug('Loading file: %s' % genbank_filepath)
@@ -54,16 +37,49 @@ def get_bioproject_id(genbank_filepath, fast=False):
     except Exception as e:
         raise BadGenomeError('BioPython failed to parse %s with error "%s"' %
                              (genbank_filepath, e.message))
+    return gb_file
 
-    bioproject_id = None
-    for value in gb_file.dbxrefs[0].split():
-        if 'BioProject' in value:
-            bioproject_id = value.split(':')[1]
 
-    if bioproject_id is None:
-        raise BadGenomeError('Invalid genbank file %s: Does not contain a BioProject ID' % genbank_filepath)
+def get_genbank_accessions(genbank_filepath, fast=False):
+    """Load the file and return the NCBI Accession and Assembly IDs (if available).
 
-    return bioproject_id, gb_file
+    Returns a tuples of (NCBI Acession with verion, Assembly ID with version).
+
+    Arguments
+    ---------
+
+    genbank_filepath: The path to the genbank file.
+
+    fast: If True, then only look in the first 100 lines. Faster because we do
+    not load the whole file.
+
+    """
+    accession = None
+    assembly = None
+
+    if fast:
+        # try to find the BioProject ID in the first 100 lines. Otherwise, use
+        # the full SeqIO.read
+        line_limit = 100
+        with open(genbank_filepath, 'r') as f:
+            for i, line in enumerate(f.readlines()):
+                m1 = re.search(r'VERSION\s+([\w.]+)[^\w.]', line)
+                if m1 is not None:
+                    accession = m1.group(1)
+                m2 = re.search(r'Assembly:\s*([\w.]+)[^\w.]', line)
+                if m2 is not None:
+                    assembly = m2.group(1)
+                if i > line_limit:
+                    break
+    else:
+        # load the genbank file
+        gb_file = _load_gb_file(genbank_filepath)
+        accession = gb_file.id
+        for value in gb_file.dbxrefs[0].split():
+            if 'Assembly' in value:
+                assembly = value.split(':')[1]
+
+    return {'ncbi_accession': accession, 'ncbi_assembly': assembly}
 
 
 def load_gene_synonym(session, gene_db, synonym, data_source_name):
@@ -110,54 +126,64 @@ def _get_qual(feat, name, get_first=False):
 
 
 @timing
-def load_genome(genbank_filepath, session):
-    bioproject_id, gb_file = get_bioproject_id(genbank_filepath)
-    old_locus_tag_id = get_or_create_data_source(session, 'refseq_old_locus_tag')
-    organism = gb_file.annotations['organism']
-    genome = (session
-              .query(base.Genome)
-              .filter(base.Genome.bioproject_id == bioproject_id)
-              .filter(base.Genome.organism == organism)
-              .first())
+def load_genome(genome_ref, genome_file_paths, session):
+    """Load the genome and chromosomes."""
 
-    if not genome:
-        logging.debug('Adding new genome: %s' % bioproject_id)
-        ome_genome = { 'bioproject_id': bioproject_id,
-                       'organism': organism,
-                       'taxon_id':'None' }
-        genome = base.Genome(**ome_genome)
-        session.add(genome)
-        session.flush()
-    else:
-        logging.debug('Genome already loaded for bioproject_id %s' % bioproject_id)
+    if len(genome_file_paths) == 0:
+        raise Exception('No files found for genome {}'.format(genome_ref))
 
+    genome_db = (session
+                 .query(Genome)
+                 .filter(Genome.accession_type == genome_ref[0])
+                 .filter(Genome.accession_value == genome_ref[1])
+                 .first())
+
+    if genome_db is None:
+        logging.debug('Adding new genome: {}'.format(genome_ref))
+        genome_db = base.Genome(accession_type=genome_ref[0],
+                                accession_value=genome_ref[1])
+        session.add(genome_db)
+        session.commit()
+
+    n = len(genome_file_paths)
+    for i, genbank_file_path in enumerate(genome_file_paths):
+        logging.info('Loading chromosome [{} of {}] {}'
+                     .format(i + 1, n, basename(genbank_file_path)))
+        gb_file = _load_gb_file(genbank_file_path)
+        load_chromosome(gb_file, genome_db, session)
+
+
+def load_chromosome(gb_file, genome_db, session):
     chromosome = (session
                   .query(base.Chromosome)
-                  .filter(base.Chromosome.genbank_id == gb_file.annotations['gi'])
-                  .filter(base.Chromosome.genome_id == genome.id)
+                  .filter(base.Chromosome.ncbi_accession == gb_file.id)
+                  .filter(base.Chromosome.genome_id == genome_db.id)
                   .first())
-
     if not chromosome:
-        logging.debug('Adding new chromosome: %s' % gb_file.annotations['gi'])
-        chromosome = base.Chromosome(genome_id=genome.id,
-                                     genbank_id=gb_file.annotations['gi'],
-                                     ncbi_id=gb_file.id)
+        logging.debug('Loading new chromosome: {}'.format(gb_file.id))
+        chromosome = base.Chromosome(ncbi_accession=gb_file.id,
+                                     genome_id=genome_db.id)
         session.add(chromosome)
-        session.flush()
+        session.commit()
     else:
-        logging.debug('Chromosome already loaded: %s' % gb_file.annotations['gi'])
+        logging.debug('Chromosome already loaded: %s' % gb_file.id)
+
+    # update genome
+    if genome_db.organism is None:
+        genome_db.organism = gb_file.annotations['organism']
 
     bigg_id_warnings = 0
     duplicate_genes_warnings = 0
     warning_num = 5
     for i, feature in enumerate(gb_file.features):
-        # get the source information
-        if feature.type == 'source':
-            for ref in _get_qual(feature, 'db_xref'):
-                if 'taxon' == ref.split(':')[0]:
-                    genome.taxon_id = ref.split(':')[1]
-                    break
-            continue
+
+        # update genome with the source information
+        if genome_db.taxon_id is None and feature.type == 'source':
+                for ref in _get_qual(feature, 'db_xref'):
+                    if 'taxon' == ref.split(':')[0]:
+                        genome_db.taxon_id = ref.split(':')[1]
+                        break
+                continue
 
         # only read in CDSs
         if feature.type != 'CDS':

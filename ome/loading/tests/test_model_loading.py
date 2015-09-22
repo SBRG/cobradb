@@ -20,8 +20,8 @@ class TestsWithModels:
     def test_cannot_load_same_model_twice(self, session, test_model_files):
         model_details = test_model_files[0]
         with pytest.raises(AlreadyLoadedError):
-            load_model(model_details['path'], model_details['genome_id'],
-                       model_details['pmid'], session)
+            load_model(model_details['path'], model_details['pmid'],
+                       model_details['genome_ref'], session)
 
     def test_counts(self, session):
         # test the model
@@ -75,12 +75,13 @@ class TestsWithModels:
         assert res_db.first().name == 'focA'
 
     def test_gene_reaction_rule_handling(self, session):
-        # make sure the locus tag b4153 is back in this gene_reaction_rule (in place of frdB)
+        # make sure the locus tag b4153 is back in this gene_reaction_rule (in
+        # place of frdB). NOTE: COBRApy now reformats these without extra parens.
         assert (session
                 .query(ModelReaction)
                 .join(Reaction, Reaction.id == ModelReaction.reaction_id)
                 .filter(Reaction.bigg_id == 'FRD7')
-                .first()).gene_reaction_rule == '(904_AT12 and gene_with_period_AT22 and b4153 and b4154)'
+                .first()).gene_reaction_rule == '904_AT12 and gene_with_period_AT22 and b4153 and b4154'
 
     def tests_reaction_collisions(self, session):
         # (2 ny-n) Model 1 has a different ACALD from models 2 and 3. The
@@ -208,7 +209,7 @@ class TestsWithModels:
                      .join(Reaction, Reaction.id == ModelReaction.reaction_id)
                      .filter(Model.bigg_id == 'Ecoli_core_model')
                      .filter(Reaction.bigg_id == 'NTP1')
-                     .filter(ModelReaction.gene_reaction_rule == '(b0650) or (b4161)')
+                     .filter(ModelReaction.gene_reaction_rule == 'b0650 or b4161')
                      .count())
         assert len_mr_db == 2
 
@@ -237,7 +238,7 @@ class TestsWithModels:
                 .filter(Model.bigg_id == 'Ecoli_core_model')
                 .filter(Reaction.bigg_id == 'ACKr')
                 .first())
-        assert mr_db.gene_reaction_rule == '(b1849 or b2296 or b3115)'
+        assert mr_db.gene_reaction_rule == 'b1849 or b2296 or b3115'
 
     def test_multiple_reaction_copies(self, session):
         # make sure both copies of ADK1 are here

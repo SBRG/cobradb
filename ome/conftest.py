@@ -34,21 +34,21 @@ def setup_logger():
 
 @pytest.fixture(scope='session')
 def test_genbank_files():
-    return [join(test_data_dir, 'core.gb'),
-            join(test_data_dir, 'core_2.gb')]
+    return [(('primary_type', 'core'), join(test_data_dir, 'core.gb')),
+            (('primary_type', 'core_2'), join(test_data_dir, 'core_2.gb'))]
 
 
 @pytest.fixture(scope='session')
 def test_model_files():
     return [{'path': join(test_data_dir, 'ecoli_core_model.xml'),
-             'genome_id': 'PRJNA57779-core',
-             'pmid': 'pmid:25575024'},
+             'genome_ref': ('primary_type', 'core'),
+             'pmid': ('pmid', '25575024')},
             {'path': join(test_data_dir, 'ecoli_core_model_2.xml'),
-             'genome_id': 'PRJNA57779-core-2',
-             'pmid': 'pmid:25575024'},
+             'genome_ref': ('primary_type', 'core_2'),
+             'pmid': ('pmid', '25575024')},
             {'path': join(test_data_dir, 'ecoli_core_model_3.xml'),
-             'genome_id': 'PRJNA57779-core',
-             'pmid': 'pmid:25575024'}]
+             'genome_ref': ('primary_type', 'core'),
+             'pmid': ('pmid', '25575024')}]
 
 
 @pytest.fixture(scope='session')
@@ -100,8 +100,8 @@ def load_genomes(test_db, test_genbank_files, test_prefs, session):
     settings.data_source_preferences = test_prefs['data_source_preferences']
 
     # load the test genomes
-    for gb in test_genbank_files:
-        load_genome(gb, session)
+    for genome_ref, gb in test_genbank_files:
+        load_genome(genome_ref, [gb], session)
 
 
 @pytest.fixture(scope='session')
@@ -111,8 +111,10 @@ def load_models(load_genomes, test_model_files, session):
     out = []
     for model_details in test_model_files:
         # load the models
-        out.append(load_model(model_details['path'], model_details['genome_id'],
-                              model_details['pmid'], session))
+        out.append(load_model(model_details['path'],
+                              model_details['pmid'],
+                              model_details['genome_ref'],
+                              session))
     assert out == ['Ecoli_core_model', 'Ecoli_core_model_2', 'Ecoli_core_model_3']
 
 

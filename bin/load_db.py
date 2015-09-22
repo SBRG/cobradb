@@ -27,13 +27,15 @@ from ome import base, settings, components, datasets, models, timing, util
 from ome.loading import AlreadyLoadedError
 from ome.loading import dataset_loading
 from ome.loading import component_loading
-from ome.loading.component_loading import BadGenomeError
+from ome.loading.component_loading import BadGenomeError, get_genbank_accessions
 from ome.loading import model_loading
 from ome.loading import map_loading
 
 import os
+from os import listdir
 from os.path import join
 import argparse
+from collections import defaultdict
 
 
 parser = argparse.ArgumentParser()
@@ -42,6 +44,7 @@ parser.add_argument('--drop-models', help='Empty model and map data', action='st
 parser.add_argument('--drop-maps', help='Empty map data', action='store_true')
 parser.add_argument('--skip-genomes', help='Skip genome loading', action='store_true')
 parser.add_argument('--skip-models', help='Skip model loading', action='store_true')
+parser.add_argument('--skip-maps', help='Skip map loading', action='store_true')
 
 args = parser.parse_args()
 
@@ -100,60 +103,77 @@ if __name__ == "__main__":
     model_genome_path = settings.model_genome
     logging.info('Loading models and genomes using %s' % model_genome_path)
     lines = util.load_tsv(model_genome_path, required_column_num=3)
-    models_list = []; found_genomes = {}
+    models_list = []
     for line in lines:
-        val_nones = [(x if x.strip() != '' else None) for x in line]
-        model_filename, bioproject_id, pub_ref = val_nones
-        if bioproject_id is not None:
-            found_genomes[bioproject_id] = False
-        models_list.append((model_filename, bioproject_id, pub_ref))
+        model_filename, pub_ref_string, genome_ref_string = line
+        if genome_ref_string is None:
+            genome_ref = None
+        else:
+            genome_ref = util.ref_str_to_tuple(genome_ref_string)
+        if pub_ref_string is None:
+            pub_ref = None
+        else:
+            pub_ref = util.ref_str_to_tuple(pub_ref_string)
+        models_list.append({'model_filename': model_filename,
+                            'pub_ref': pub_ref,
+                            'genome_ref': genome_ref})
 
+    genomes_for_models = {}
     if not args.skip_genomes:
-        logging.info('Finding matching GenBank files')
-        genbank_dir = settings.refseq_directory
-        # get the genbank files with matching bioproject ids
-        genome_files = []
-        for filename in os.listdir(genbank_dir):
-            logging.debug('Looking for BioProject ID in %s' % filename)
-            try:
-                bioproject_id, _ = component_loading.get_bioproject_id(join(genbank_dir, filename),
-                                                                       fast=True)
-            except BadGenomeError as e:
-                logging.warn(str(e))
+        # find the accessions for the genbank files
+        logging.info('Finding GenBank files')
+        refseq_dir = settings.refseq_directory
+        # unique refs
+        genome_refs = {r['genome_ref'] for r in models_list}
+        # loop through all the files
+        genome_file_locations = defaultdict(list)
+        for refseq_filename in listdir(refseq_dir):
+            if refseq_filename.startswith('.'):
                 continue
-            if bioproject_id in found_genomes:
-                found_genomes[bioproject_id] = True
-                genome_files.append(filename)
-        not_found = [k for k, v in found_genomes.iteritems() if v is False]
-        if len(not_found) > 0:
-            logging.warn('No genbank file for for %s' % not_found)
+            refseq_filepath = join(refseq_dir, refseq_filename)
+            # check both accession and assembly for a match
+            ids = get_genbank_accessions(refseq_filepath, fast=True)
+            # if the ids couldn't be found
+            if all(x is None for x in ids.values()):
+                logging.warn('Could not find accessions for genbank file %s' % refseq_filepath)
+                continue
+            # look for matching ids from the model-genome file
+            for genome_ref in ids.iteritems():
+                if genome_ref in genome_refs:
+                    genome_file_locations[genome_ref].append(refseq_filepath)
 
-        logging.info('Loading genomes')
-        n = len(genome_files)
-        for i, genbank_file in enumerate(genome_files):
-            logging.info('Loading genome from genbank file (%d of %d) %s' % (i + 1, n, genbank_file))
+        # load the genomes
+        n = len(genome_refs)
+        for i, genome_ref in enumerate(genome_refs):
+            logging.info('Loading genome ({} of {}) {}'.format(i + 1, n, genome_ref))
+            file_paths = genome_file_locations[genome_ref]
             try:
-                component_loading.load_genome(join(genbank_dir, genbank_file), session)
+                component_loading.load_genome(genome_ref, file_paths, session)
             except Exception as e:
                 logging.exception(e)
 
     if not args.skip_models:
         logging.info("Loading models")
         n = len(models_list)
-        for i, (model_filename, bioproject_id, pub_ref) in enumerate(models_list):
-            logging.info('Loading model (%d of %d) %s' % (i + 1, n, model_filename))
+        model_dir = settings.model_directory
+        for i, model_dict in enumerate(models_list):
+            logging.info('Loading model ({} of {}) {}'
+                         .format(i + 1, n, model_dict['model_filename']))
             try:
-                model_loading.load_model(join(model_dir, model_filename),
-                                         bioproject_id, pub_ref, session)
+                model_loading.load_model(join(model_dir, model_dict['model_filename']),
+                                         model_dict['pub_ref'],
+                                         model_dict['genome_ref'],
+                                         session)
             except AlreadyLoadedError as e:
                 logging.info(str(e))
             except Exception as e:
                 logging.error('Could not load model %s.' % model_filename)
                 logging.exception(e)
 
-    logging.info("Loading Escher maps")
-    map_loading.load_maps_from_server(session, drop_maps=(args.drop_models or
-                                                          args.drop_maps))
+    if not args.skip_maps:
+        logging.info("Loading Escher maps")
+        map_loading.load_maps_from_server(session, drop_maps=(args.drop_models or
+                                                              args.drop_maps))
 
     session.close()
     base.Session.close_all()

@@ -1,9 +1,22 @@
 # -*- coding: utf-8 -*-
 
+from ome.loading.component_loading import get_genbank_accessions
+
 from ome.models import *
 from ome.components import *
 
 import pytest
+
+
+def test_get_genbank_accessions(test_genbank_files):
+    acc = get_genbank_accessions(test_genbank_files[0][1], fast=True)
+    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': None}
+    acc = get_genbank_accessions(test_genbank_files[0][1], fast=False)
+    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': None}
+    acc = get_genbank_accessions(test_genbank_files[1][1], fast=True)
+    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': 'test_assembly.1'}
+    acc = get_genbank_accessions(test_genbank_files[1][1], fast=False)
+    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': 'test_assembly.1'}
 
 
 @pytest.mark.usefixtures('load_genomes')

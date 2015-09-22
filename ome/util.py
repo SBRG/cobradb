@@ -51,7 +51,7 @@ def get_or_create_data_source(session, data_source_name):
         url_prefs = load_tsv(settings.data_source_preferences)
         url_prefix = find_data_source_url(data_source_name, url_prefs)
         if url_prefix is None:
-            logging.warn('No URL found for data source %' % data_source_name)
+            logging.warn('No URL found for data source %s' % data_source_name)
         data_source_db = DataSource(name=data_source_name,
                                     url_prefix=url_prefix)
         session.add(data_source_db)
@@ -99,11 +99,14 @@ def load_tsv(filename, required_column_num=None):
     required_column_num: The number of columns to check for.
 
     """
+    def check_none(v):
+        return None if (v == 'None' or v == '') else v
+
     if not os.path.exists(filename):
         return []
     with open(filename, 'r') as f:
         # split non-empty rows by tab
-        rows = [[x.strip() for x in line.split('\t')]
+        rows = [[check_none(x.strip()) for x in line.split('\t')]
                 for line in f.readlines()
                 if line.strip() != '' and line[0] != '#']
 
@@ -111,9 +114,20 @@ def load_tsv(filename, required_column_num=None):
     if required_column_num is not None:
         def check_row(row):
             if len(row) != required_column_num:
-                logging.warn('Bad row in gene_reaction_rule_prefs: %s' % row)
+                logging.warn('Line in {} should have {} columns, but found {}: {}'
+                             .format(filename, required_column_num, len(row), row))
                 return None
             return row
         rows = [x for x in (check_row(r) for r in rows) if x is not None]
 
     return rows
+
+
+def ref_str_to_tuple(ref):
+    """String like ' a : b ' to tuple like ('a', 'b')."""
+    return tuple(x.strip() for x in ref.split(':'))
+
+
+def ref_tuple_to_str(key, val):
+    """Tuple like ('a', 'b') to string like 'a:b'."""
+    return '%s:%s' % (key, val)

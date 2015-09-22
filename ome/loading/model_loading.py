@@ -43,7 +43,7 @@ def check_for_model(name):
 
 
 @timing
-def load_model(model_filepath, bioproject_id, pub_ref, session):
+def load_model(model_filepath, pub_ref, genome_ref, session):
     """Load a model into the database. Returns the bigg_id for the new model.
 
     Arguments
@@ -51,13 +51,15 @@ def load_model(model_filepath, bioproject_id, pub_ref, session):
 
     model_filepath: the path to the file where model is stored.
 
-    bioproject_id: id for the loaded genome annotation.
+    pub_ref: a publication PMID or doi for the model, as a tuple like this:
 
-    pub_ref: a publication PMID or doi for the model, as a string like this:
+        ('doi', '10.1128/ecosalplus.10.2.1')
 
-        doi:10.1128/ecosalplus.10.2.1
+        ('pmid', '21988831')
 
-        pmid:21988831
+    genome_ref: A tuple specifying the genome accession type and value.
+
+    session: An instance of base.Session.
 
     """
     # apply id normalization
@@ -70,29 +72,18 @@ def load_model(model_filepath, bioproject_id, pub_ref, session):
         raise AlreadyLoadedError('Model %s already loaded' % model_bigg_id)
 
     # check for a genome annotation for this model
-    if bioproject_id is not None:
-        genome_db = session.query(Genome).filter_by(bioproject_id=bioproject_id).first()
-        if bioproject_id == 'PRJNA224116':
-            logging.warn('THIS IS A TERRIBLE SOLUTION. SEE https://github.com/SBRG/BIGG2/issues/68')
-            if model_bigg_id == 'iHN637':
-                organism = 'Clostridium ljungdahlii DSM 13528'
-            elif model_bigg_id == 'iSB619':
-                organism = 'Staphylococcus aureus subsp. aureus N315'
-            elif model_bigg_id == 'iY75_1357':
-                organism = 'Escherichia coli str. K-12 substr. W3110'
-            else:
-                raise Exception('My terrible fix broke for model {}'.format(model_bigg_id))
-            genome_db = (session
-                        .query(Genome)
-                        .filter(Genome.bioproject_id == bioproject_id)
-                        .filter(Genome.organism == organism)
-                        .first())
+    if genome_ref is not None:
+        genome_db = (session
+                     .query(Genome)
+                     .filter(Genome.accession_type==genome_ref[0])
+                     .filter(Genome.accession_value==genome_ref[1])
+                     .first())
         if genome_db is None:
-            raise GenbankNotFound('Genbank file %s for model %s not found in the database' %
-                                  (bioproject_id, model_bigg_id))
+            raise GenbankNotFound('Genome for model {} not found with genome_ref {}'
+                                  .format(model_bigg_id, genome_ref))
         genome_id = genome_db.id
     else:
-        logging.info('No BioProject ID provided for model {}'.format(model_bigg_id))
+        logging.info('No Genome reference provided for model {}'.format(model_bigg_id))
         genome_id = None
 
     # Load the model objects. Remember: ORDER MATTERS! So don't mess around.
@@ -164,30 +155,26 @@ def load_new_model(session, model, genome_db_id, pub_ref, published_filename):
                      published_filename=published_filename)
     session.add(model_db)
     if pub_ref is not None:
-        try:
-            ref_type, ref_id = pub_ref.split(':')
-        except ValueError:
-            logging.warn('Bad publication reference {}'.format(pub_ref))
-        else:
-            publication_db = (session
-                              .query(Publication)
-                              .filter(Publication.reference_type==ref_type)
-                              .filter(Publication.reference_id==ref_id)
-                              .first())
-            if publication_db is None:
-                publication_db = Publication(reference_type=ref_type,
-                                                  reference_id=ref_id)
-                session.add(publication_db)
-                session.commit()
-            publication_model_db = (session
-                                    .query(PublicationModel)
-                                    .filter(PublicationModel.publication_id == publication_db.id)
-                                    .filter(PublicationModel.model_id == model_db.id)
-                                    .first())
-            if publication_model_db is None:
-                publication_model_db = PublicationModel(model_id=model_db.id,
-                                                             publication_id=publication_db.id)
-                session.add(publication_model_db)
+        ref_type, ref_id = pub_ref
+        publication_db = (session
+                            .query(Publication)
+                            .filter(Publication.reference_type==ref_type)
+                            .filter(Publication.reference_id==ref_id)
+                            .first())
+        if publication_db is None:
+            publication_db = Publication(reference_type=ref_type,
+                                                reference_id=ref_id)
+            session.add(publication_db)
+            session.commit()
+        publication_model_db = (session
+                                .query(PublicationModel)
+                                .filter(PublicationModel.publication_id == publication_db.id)
+                                .filter(PublicationModel.model_id == model_db.id)
+                                .first())
+        if publication_model_db is None:
+            publication_model_db = PublicationModel(model_id=model_db.id,
+                                                            publication_id=publication_db.id)
+            session.add(publication_model_db)
     session.commit()
     return model_db.id
 

@@ -132,13 +132,9 @@ def convert_ids(model):
                                                  reaction.gene_reaction_rule)
 
     # remove old genes
-    for gene in list(model.genes):
-        if len(gene.reactions) == 0:
-            gene.remove_from_model()
-    # TODO switch to:
-    # from cobra.manipulation import remove_genes
-    # remove_genes(model, [gene for gene in model.genes
-    #                      if len(gene.reactions) == 0])
+    from cobra.manipulation import remove_genes
+    remove_genes(model, [gene for gene in model.genes
+                         if len(gene.reactions) == 0])
 
     # fix the model id
     bigg_id = re.sub(r'[^a-zA-Z0-9_]', '_', model.id)

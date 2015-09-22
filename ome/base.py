@@ -47,34 +47,35 @@ class Genome(Base):
     __tablename__ = 'genome'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
-    bioproject_id = Column(String(200), nullable=False)
-    organism = Column(String(200), nullable=False)
+    accession_type = Column(String(200), nullable=False)
+    accession_value = Column(String(200), nullable=False)
+    organism = Column(String(200), nullable=True)
     taxon_id = Column(String(200), nullable=True)
+    ncbi_assembly_id = Column(String(200), nullable=True)
 
     __table_args__ = (
-        UniqueConstraint('bioproject_id', 'organism'),
+        UniqueConstraint('accession_type', 'accession_value'),
     )
 
     def __repr__(self):
-        return ('<ome Genome(id={self.id}, bioproject_id={self.bioproject_id}, '
-                'organism={self.organism}, taxon_id={self.taxon_id})>').format(self=self)
+        return ('<ome Genome(id={self.id}, accession_type={self.accession_type}, '
+                'accession_value={self.accession_value})>'.format(self=self))
 
 
 class Chromosome(Base):
     __tablename__ = 'chromosome'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
+    ncbi_accession = Column(String(200))
     genome_id = Column(Integer, ForeignKey('genome.id'))
-    genome = relationship('Genome', backref='chromosomes')
-    genbank_id = Column(String(100))
-    ncbi_id = Column(String(100))
 
     __table_args__ = (
-        UniqueConstraint('genome_id', 'genbank_id'),
+        UniqueConstraint('ncbi_accession', 'genome_id'),
     )
 
     def __repr__(self):
-        return ('<ome Chromosome(id={self.id}, ncbi_id={self.ncbi_id})>'.format(self=self))
+        return ('<ome Chromosome(id={self.id}, ncbi_accession={self.ncbi_accession}, genome_id={self.genome_id})>'
+                .format(self=self))
 
 
 class GenomeRegion(Base):
@@ -161,7 +162,7 @@ class DataSource(Base):
 
 
 class Synonym(Base):
-    __tablename__ = "synonym"
+    __tablename__ = 'synonym'
     id = Column(Integer, Sequence('wids'), primary_key=True)
     ome_id = Column(Integer)
     synonym = Column(String)

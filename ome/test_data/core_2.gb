@@ -3,6 +3,7 @@ DEFINITION  Escherichia coli str. K-12 substr. MG1655, complete genome.
 ACCESSION   NC_000913
 VERSION     NC_000913.2  GI:49175990-core-2
 DBLINK      Project:57779 BioProject:PRJNA57779-core-2
+            Assembly: test_assembly.1
 KEYWORDS    RefSeq.
 SOURCE      Escherichia coli str. K-12 substr. MG1655
   ORGANISM  Escherichia coli str. K-12 substr. MG1655
