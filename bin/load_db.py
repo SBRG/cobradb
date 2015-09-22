@@ -128,7 +128,8 @@ if __name__ == "__main__":
         logging.info('Finding GenBank files')
         refseq_dir = settings.refseq_directory
         # unique refs
-        genome_refs = {r['genome_ref'] for r in models_list}
+        genome_refs = {x for x in (r['genome_ref'] for r in models_list)
+                       if x is not None}
         # loop through all the files
         genome_file_locations = defaultdict(list)
         for refseq_filename in listdir(refseq_dir):
@@ -149,7 +150,8 @@ if __name__ == "__main__":
         # load the genomes
         n = len(genome_refs)
         for i, genome_ref in enumerate(genome_refs):
-            logging.info('Loading genome ({} of {}) {}'.format(i + 1, n, genome_ref))
+            logging.info('Loading genome ({} of {}) with {} {}'
+                         .format(i + 1, n, genome_ref[0], genome_ref[1]))
             file_paths = genome_file_locations[genome_ref]
             try:
                 component_loading.load_genome(genome_ref, file_paths, session)

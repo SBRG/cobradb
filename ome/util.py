@@ -28,7 +28,8 @@ def check_pseudoreaction(reaction_id):
     patterns = [
         r'^ATPM$', r'^ATPM_NGAM$',
         r'^EX_.*',
-        r'^DM.*',
+        r'^DM_.*',
+        r'^sink_.*',
         r'(?i).*biomass.*' # case insensitive
     ]
     for pattern in patterns:
