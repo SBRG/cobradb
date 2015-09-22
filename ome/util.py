@@ -8,6 +8,10 @@ import os
 import logging
 
 
+def check_none(v):
+    return None if (v == 'None' or v == '') else v
+
+
 def increment_id(id, increment_name=''):
     match = re.match(r'(.*)_%s([0-9]+)$' % increment_name, id)
     if match:
@@ -99,9 +103,6 @@ def load_tsv(filename, required_column_num=None):
     required_column_num: The number of columns to check for.
 
     """
-    def check_none(v):
-        return None if (v == 'None' or v == '') else v
-
     if not os.path.exists(filename):
         return []
     with open(filename, 'r') as f:

@@ -52,6 +52,14 @@ def test_formula(dumped_model):
     assert str(dumped_model.metabolites.get_by_id('glc__D_e').formula) == 'C6H12O6'
 
 
+def test_charge(dumped_model):
+    assert dumped_model.metabolites.get_by_id('glc__D_e').charge == 0
+
+
+def test_subsystem(dumped_model):
+    assert str(dumped_model.reactions.get_by_id('GAPD').subsystem) == 'Glycolysis/Gluconeogenesis'
+
+
 def test_solve_model(dumped_model):
     # test solve
     dumped_model.reactions.get_by_id('EX_glc__D_e').lower_bound = -10

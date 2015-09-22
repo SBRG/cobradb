@@ -85,6 +85,7 @@ def dump_model(bigg_id):
         d['upper_bound'] = float(mr_db.upper_bound)
         d['objective_coefficient'] = float(mr_db.objective_coefficient)
         d['original_bigg_ids'] = old_reaction_ids_dict[r_db.bigg_id]
+        d['subsystem'] = mr_db.subsystem
         d['copy_number'] = int(mr_db.copy_number)
         result_dicts.append(d)
 
@@ -116,6 +117,7 @@ def dump_model(bigg_id):
         r.upper_bound = result_dict['upper_bound']
         r.objective_coefficient = result_dict['objective_coefficient']
         r.notes = {'original_bigg_ids': result_dict['original_bigg_ids']}
+        r.subsystem = result_dict['subsystem']
         reactions.append(r)
     model.add_reactions(reactions)
 
@@ -123,28 +125,33 @@ def dump_model(bigg_id):
     logging.debug('Dumping metabolites')
     # get original bigg ids (might be multiple)
     metabolites_db = (session
-                      .query(Metabolite.bigg_id, Metabolite.name, Metabolite.formula, Compartment.bigg_id, Synonym.synonym)
-                      .join(CompartmentalizedComponent, CompartmentalizedComponent.component_id == Metabolite.id)
-                      .join(Compartment, Compartment.id == CompartmentalizedComponent.compartment_id)
-                      .join(ModelCompartmentalizedComponent,
-                            ModelCompartmentalizedComponent.compartmentalized_component_id == CompartmentalizedComponent.id)
+                      .query(Metabolite.bigg_id,
+                             Metabolite.name,
+                             ModelCompartmentalizedComponent.formula,
+                             ModelCompartmentalizedComponent.charge,
+                             Compartment.bigg_id,
+                             Synonym.synonym)
+                      .join(CompartmentalizedComponent)
+                      .join(Compartment)
+                      .join(ModelCompartmentalizedComponent)
                       .join(OldIDSynonym, OldIDSynonym.ome_id == ModelCompartmentalizedComponent.id)
-                      .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
+                      .join(Synonym)
                       .filter(ModelCompartmentalizedComponent.model_id == model_db.id))
     metabolite_names = []
     old_metabolite_ids_dict = defaultdict(list)
-    for metabolite_id, metabolite_name, formula, compartment_id, old_id in metabolites_db:
+    for metabolite_id, metabolite_name, formula, charge, compartment_id, old_id in metabolites_db:
         if metabolite_id + '_' + compartment_id not in old_metabolite_ids_dict:
-            metabolite_names.append((metabolite_id, metabolite_name, formula, compartment_id))
+            metabolite_names.append((metabolite_id, metabolite_name, formula, charge, compartment_id))
         old_metabolite_ids_dict[metabolite_id + '_' + compartment_id].append(old_id)
 
     metabolites = []
     compartments = set()
-    for component_id, component_name, formula, compartment_id in metabolite_names:
+    for component_id, component_name, formula, charge, compartment_id in metabolite_names:
         if component_id is not None and compartment_id is not None:
             m = cobra.core.Metabolite(id=component_id + '_' + compartment_id,
                                       compartment=compartment_id,
                                       formula=formula)
+            m.charge = charge
             m.name = component_name
             m.notes = {'original_bigg_ids': old_metabolite_ids_dict[component_id + '_' + compartment_id]}
             compartments.add(compartment_id)
@@ -201,70 +208,3 @@ def dump_model(bigg_id):
     session.close()
 
     return model
-
-
-# def dump_universal_model():
-#     session = Session()
-
-#     model = cobra.core.Model('Universal model')
-
-#     # reaction matrix
-#     logging.debug('Dumping reaction matrix')
-#     matrix_db = (session
-#                  .query(ReactionMatrix.stoichiometry, Reaction, ModelReaction,
-#                         Model.bigg_id, Component, Compartment.bigg_id)
-#                  # component, compartment
-#                  .join(CompartmentalizedComponent,
-#                        ReactionMatrix.compartmentalized_component_id == CompartmentalizedComponent.id)
-#                  .join(Component,
-#                        CompartmentalizedComponent.component_id == Component.id)
-#                  .join(Compartment,
-#                        CompartmentalizedComponent.compartment_id == Compartment.id)
-#                  # reaction
-#                  .join(Reaction,
-#                        ReactionMatrix.reaction_id == Reaction.id)
-#                  .join(ModelReaction,
-#                        Reaction.id == ModelReaction.reaction_id)
-#                  .join(Model,
-#                        ModelReaction.model_id == Model.id)
-#                  # .limit(100)
-#                  .all())
-
-#     def assign_reaction(reaction, db_reaction, db_model_reaction, model_bigg_id):
-#         reaction.bigg_id = '%s (%s)' % (db_reaction.bigg_id, model_bigg_id)
-#         reaction.name = db_reaction.name
-#         reaction.gene_reaction_rule = db_model_reaction.gpr
-#         reaction.lower_bound = float(db_model_reaction.lower_bound)
-#         reaction.upper_bound = float(db_model_reaction.upper_bound)
-#         reaction.objective_coefficient = float(db_model_reaction.objective_coefficient)
-
-#     try:
-#         it = izip(matrix_db, ProgressBar(len(matrix_db)))
-#     except NameError:
-#         it = izip(matrix_db, repeat(None))
-
-#     for (stoich, r_db, mr_db, model_bigg_id, component, compartment_id), _ in it:
-#         # assign the reaction
-#         try:
-#             r = model.reactions.get_by_id(r_db.bigg_id)
-#             # choose the most lenient reversibility
-#             if mr_db.lower_bound < 0 and r.lower_bound >= 0:
-#                 assign_reaction(r, r_db, mr_db, model_bigg_id)
-#         except KeyError:
-#             r = cobra.core.Reaction(r_db.bigg_id)
-#             assign_reaction(r, r_db, mr_db, model_bigg_id)
-#             model.add_reaction(r)
-
-#         # add mets
-#         met_bigg_id = component.bigg_id + '_' + compartment_id
-#         try:
-#             m = model.metabolites.get_by_id(met_bigg_id)
-#         except KeyError:
-#             m = cobra.core.Metabolite(met_bigg_id)
-#             m.bigg_id = '%s (%s)' % (component.bigg_id, component.kegg_id)
-#         r.add_metabolites({ m: float(stoich) })
-
-#     session.commit()
-#     session.close()
-
-#     return model

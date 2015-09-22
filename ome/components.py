@@ -218,10 +218,6 @@ class Metabolite(Component):
                 ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"),
                 primary_key=True)
 
-    formula = Column(String, nullable=True)
-    smiles = Column(String(200), nullable=True)
-    charge = Column(Integer, nullable=True)
-
     def __repr__(self):
         return ('<ome Metabolite(id={self.id}, bigg_id={self.bigg_id}>'
                 .format(self=self))

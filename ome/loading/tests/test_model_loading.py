@@ -366,12 +366,6 @@ class TestsWithModels:
                 .filter(DataSource.name  == 'CHEBI')
                 .count()) == 5
 
-    def test_formula_from_second_model(self, session):
-        assert (session
-                .query(Metabolite)
-                .filter(Metabolite.bigg_id == 'atp')
-                .first()).formula == 'C10H12N5O13P3'
-
     def tests_reaction_attributes(self, session):
         r_db =  (session.query(ModelReaction)
                 .join(Reaction)
@@ -380,10 +374,16 @@ class TestsWithModels:
         assert r_db.objective_coefficient == 0
         assert r_db.upper_bound == 1000
         assert r_db.lower_bound == -1000
+        assert r_db.subsystem == 'Glycolysis/Gluconeogenesis'
 
     def test_metabolite_attributes(self, session):
-        m_db =  (session.query(Metabolite)
-                .filter(Metabolite.bigg_id == '13dpg')
-                .first())
-        assert m_db.formula == 'C3H4O10P2'
-        assert m_db.charge == -4
+        res_db = (session
+                  .query(ModelCompartmentalizedComponent)
+                  .join(CompartmentalizedComponent)
+                  .join(Component)
+                  .join(Model)
+                  .filter(Component.bigg_id == '13dpg')
+                  .filter(Model.bigg_id == 'Ecoli_core_model')
+                  .first())
+        assert res_db.formula == 'C3H4O10P2'
+        assert res_db.charge == -4

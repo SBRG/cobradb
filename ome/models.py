@@ -58,6 +58,7 @@ class ModelReaction(Base):
     upper_bound = Column(Numeric, nullable=False)
     gene_reaction_rule = Column(String, nullable=False)
     original_gene_reaction_rule = Column(String, nullable=True)
+    subsystem = Column(String, nullable=True)
 
     __table_args__ = (
         UniqueConstraint('reaction_id', 'model_id', 'copy_number'),
@@ -112,6 +113,8 @@ class ModelCompartmentalizedComponent(Base):
     compartmentalized_component_id = Column(Integer,
                                             ForeignKey('compartmentalized_component.id'),
                                             nullable=False)
+    formula = Column(String, nullable=True)
+    charge = Column(Integer, nullable=True)
 
     __table_args__ = (
         UniqueConstraint('compartmentalized_component_id', 'model_id'),

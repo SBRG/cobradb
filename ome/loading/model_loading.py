@@ -8,7 +8,8 @@ from ome.models import *
 from ome.components import *
 from ome.loading import parse
 from ome.util import (increment_id, check_pseudoreaction, load_tsv,
-                      get_or_create_data_source, format_formula, scrub_name)
+                      get_or_create_data_source, format_formula, scrub_name,
+                      check_none)
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
@@ -298,14 +299,9 @@ def load_metabolites(session, model_id, model, compartment_names,
         if metabolite_db is None:
             # make the new metabolite
             metabolite_db = Metabolite(bigg_id=component_bigg_id,
-                                       name=scrub_name(getattr(metabolite, 'name', None)),
-                                       formula=_formula,
-                                       charge=charge)
+                                       name=scrub_name(getattr(metabolite, 'name', None)))
             session.add(metabolite_db)
             session.commit()
-
-        elif metabolite_db.formula is None:
-            metabolite_db.formula = _formula
 
         # load the linkouts for the universal metabolite
         _load_metabolite_linkouts(session, metabolite, metabolite_db.id)
@@ -345,8 +341,16 @@ def load_metabolites(session, model_id, model, compartment_names,
                               .first())
         if model_comp_comp_db is None:
             model_comp_comp_db = ModelCompartmentalizedComponent(model_id=model_id,
-                                                                 compartmentalized_component_id=comp_component_db.id)
+                                                                 compartmentalized_component_id=comp_component_db.id,
+                                                                 formula=_formula,
+                                                                 charge=charge)
             session.add(model_comp_comp_db)
+            session.commit()
+        else:
+            if model_comp_comp_db.formula is None:
+                model_comp_comp_db.formula = _formula
+            if model_comp_comp_db.charge is None:
+                model_comp_comp_db.charge = charge
             session.commit()
 
         # add synonyms
@@ -384,7 +388,7 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
     """Add a new universal reaction with reaction matrix rows."""
 
     # name is optional in cobra 0.4b2. This will probably change back.
-    name = getattr(reaction, 'name', None)
+    name = check_none(getattr(reaction, 'name', None))
     reaction_db = Reaction(bigg_id=bigg_id, name=scrub_name(name),
                            reaction_hash=reaction_hash,
                            pseudoreaction=is_pseudoreaction)
@@ -588,6 +592,9 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
         else:
             raise Exception('Should not get here')
 
+        # subsystem
+        subsystem = check_none(reaction.subsystem.strip())
+
         # get the model reaction
         model_reaction_db = (session
                              .query(ModelReaction)
@@ -597,6 +604,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                              .filter(ModelReaction.upper_bound == reaction.upper_bound)
                              .filter(ModelReaction.gene_reaction_rule == reaction.gene_reaction_rule)
                              .filter(ModelReaction.objective_coefficient == reaction.objective_coefficient)
+                             .filter(ModelReaction.subsystem == subsystem)
                              .first())
         if model_reaction_db is None:
             # get the number of existing copies of this reaction in the model
@@ -613,7 +621,8 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                                               upper_bound=reaction.upper_bound,
                                               lower_bound=reaction.lower_bound,
                                               objective_coefficient=reaction.objective_coefficient,
-                                              copy_number=copy_number)
+                                              copy_number=copy_number,
+                                              subsystem=subsystem)
             session.add(model_reaction_db)
             session.commit()
 

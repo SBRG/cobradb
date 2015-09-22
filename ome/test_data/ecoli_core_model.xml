@@ -204,7 +204,7 @@
           <html xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: C6H11O9P</p></html>
         </notes>
       </species>
-      <species id="M_glc_D_e" name="D-Glucose" compartment="C_e">
+      <species id="M_glc_D_e" name="D-Glucose" compartment="C_e" charge="0">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: C6H12O6</p></html>
         </notes>

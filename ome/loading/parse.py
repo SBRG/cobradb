@@ -254,10 +254,10 @@ def setup_model(model, substrate_reactions, aerobic=True, sur=10, max_our=10,
 
     return model
 
-def turn_on_subsystem(model, subsytem):
+def turn_on_subsystem(model, subsystem):
     raise NotImplementedError()
     for reaction in model.reactions:
-        if reaction.subsystem.strip('_') == subsytem.strip('_'):
+        if reaction.subsystem.strip('_') == subsystem.strip('_'):
             reaction.lower_bound = -1000 if reaction.reversibility else 0
             reaction.upper_bound = 1000
     return model
