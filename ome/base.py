@@ -5,7 +5,7 @@ from ome import settings
 from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import Session as _SA_Session
 from sqlalchemy import (Table, MetaData, create_engine, Column, Integer, String,
-                        Float, Numeric, ForeignKey, Boolean, Enum)
+                        Float, Numeric, ForeignKey, Boolean, Enum, DateTime)
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from types import MethodType
@@ -33,7 +33,8 @@ _enum_l = [
     Enum('pmid', 'doi',
          name='reference_type'),
     Enum('model_reaction', 'model_compartmentalized_component', 'model_gene',
-         name='old_id_synonym_type')
+         name='old_id_synonym_type'),
+    Enum('is_version', name='is_version')
 ]
 custom_enums = {x.name: x for x in _enum_l}
 
@@ -41,6 +42,21 @@ custom_enums = {x.name: x for x in _enum_l}
 # exceptions
 class NotFoundError(Exception):
     pass
+
+
+class DatabaseVersion(Base):
+    __tablename__ = 'database_version'
+
+    is_version = Column(custom_enums['is_version'], primary_key=True)
+    date_time = Column(DateTime, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('is_version'),
+    )
+
+    def __init__(self, date_time):
+        self.is_version = 'is_version'
+        self.date_time = date_time
 
 
 class Genome(Base):

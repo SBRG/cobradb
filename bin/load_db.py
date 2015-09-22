@@ -30,6 +30,7 @@ from ome.loading import component_loading
 from ome.loading.component_loading import BadGenomeError, get_genbank_accessions
 from ome.loading import model_loading
 from ome.loading import map_loading
+from ome.loading import version_loading
 
 import os
 from os import listdir
@@ -97,6 +98,9 @@ if __name__ == "__main__":
 
     # make the session
     session = base.Session()
+
+    # load the date
+    version_loading.load_version_date(session)
 
     # get the models and genomes
     model_dir = settings.model_directory
