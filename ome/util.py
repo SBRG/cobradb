@@ -84,6 +84,11 @@ def scrub_name(the_name):
     """Make a nice looking name."""
     if the_name is None:
         return None
+    the_name = (the_name
+                .replace('_SPACE_SPACE_', ' ')
+                .replace('_SPACE_', ' ')
+                .replace('_COLON_', ':')
+                .replace('_COMMA_', ','))
     the_name = re.sub(r'^[RMG]?_', '', the_name)
     the_name = re.sub(r'_', ' ', the_name)
     # uppercase

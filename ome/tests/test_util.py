@@ -57,6 +57,7 @@ def test_scrub_gene_id():
 
 
 def test_scrub_name():
+    assert scrub_name('retpalm_SPACE_deleted_SPACE_10_09_2005_SPACE_SPACE_06_COLON_18_COLON_49_SPACE_PM') == 'Retpalm deleted 10 09 2005 06:18:49 PM'
     assert scrub_name('R_ammonia_reversible_transport') == 'Ammonia reversible transport'
     assert scrub_name('_ammonia_reversible_transport') == 'Ammonia reversible transport'
     assert scrub_name(None) == None
