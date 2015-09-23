@@ -10,13 +10,17 @@ import pytest
 
 def test_get_genbank_accessions(test_genbank_files):
     acc = get_genbank_accessions(test_genbank_files[0][1], fast=True)
-    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': None}
+    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': None, 'ncbi_bioproject': None}
     acc = get_genbank_accessions(test_genbank_files[0][1], fast=False)
-    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': None}
+    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': None, 'ncbi_bioproject': None}
     acc = get_genbank_accessions(test_genbank_files[1][1], fast=True)
-    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': 'test_assembly.1'}
+    assert acc == {'ncbi_accession': 'NC_000913.2',
+                   'ncbi_assembly': 'test_assembly.1',
+                   'ncbi_bioproject': 'PRJNA57779-core-2'}
     acc = get_genbank_accessions(test_genbank_files[1][1], fast=False)
-    assert acc == {'ncbi_accession': 'NC_000913.2', 'ncbi_assembly': 'test_assembly.1'}
+    assert acc == {'ncbi_accession': 'NC_000913.2',
+                   'ncbi_assembly': 'test_assembly.1',
+                   'ncbi_bioproject': 'PRJNA57779-core-2'}
 
 
 @pytest.mark.usefixtures('load_genomes')

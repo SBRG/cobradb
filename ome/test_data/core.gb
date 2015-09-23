@@ -2,7 +2,7 @@ LOCUS       NC_000913                  0 bp    DNA              CON 22-JUL-2013
 DEFINITION  Escherichia coli str. K-12 substr. MG1655, complete genome.
 ACCESSION   NC_000913
 VERSION     NC_000913.2  GI:49175990-core
-DBLINK      Project:57779 BioProject:PRJNA57779-core
+DBLINK      Project:57779
 KEYWORDS    RefSeq.
 SOURCE      Escherichia coli str. K-12 substr. MG1655
   ORGANISM  Escherichia coli str. K-12 substr. MG1655

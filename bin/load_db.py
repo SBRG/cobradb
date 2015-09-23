@@ -34,7 +34,7 @@ from ome.loading import version_loading
 
 import os
 from os import listdir
-from os.path import join
+from os.path import join, isfile
 import argparse
 from collections import defaultdict
 
@@ -133,9 +133,9 @@ if __name__ == "__main__":
         # loop through all the files
         genome_file_locations = defaultdict(list)
         for refseq_filename in listdir(refseq_dir):
-            if refseq_filename.startswith('.'):
-                continue
             refseq_filepath = join(refseq_dir, refseq_filename)
+            if refseq_filename.startswith('.') or not isfile(refseq_filepath):
+                continue
             # check both accession and assembly for a match
             ids = get_genbank_accessions(refseq_filepath, fast=True)
             # if the ids couldn't be found
@@ -143,9 +143,14 @@ if __name__ == "__main__":
                 logging.warn('Could not find accessions for genbank file %s' % refseq_filepath)
                 continue
             # look for matching ids from the model-genome file
+            found = False
             for genome_ref in ids.iteritems():
                 if genome_ref in genome_refs:
                     genome_file_locations[genome_ref].append(refseq_filepath)
+                    found = True
+            # warn about unused files
+            if not found:
+                logging.warn('Unused file in the refseq directory: %s' % refseq_filename)
 
         # load the genomes
         n = len(genome_refs)

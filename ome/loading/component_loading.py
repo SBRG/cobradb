@@ -43,7 +43,8 @@ def _load_gb_file(genbank_filepath):
 def get_genbank_accessions(genbank_filepath, fast=False):
     """Load the file and return the NCBI Accession and Assembly IDs (if available).
 
-    Returns a tuples of (NCBI Acession with verion, Assembly ID with version).
+    Returns a dictionary of accessions with keys: 'ncbi_accession',
+    'ncbi_assembly', 'ncbi_bioproject'.
 
     Arguments
     ---------
@@ -54,32 +55,40 @@ def get_genbank_accessions(genbank_filepath, fast=False):
     not load the whole file.
 
     """
-    accession = None
-    assembly = None
+    out = {'ncbi_assembly': None,
+           'ncbi_accession': None,
+           'ncbi_bioproject': None}
 
     if fast:
         # try to find the BioProject ID in the first 100 lines. Otherwise, use
         # the full SeqIO.read
         line_limit = 100
+        regex_dict = {
+            k: re.compile(v) for k, v in {
+                'ncbi_accession': r'VERSION\s+([\w.-]+)[^\w.-]',
+                'ncbi_assembly': r'Assembly:\s*([\w.-]+)[^\w.-]',
+                'ncbi_bioproject': r'BioProject:\s*([\w.-]+)[^\w.-]'
+            }.iteritems()
+        }
         with open(genbank_filepath, 'r') as f:
             for i, line in enumerate(f.readlines()):
-                m1 = re.search(r'VERSION\s+([\w.]+)[^\w.]', line)
-                if m1 is not None:
-                    accession = m1.group(1)
-                m2 = re.search(r'Assembly:\s*([\w.]+)[^\w.]', line)
-                if m2 is not None:
-                    assembly = m2.group(1)
+                for key, regex in regex_dict.iteritems():
+                    match = regex.search(line)
+                    if match is not None:
+                        out[key] = match.group(1)
                 if i > line_limit:
                     break
     else:
         # load the genbank file
         gb_file = _load_gb_file(genbank_filepath)
-        accession = gb_file.id
+        out['ncbi_accession'] = gb_file.id
         for value in gb_file.dbxrefs[0].split():
             if 'Assembly' in value:
-                assembly = value.split(':')[1]
+                out['ncbi_assembly'] = value.split(':')[1]
+            if 'BioProject' in value:
+                out['ncbi_bioproject'] = value.split(':')[1]
 
-    return {'ncbi_accession': accession, 'ncbi_assembly': assembly}
+    return out
 
 
 def load_gene_synonym(session, gene_db, synonym, data_source_name):
