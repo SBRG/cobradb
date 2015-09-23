@@ -185,7 +185,7 @@ def id_for_new_id_style(old_id, is_metabolite=False):
 
 
 def get_formulas_from_names(model):
-    reg = re.compile(r'.*_([A-Za-z0-9]+)$')
+    reg = re.compile(r'.*_([A-Z][A-Z0-9]*)$')
     # support cobra 0.3 and 0.4
     for metabolite in model.metabolites:
         if (metabolite.formula is not None and str(metabolite.formula) != '' and getattr(metabolite, 'formula', None) is not None):

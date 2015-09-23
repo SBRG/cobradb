@@ -49,6 +49,10 @@ def test_get_or_create_data_source(test_db, session, test_prefs, tmpdir):
             .count()) == 1
 
 
+def test_format_formula():
+    assert format_formula("['abc']") == 'abc'
+
+
 def test_scrub_gene_id():
     assert scrub_gene_id('1234.5') == '1234_AT5'
     assert scrub_gene_id('1234.56') == '1234_AT56'

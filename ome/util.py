@@ -66,11 +66,10 @@ def get_or_create_data_source(session, data_source_name):
 
 
 def format_formula(formula):
-    if formula is not None:
-        formatted_formula = formula.translate(None, "'[]")
-        return formatted_formula
-    else:
+    """Remove unnecessary characters from formula."""
+    if formula is None:
         return formula
+    return formula.strip("'[]")
 
 
 def scrub_gene_id(the_id):
