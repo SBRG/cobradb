@@ -108,11 +108,21 @@ if __name__ == "__main__":
     logging.info('Loading models and genomes using %s' % model_genome_path)
     lines = util.load_tsv(model_genome_path, required_column_num=3)
     models_list = []
-    for line in lines:
-        model_filename, pub_ref_string, genome_ref_string = line
-        if genome_ref_string is None:
-            genome_ref = None
+
+    def _check_for_additional_gb_filenames(ref_string_plus):
+        spl = [x.strip() for x in ref_string_plus.split(',')]
+        if len(spl) == 1:
+            return spl[0], None
         else:
+            return spl[0], spl[1:]
+
+    for line in lines:
+        model_filename, pub_ref_string, genome_ref_string_plus = line
+        if genome_ref_string_plus is None:
+            genome_ref = None
+            additional_gb_filenames = None
+        else:
+            genome_ref_string, additional_gb_filenames = _check_for_additional_gb_filenames(genome_ref_string_plus)
             genome_ref = util.ref_str_to_tuple(genome_ref_string)
         if pub_ref_string is None:
             pub_ref = None
@@ -120,16 +130,34 @@ if __name__ == "__main__":
             pub_ref = util.ref_str_to_tuple(pub_ref_string)
         models_list.append({'model_filename': model_filename,
                             'pub_ref': pub_ref,
-                            'genome_ref': genome_ref})
+                            'genome_ref': genome_ref,
+                            'additional_gb_filenames': additional_gb_filenames})
 
     genomes_for_models = {}
     if not args.skip_genomes:
         # find the accessions for the genbank files
         logging.info('Finding GenBank files')
         refseq_dir = settings.refseq_directory
-        # unique refs
-        genome_refs = {x for x in (r['genome_ref'] for r in models_list)
-                       if x is not None}
+
+        # unique refs and additional files for accessions. Any conflicting
+        # repeats will raise exception.
+        genome_refs = set()
+        additional_gb_filenames_dict = defaultdict(set)
+        genome_ref_additions = {}
+        for d in models_list:
+            genome_ref = d['genome_ref']
+            if genome_ref is None:
+                continue
+            genome_refs.add(genome_ref)
+            additional_gb_filenames = d['additional_gb_filenames']
+            if additional_gb_filenames is None:
+                continue
+            if genome_ref in genome_ref_additions and set(genome_ref_additions[genome_ref]) != set(additional_gb_filenames):
+                raise Exception('Conflicting additional files genome ref with %s %s' % genome_ref)
+            for add in additional_gb_filenames:
+                additional_gb_filenames_dict[add].add(genome_ref)
+            genome_ref_additions[genome_ref] = additional_gb_filenames
+
         # loop through all the files
         genome_file_locations = defaultdict(list)
         for refseq_filename in listdir(refseq_dir):
@@ -148,6 +176,11 @@ if __name__ == "__main__":
                 if genome_ref in genome_refs:
                     genome_file_locations[genome_ref].append(refseq_filepath)
                     found = True
+            # also look for additional files
+            if refseq_filename in additional_gb_filenames_dict:
+                for genome_ref in additional_gb_filenames_dict[refseq_filename]:
+                    genome_file_locations[genome_ref].append(refseq_filepath)
+                found = True
             # warn about unused files
             if not found:
                 logging.warn('Unused file in the refseq directory: %s' % refseq_filename)
@@ -160,8 +193,11 @@ if __name__ == "__main__":
             file_paths = genome_file_locations[genome_ref]
             try:
                 component_loading.load_genome(genome_ref, file_paths, session)
+            except AlreadyLoadedError as e:
+                logging.info(str(e))
             except Exception as e:
                 logging.exception(e)
+
 
     if not args.skip_models:
         logging.info("Loading models")

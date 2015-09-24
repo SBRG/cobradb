@@ -4,6 +4,7 @@ from ome import settings, timing, base
 from ome.base import *
 from ome.components import Gene, Protein
 from ome.util import scrub_gene_id, get_or_create_data_source
+from ome.loading import AlreadyLoadedError
 
 import sys, os, math, re
 from os.path import basename
@@ -141,18 +142,17 @@ def load_genome(genome_ref, genome_file_paths, session):
     if len(genome_file_paths) == 0:
         raise Exception('No files found for genome {}'.format(genome_ref))
 
-    genome_db = (session
-                 .query(Genome)
-                 .filter(Genome.accession_type == genome_ref[0])
-                 .filter(Genome.accession_value == genome_ref[1])
-                 .first())
+    # check that the genome doesn't already exist
+    if (session.query(Genome)
+        .filter(Genome.accession_type == genome_ref[0])
+        .filter(Genome.accession_value == genome_ref[1])).count() > 0:
+        raise AlreadyLoadedError('Genome with %s %s already loaded' % genome_ref)
 
-    if genome_db is None:
-        logging.debug('Adding new genome: {}'.format(genome_ref))
-        genome_db = base.Genome(accession_type=genome_ref[0],
-                                accession_value=genome_ref[1])
-        session.add(genome_db)
-        session.commit()
+    logging.debug('Adding new genome: {}'.format(genome_ref))
+    genome_db = base.Genome(accession_type=genome_ref[0],
+                            accession_value=genome_ref[1])
+    session.add(genome_db)
+    session.commit()
 
     n = len(genome_file_paths)
     for i, genbank_file_path in enumerate(genome_file_paths):
