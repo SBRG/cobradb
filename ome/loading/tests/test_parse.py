@@ -1,4 +1,6 @@
 from ome.loading.parse import *
+from ome.loading.parse import (_has_gene_reaction_rule,
+                               _normalize_pseudoreaction)
 
 from cobra.core import Reaction, Metabolite
 from cobra.io import read_sbml_model
@@ -19,6 +21,190 @@ def convert_ids_model(example_model):
     })
     return convert_ids(example_model.copy())
 
+
+# --------------------------------------------------------------------
+# pseudoreactions
+# --------------------------------------------------------------------
+
+def test__has_gene_reaction_rule():
+    reaction = Reaction('rxn')
+    assert _has_gene_reaction_rule(reaction) is False
+    reaction.gene_reaction_rule = 'b1779'
+    assert _has_gene_reaction_rule(reaction) is True
+    reaction.gene_reaction_rule = ' '
+    assert _has_gene_reaction_rule(reaction) is False
+
+
+def test__normalize_pseudoreaction_exchange():
+    reaction = Reaction('EX_gone')
+    reaction.add_metabolites({Metabolite('glu__L_e'): -1})
+    reaction.lower_bound = -1000
+    reaction.upper_bound = 0
+    _normalize_pseudoreaction(reaction)
+    assert reaction.id == 'EX_glu__L_e'
+
+
+def test__normalize_pseudoreaction_exchange_reversed():
+    reaction = Reaction('EX_gone')
+    reaction.add_metabolites({Metabolite('glu__L_e'): 1})
+    reaction.lower_bound = 0
+    reaction.upper_bound = 1000
+    _normalize_pseudoreaction(reaction)
+    assert reaction.id == 'EX_glu__L_e'
+    assert reaction.lower_bound == -1000
+    assert reaction.upper_bound == 0
+    assert reaction.metabolites.values() == [-1]
+
+
+def test__normalize_pseudoreaction_exchange_error_bad_coeff():
+    reaction = Reaction('EX_gone')
+    reaction.add_metabolites({Metabolite('glu__L_e'): -2})
+    with pytest.raises(ConflictingPseudoreaction) as excinfo:
+        _normalize_pseudoreaction(reaction)
+    assert 'with coefficient' in str(excinfo.value)
+    assert reaction.id == 'EX_gone'
+
+
+def test__normalize_pseudoreaction_exchange_error_bad_name():
+    reaction = Reaction('gone')
+    reaction.add_metabolites({Metabolite('glu__L_e'): -1})
+    with pytest.raises(ConflictingPseudoreaction) as excinfo:
+        _normalize_pseudoreaction(reaction)
+    assert 'does not start with EX_' in str(excinfo.value)
+    assert reaction.id == 'gone'
+
+
+def test__normalize_pseudoreaction_exchange_error_has_gpr():
+    reaction = Reaction('EX_gone')
+    reaction.add_metabolites({Metabolite('glu__L_e'): -1})
+    reaction.gene_reaction_rule = 'b1779'
+    with pytest.raises(ConflictingPseudoreaction) as excinfo:
+        _normalize_pseudoreaction(reaction)
+    assert 'has a gene_reaction_rule' in str(excinfo.value)
+    assert reaction.id == 'EX_gone'
+
+
+def test__normalize_pseudoreaction_demand():
+    reaction = Reaction('DM_gone')
+    reaction.add_metabolites({Metabolite('glu__L_c'): -1})
+    reaction.lower_bound = 0
+    reaction.upper_bound = 1000
+    _normalize_pseudoreaction(reaction)
+    assert reaction.id == 'DM_glu__L_c'
+
+
+def test__normalize_pseudoreaction_demand_reversed():
+    reaction = Reaction('DM_gone')
+    reaction.add_metabolites({Metabolite('glu__L_c'): 1})
+    reaction.lower_bound = -1000
+    reaction.upper_bound = 0
+    _normalize_pseudoreaction(reaction)
+    assert reaction.metabolites.values() == [-1]
+    assert reaction.lower_bound == 0
+    assert reaction.upper_bound == 1000
+    assert reaction.id == 'DM_glu__L_c'
+
+
+def test__normalize_pseudoreaction_demand_reversed_prefer_sink_name():
+    reaction = Reaction('sink_gone')
+    reaction.add_metabolites({Metabolite('glu__L_c'): 1})
+    reaction.lower_bound = -1000
+    reaction.upper_bound = 0
+    _normalize_pseudoreaction(reaction)
+    assert reaction.metabolites.values() == [-1]
+    assert reaction.lower_bound == 0
+    assert reaction.upper_bound == 1000
+    assert reaction.id == 'SK_glu__L_c'
+
+
+def test__normalize_pseudoreaction_demand_error_has_gpr():
+    reaction = Reaction('DM_gone')
+    reaction.add_metabolites({Metabolite('glu__L_c'): -1})
+    reaction.gene_reaction_rule = 'b1779'
+    with pytest.raises(ConflictingPseudoreaction) as excinfo:
+        _normalize_pseudoreaction(reaction)
+    assert 'has a gene_reaction_rule' in str(excinfo.value)
+    assert reaction.id == 'DM_gone'
+
+
+def test__normalize_pseudoreaction_sink():
+    reaction = Reaction('SInk_gone')
+    reaction.add_metabolites({Metabolite('glu__L_c'): -1})
+    reaction.lower_bound = -1000
+    reaction.upper_bound = 0
+    _normalize_pseudoreaction(reaction)
+    assert reaction.id == 'SK_glu__L_c'
+
+
+def test__normalize_pseudoreaction_sink_reversed():
+    reaction = Reaction('Sink_gone')
+    reaction.add_metabolites({Metabolite('glu__L_c'): 1})
+    reaction.lower_bound = 0
+    reaction.upper_bound = 50
+    _normalize_pseudoreaction(reaction)
+    assert reaction.metabolites.values() == [-1]
+    assert reaction.lower_bound == -50
+    assert reaction.upper_bound == 0
+    assert reaction.id == 'SK_glu__L_c'
+
+
+def test__normalize_pseudoreaction_biomass():
+    reaction = Reaction('my_biomass_2')
+    _normalize_pseudoreaction(reaction)
+    assert reaction.id == 'BIOMASS_my_2'
+
+
+def test__normalize_pseudoreaction_biomass_has_gpr():
+    reaction = Reaction('my_biomass_2')
+    reaction.gene_reaction_rule = 'b1779'
+    with pytest.raises(ConflictingPseudoreaction) as excinfo:
+        _normalize_pseudoreaction(reaction)
+    assert 'has a gene_reaction_rule' in str(excinfo.value)
+    assert reaction.id == 'my_biomass_2'
+
+
+def test__normalize_pseudoreaction_atpm():
+    reaction = Reaction('notATPM')
+    reaction.add_metabolites({Metabolite('atp_c'): -1,
+                              Metabolite('h2o_c'): -1,
+                              Metabolite('pi_c'): 1,
+                              Metabolite('h_c'): 1,
+                              Metabolite('adp_c'): 1})
+    _normalize_pseudoreaction(reaction)
+    assert reaction.id == 'ATPM'
+
+
+def test__normalize_pseudoreaction_atpm_reversed():
+    reaction = Reaction('notATPM')
+    reaction.add_metabolites({Metabolite('atp_c'): 1,
+                              Metabolite('h2o_c'): 1,
+                              Metabolite('pi_c'): -1,
+                              Metabolite('h_c'): -1,
+                              Metabolite('adp_c'): -1})
+    reaction.lower_bound = -50
+    reaction.upper_bound = 100
+    _normalize_pseudoreaction(reaction)
+    assert reaction.id == 'ATPM'
+    assert reaction.lower_bound == -100
+    assert reaction.upper_bound == 50
+
+
+def test__normalize_pseudoreaction_atpm_has_gpr():
+    reaction = Reaction('NPT1')
+    reaction.add_metabolites({Metabolite('atp_c'): -1,
+                              Metabolite('h2o_c'): -1,
+                              Metabolite('pi_c'): 1,
+                              Metabolite('h_c'): 1,
+                              Metabolite('adp_c'): 1})
+    reaction.gene_reaction_rule = 'b1779'
+    _normalize_pseudoreaction(reaction)
+    # should not change
+    assert reaction.id == 'NPT1'
+
+
+# --------------------------------------------------------------------
+# ID fixes
+# --------------------------------------------------------------------
 
 def test_convert_ids_dad_2(convert_ids_model):
     returned, old_ids = convert_ids_model
