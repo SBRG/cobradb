@@ -121,9 +121,8 @@ def _fix_exchange(reaction):
         return None
     # check id
     if not re.search(r'^ex_', reaction.id, re.IGNORECASE):
-        raise ConflictingPseudoreaction('Reaction {r.id} looks like an exchange '
-                                        'but it does not start with EX_'
-                                        .format(r=reaction))
+        logging.warn('Reaction {r.id} looks like an exchange but it does not start with EX_. Renaming'
+                     .format(r=reaction))
     # check coefficient
     if abs(coeff) != 1:
         raise ConflictingPseudoreaction('Reaction {} looks like an exchange '
@@ -132,7 +131,7 @@ def _fix_exchange(reaction):
     # reverse if necessary
     if coeff == 1:
         _reverse_reaction(reaction)
-    return 'EX_%s' % met.id
+    return 'EX_%s' % met.id, 'Extracellular exchange'
 
 
 # for sink & demand functions
@@ -158,9 +157,8 @@ def _fix_demand(reaction):
         return None
     # check id
     if not re.search(r'^dm_', reaction.id, re.IGNORECASE):
-        raise ConflictingPseudoreaction('Reaction {r.id} looks like a demand '
-                                        'but it does not start with DM_'
-                                        .format(r=reaction))
+        logging.warn('Reaction {r.id} looks like a demand but it does not start with DM_. Renaming.'
+                     .format(r=reaction))
     # check coefficient
     if abs(coeff) != 1:
         raise ConflictingPseudoreaction('Reaction {} looks like a demand '
@@ -169,7 +167,7 @@ def _fix_demand(reaction):
     # reverse if necessary
     if coeff == 1:
         _reverse_reaction(reaction)
-    return 'DM_%s' % met.id
+    return 'DM_%s' % met.id, 'Intracellular demand'
 
 
 def _fix_sink(reaction):
@@ -183,9 +181,8 @@ def _fix_sink(reaction):
         return None
     # check id
     if not _sink_regex.search(reaction.id):
-        raise ConflictingPseudoreaction('Reaction {r.id} looks like a sink '
-                                        'but it does not start with sink_ or SK_'
-                                        .format(r=reaction))
+        logging.warn('Reaction {r.id} looks like a sink but it does not start with sink_ or SK_. Renaming.'
+                     .format(r=reaction))
     # check coefficient
     if abs(coeff) != 1:
         raise ConflictingPseudoreaction('Reaction {} looks like a sink '
@@ -194,7 +191,7 @@ def _fix_sink(reaction):
     # reverse if necessary
     if coeff == 1:
         _reverse_reaction(reaction)
-    return 'SK_%s' % met.id
+    return 'SK_%s' % met.id, 'Intracellular source/sink'
 
 
 def _fix_biomass(reaction):
@@ -203,18 +200,20 @@ def _fix_biomass(reaction):
     regex = re.compile(r'biomass', re.IGNORECASE)
     if not regex.search(reaction.id):
         return None
-    return ('BIOMASS_%s' % regex.sub('', reaction.id)).replace('__', '_')
+    new_id = ('BIOMASS_%s' % regex.sub('', reaction.id)).replace('__', '_')
+    return new_id, 'Biomass and maintenance functions'
 
 
 def _fix_atpm(reaction):
     """Returns new ID if the reaction was treated as a biomass."""
     # does it look like a atpm?
     mets = {k.id: v for k, v in reaction.metabolites.iteritems()}
+    subsystem = 'Biomass and maintenance functions'
     if mets == {'atp_c': -1, 'h2o_c': -1, 'pi_c': 1, 'h_c': 1, 'adp_c': 1}:
-        return 'ATPM'
+        return 'ATPM', subsystem
     elif mets == {'atp_c': 1, 'h2o_c': 1, 'pi_c': -1, 'h_c': -1, 'adp_c': -1}:
         _reverse_reaction(reaction)
-        return 'ATPM'
+        return 'ATPM', subsystem
     return None
 
 
@@ -222,22 +221,26 @@ def _normalize_pseudoreaction(reaction):
     """If the reaction is a pseudoreaction (exchange, demand, sink, biomass, or
     ATPM), then apply standard rules to it."""
 
-    new_id = None
+    new_id = None; subsystem = None
 
     # check atpm separately because there is a good reason for an atpm-like
     # reaction with a gene_reaction_rule
     is_atpm = False
     if new_id is None:
-        new_id = _fix_atpm(reaction)
-        if new_id is not None:
+        res = _fix_atpm(reaction)
+        if res is not None:
+            new_id, subsystem = res
             is_atpm = True
 
     # check for other pseudoreactions
     fns = [_fix_exchange, _fix_demand, _fix_sink, _fix_biomass]
+    res = None
     for fn in fns:
-        if new_id is not None:
+        if res is not None:
             break
-        new_id = fn(reaction)
+        res = fn(reaction)
+    if res is not None:
+        new_id, subsystem = res
 
     if new_id is not None:
         # does it have a gene_reaction_rule? OK if atpm reaction has
@@ -252,6 +255,7 @@ def _normalize_pseudoreaction(reaction):
         if reaction.id != new_id:
             logging.debug('Renaming pseudoreaction %s to %s' % (reaction.id, new_id))
             reaction.id = new_id
+            reaction.subsystem = subsystem
     return
 
 

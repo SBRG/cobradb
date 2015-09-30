@@ -42,6 +42,7 @@ def test__normalize_pseudoreaction_exchange():
     reaction.upper_bound = 0
     _normalize_pseudoreaction(reaction)
     assert reaction.id == 'EX_glu__L_e'
+    assert reaction.subsystem == 'Extracellular exchange'
 
 
 def test__normalize_pseudoreaction_exchange_reversed():
@@ -68,10 +69,8 @@ def test__normalize_pseudoreaction_exchange_error_bad_coeff():
 def test__normalize_pseudoreaction_exchange_error_bad_name():
     reaction = Reaction('gone')
     reaction.add_metabolites({Metabolite('glu__L_e'): -1})
-    with pytest.raises(ConflictingPseudoreaction) as excinfo:
-        _normalize_pseudoreaction(reaction)
-    assert 'does not start with EX_' in str(excinfo.value)
-    assert reaction.id == 'gone'
+    _normalize_pseudoreaction(reaction)
+    assert reaction.id == 'EX_glu__L_e'
 
 
 def test__normalize_pseudoreaction_exchange_error_has_gpr():
@@ -91,6 +90,7 @@ def test__normalize_pseudoreaction_demand():
     reaction.upper_bound = 1000
     _normalize_pseudoreaction(reaction)
     assert reaction.id == 'DM_glu__L_c'
+    assert reaction.subsystem == 'Intracellular demand'
 
 
 def test__normalize_pseudoreaction_demand_reversed():
@@ -134,6 +134,7 @@ def test__normalize_pseudoreaction_sink():
     reaction.upper_bound = 0
     _normalize_pseudoreaction(reaction)
     assert reaction.id == 'SK_glu__L_c'
+    assert reaction.subsystem == 'Intracellular source/sink'
 
 
 def test__normalize_pseudoreaction_sink_reversed():
@@ -152,6 +153,7 @@ def test__normalize_pseudoreaction_biomass():
     reaction = Reaction('my_biomass_2')
     _normalize_pseudoreaction(reaction)
     assert reaction.id == 'BIOMASS_my_2'
+    assert reaction.subsystem == 'Biomass and maintenance functions'
 
 
 def test__normalize_pseudoreaction_biomass_has_gpr():
@@ -172,6 +174,7 @@ def test__normalize_pseudoreaction_atpm():
                               Metabolite('adp_c'): 1})
     _normalize_pseudoreaction(reaction)
     assert reaction.id == 'ATPM'
+    assert reaction.subsystem == 'Biomass and maintenance functions'
 
 
 def test__normalize_pseudoreaction_atpm_reversed():
@@ -210,7 +213,7 @@ def test_convert_ids_dad_2(convert_ids_model):
     returned, old_ids = convert_ids_model
     assert returned.id == 'A_bad_id'
     assert 'dad_2_c' in returned.metabolites
-    assert 'dad_2_c' in [x.id for x in returned.reactions.get_by_id('DADA').metabolites]
+    assert 'dad_2_c' in [x.id for x in returned.reactions.get_by_id('DM_dad_2_c').metabolites]
     assert ('dad_2_c', ['dad_DASH_2_c']) in old_ids['metabolites'].items()
 
 
