@@ -26,11 +26,11 @@ def make_reaction_copy_id(bigg_id, copy_number):
 
 def check_pseudoreaction(reaction_id):
     patterns = [
-        r'^ATPM$', r'^ATPM_NGAM$',
+        r'^ATPM$',
         r'^EX_.*',
         r'^DM_.*',
-        r'^sink_.*',
-        r'(?i).*biomass.*' # case insensitive
+        r'^SK_.*',
+        r'^BIOMASS_.*' # case insensitive
     ]
     for pattern in patterns:
         if re.match(pattern, reaction_id):

@@ -82,6 +82,187 @@ def remove_boundary_metabolites(model):
     model.metabolites._generate_index()
 
 
+# --------------------------------------------------------------------
+# pseudoreactions
+# --------------------------------------------------------------------
+
+class ConflictingPseudoreaction(Exception):
+    pass
+
+
+def _has_gene_reaction_rule(reaction):
+    """Check if the reaction has a gene reaction rule."""
+    rule = getattr(reaction, 'gene_reaction_rule', None)
+    return rule is not None and rule.strip() != ''
+
+
+def _reaction_single_met_coeff(reaction):
+    if len(reaction.metabolites) == 1:
+        return reaction.metabolites.iteritems().next()
+    return None
+
+
+def _reverse_reaction(reaction):
+    """Reverse the metabolite coefficients and the upper & lower bounds."""
+    reaction.add_metabolites({k: -v for k, v in reaction.metabolites.iteritems()},
+                             combine=False)
+    reaction.upper_bound, reaction.lower_bound = -reaction.lower_bound, -reaction.upper_bound
+    logging.debug('Reversing pseudoreaction %s' % reaction.id)
+
+
+def _fix_exchange(reaction):
+    """Returns new id if the reaction was treated as an exchange."""
+    # does it look like an exchange?
+    met_coeff = _reaction_single_met_coeff(reaction)
+    if met_coeff is None:
+        return None
+    met, coeff = met_coeff
+    if split_compartment(met.id)[1] != 'e':
+        return None
+    # check id
+    if not re.search(r'^ex_', reaction.id, re.IGNORECASE):
+        logging.warn('Reaction {r.id} looks like an exchange but it does not start with EX_. Renaming'
+                     .format(r=reaction))
+    # check coefficient
+    if abs(coeff) != 1:
+        raise ConflictingPseudoreaction('Reaction {} looks like an exchange '
+                                        'but it has a reactant with coefficient {}'
+                                        .format(reaction.id, coeff))
+    # reverse if necessary
+    if coeff == 1:
+        _reverse_reaction(reaction)
+    return 'EX_%s' % met.id, 'Extracellular exchange'
+
+
+# for sink & demand functions
+_sink_regex = re.compile(r'^(sink|sk)_', re.IGNORECASE)
+
+
+def _fix_demand(reaction):
+    """Returns new ID if the reaction was treated as a demand."""
+    # does it look like a demand?
+    met_coeff = _reaction_single_met_coeff(reaction)
+    if met_coeff is None:
+        return None
+    met, coeff = met_coeff
+    if split_compartment(met.id)[1] == 'e':
+        return None
+    # source bound should be 0
+    if ((coeff > 0 and reaction.upper_bound != 0) or
+        (coeff < 0 and reaction.lower_bound != 0)):
+        return None
+    # if it could be a demand, but it is named sink_ or SK_, then let it be a
+    # sink (by returning None) because sink is really a superset of demand
+    if _sink_regex.search(reaction.id):
+        return None
+    # check id
+    if not re.search(r'^dm_', reaction.id, re.IGNORECASE):
+        logging.warn('Reaction {r.id} looks like a demand but it does not start with DM_. Renaming.'
+                     .format(r=reaction))
+    # check coefficient
+    if abs(coeff) != 1:
+        raise ConflictingPseudoreaction('Reaction {} looks like a demand '
+                                        'but it has a reactant with coefficient {}'
+                                        .format(reaction.id, coeff))
+    # reverse if necessary
+    if coeff == 1:
+        _reverse_reaction(reaction)
+    return 'DM_%s' % met.id, 'Intracellular demand'
+
+
+def _fix_sink(reaction):
+    """Returns new ID if the reaction was treated as a sink."""
+    # does it look like a sink?
+    met_coeff = _reaction_single_met_coeff(reaction)
+    if met_coeff is None:
+        return None
+    met, coeff = met_coeff
+    if split_compartment(met.id)[1] == 'e':
+        return None
+    # check id
+    if not _sink_regex.search(reaction.id):
+        logging.warn('Reaction {r.id} looks like a sink but it does not start with sink_ or SK_. Renaming.'
+                     .format(r=reaction))
+    # check coefficient
+    if abs(coeff) != 1:
+        raise ConflictingPseudoreaction('Reaction {} looks like a sink '
+                                        'but it has a reactant with coefficient {}'
+                                        .format(reaction.id, coeff))
+    # reverse if necessary
+    if coeff == 1:
+        _reverse_reaction(reaction)
+    return 'SK_%s' % met.id, 'Intracellular source/sink'
+
+
+def _fix_biomass(reaction):
+    """Returns new ID if the reaction was treated as a biomass."""
+    # does it look like an exchange?
+    regex = re.compile(r'biomass', re.IGNORECASE)
+    if not regex.search(reaction.id):
+        return None
+    new_id = ('BIOMASS_%s' % regex.sub('', reaction.id)).replace('__', '_')
+    return new_id, 'Biomass and maintenance functions'
+
+
+def _fix_atpm(reaction):
+    """Returns new ID if the reaction was treated as a biomass."""
+    # does it look like a atpm?
+    mets = {k.id: v for k, v in reaction.metabolites.iteritems()}
+    subsystem = 'Biomass and maintenance functions'
+    if mets == {'atp_c': -1, 'h2o_c': -1, 'pi_c': 1, 'h_c': 1, 'adp_c': 1}:
+        return 'ATPM', subsystem
+    elif mets == {'atp_c': 1, 'h2o_c': 1, 'pi_c': -1, 'h_c': -1, 'adp_c': -1}:
+        _reverse_reaction(reaction)
+        return 'ATPM', subsystem
+    return None
+
+
+def _normalize_pseudoreaction(reaction):
+    """If the reaction is a pseudoreaction (exchange, demand, sink, biomass, or
+    ATPM), then apply standard rules to it."""
+
+    new_id = None; subsystem = None
+
+    # check atpm separately because there is a good reason for an atpm-like
+    # reaction with a gene_reaction_rule
+    is_atpm = False
+    if new_id is None:
+        res = _fix_atpm(reaction)
+        if res is not None:
+            new_id, subsystem = res
+            is_atpm = True
+
+    # check for other pseudoreactions
+    fns = [_fix_exchange, _fix_demand, _fix_sink, _fix_biomass]
+    res = None
+    for fn in fns:
+        if res is not None:
+            break
+        res = fn(reaction)
+    if res is not None:
+        new_id, subsystem = res
+
+    if new_id is not None:
+        # does it have a gene_reaction_rule? OK if atpm reaction has
+        # gene_reaction_rule.
+        if _has_gene_reaction_rule(reaction):
+            if is_atpm:
+                return
+            raise ConflictingPseudoreaction('Reaction {r.id} looks like a pseudoreaction '
+                                            'but it has a gene_reaction_rule: '
+                                            '{r.gene_reaction_rule}'.format(r=reaction))
+        # rename
+        if reaction.id != new_id:
+            logging.debug('Renaming pseudoreaction %s to %s' % (reaction.id, new_id))
+            reaction.id = new_id
+            reaction.subsystem = subsystem
+    return
+
+
+# --------------------------------------------------------------------
+# ID fixes
+# --------------------------------------------------------------------
+
 def convert_ids(model):
     """Converts metabolite and reaction ids to the new style.
 
@@ -113,12 +294,19 @@ def convert_ids(model):
 
     # separate ids and compartments, and convert to the new_id_style
     for reaction in model.reactions:
-        new_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
+        # save the original id
+        current_id = reaction.id
+        # apply new id style
+        reaction.id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
+        # normalize pseudoreaction IDs
+        try:
+            _normalize_pseudoreaction(reaction)
+        except ConflictingPseudoreaction as e:
+            logging.warn(str(e))
         # don't merge reactions with conflicting new_id's
-        while new_id in reaction_id_dict:
-            new_id = increment_id(new_id)
-        reaction_id_dict[new_id].append(reaction.id)
-        reaction.id = new_id
+        while reaction.id in reaction_id_dict:
+            reaction.id = increment_id(reaction.id)
+        reaction_id_dict[reaction.id].append(current_id)
         # fix the gene reaction rules
         reaction.gene_reaction_rule = _check_rule_prefs(rule_prefs, reaction.gene_reaction_rule)
     model.reactions._generate_index()
@@ -144,6 +332,7 @@ def convert_ids(model):
                'reactions': reaction_id_dict,
                'genes': gene_id_dict}
     return model, old_ids
+
 
 # the regex to separate the base id, the chirality ('_L') and the compartment ('_c')
 reg_compartment = re.compile(r'(.*?)[_\(\[]([a-z][a-z0-9]?)[_\)\]]?$')
@@ -198,6 +387,10 @@ def get_formulas_from_names(model):
                 metabolite.formula = str(m.group(1))
     return model
 
+
+# --------------------------------------------------------------------
+# model setup
+# --------------------------------------------------------------------
 
 def setup_model(model, substrate_reactions, aerobic=True, sur=10, max_our=10,
                 id_style='cobrapy', fix_iJO1366=False):
