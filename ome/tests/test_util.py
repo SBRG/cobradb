@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from ome.util import *
+from ome.util import _find_data_source_url
 from ome.base import *
 
 import pytest
@@ -29,22 +30,32 @@ def test_check_pseudoreaction():
     assert check_pseudoreaction('DM_8') is True
 
 
-def test_find_data_source_url():
-    url_prefs = [['KEGGID', 'http://identifiers.org/kegg.compound/']]
-    assert find_data_source_url('KEGGID', url_prefs) == 'http://identifiers.org/kegg.compound/'
+def test__find_data_source_url():
+    url_prefs = [['kegg.compound', 'KEGG Compound', 'http://identifiers.org/kegg.compound/']]
+    assert _find_data_source_url('kegg.compound', url_prefs) == ('kegg.compound', 'KEGG Compound', 'http://identifiers.org/kegg.compound/')
+
+def test__find_data_source_url_no_url():
+    url_prefs = [['kegg.compound', 'KEGG Compound']]
+    assert _find_data_source_url('kegg.compound', url_prefs) == ('kegg.compound', 'KEGG Compound', None)
+
+def test__find_data_source_url_synonym():
+    url_prefs = [['kegg.compound', 'KEGG Compound', '', 'KEGGID,KEGG_ID']]
+    assert _find_data_source_url('KEGGID', url_prefs) == ('kegg.compound', 'KEGG Compound', None)
+    assert _find_data_source_url('KEGG_ID', url_prefs) == ('kegg.compound', 'KEGG Compound', None)
 
 
 def test_get_or_create_data_source(test_db, session, test_prefs, tmpdir):
     prefsfile = str(tmpdir.join('data_source_preferences.txt'))
     with open(prefsfile, 'w') as f:
-        f.write('my_data_source\tmy_url_prefix')
+        f.write('my_data_source\tname\tmy_url_prefix')
 
     settings.data_source_preferences = prefsfile
 
     get_or_create_data_source(session, 'my_data_source')
     assert (session
             .query(DataSource)
-            .filter(DataSource.name == 'my_data_source')
+            .filter(DataSource.bigg_id == 'my_data_source')
+            .filter(DataSource.name == 'name')
             .filter(DataSource.url_prefix == 'my_url_prefix')
             .count()) == 1
 

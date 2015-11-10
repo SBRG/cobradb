@@ -3,7 +3,7 @@
 from ome import settings, timing, base
 from ome.base import *
 from ome.components import Gene, Protein
-from ome.util import scrub_gene_id, get_or_create_data_source
+from ome.util import scrub_gene_id, get_or_create_data_source, get_or_create
 from ome.loading import AlreadyLoadedError
 
 import sys, os, math, re
@@ -92,25 +92,14 @@ def get_genbank_accessions(genbank_filepath, fast=False):
     return out
 
 
-def load_gene_synonym(session, gene_db, synonym, data_source_name):
+def load_gene_synonym(session, gene_db, synonym, data_source_id):
     """Load the synonym for this gene from the given genome."""
-
-    data_source_id = get_or_create_data_source(session, data_source_name)
-    synonym_db = (session
-                  .query(Synonym)
-                  .filter(Synonym.ome_id == gene_db.id)
-                  .filter(Synonym.synonym == synonym)
-                  .filter(Synonym.data_source_id == data_source_id)
-                  .first())
-
-    if synonym_db is None:
-        synonym_db = Synonym(type='gene',
-                             ome_id=gene_db.id,
-                             synonym=synonym,
-                             data_source_id=data_source_id)
-        session.add(synonym_db)
-        session.flush()
-
+    data_source_id = get_or_create_data_source(session, data_source_id)
+    synonym_db, _ = get_or_create(session, Synonym,
+                                  type='gene',
+                                  ome_id=gene_db.id,
+                                  synonym=synonym,
+                                  data_source_id=data_source_id)
     return synonym_db.id
 
 
@@ -269,7 +258,7 @@ def load_chromosome(gb_file, genome_db, session):
 
         # load the synonyms for the gene
         if locus_tag is not None:
-            load_gene_synonym(session, gene_db, locus_tag, 'locus_tag')
+            load_gene_synonym(session, gene_db, locus_tag, 'refseq_locus_tag')
 
         if refseq_name is not None:
             load_gene_synonym(session, gene_db, refseq_name, 'refseq_name')
@@ -288,12 +277,10 @@ def load_chromosome(gb_file, genome_db, session):
             for syn in [x.strip() for x in ref.split(';')]:
                 load_gene_synonym(session, gene_db, syn, 'refseq_old_locus_tag')
 
-
         for ref in _get_qual(feature, 'note'):
             for value in [x.strip() for x in ref.split(';')]:
                 sp = value.split(':')
                 if len(sp) == 2 and sp[0] == 'ORF_ID':
                     load_gene_synonym(session, gene_db, sp[1], 'refseq_orf_id')
-
 
     session.commit()
