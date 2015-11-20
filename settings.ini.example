@@ -1,20 +1,10 @@
 [DATABASE]
-postgres_host = localhost
+postgres_host =
 postgres_port = 5432
 postgres_database = bigg
-postgres_user = username
-postgres_password = pwd
+postgres_user =
+postgres_password =
 postgres_test_database = bigg_test
-
-[EXECUTABLES]
-psql = /usr/local/bin/psql
-r = /usr/local/bin/R
-rscript = /usr/local/bin/Rscript
-primer3 = /usr/local/bin/primer3_core
-cufflinks = /usr/local/bin/cufflinks
-cuffnorm = /usr/local/bin/cuffnorm
-cuffquant = /usr/local/bin/cuffquant
-java = /Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home/bin/java
 
 [DATA]
 # The directory containing the genome-scale models
