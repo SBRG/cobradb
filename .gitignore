@@ -54,3 +54,5 @@ ome_data
 
 .#*
 TAGS
+
+.cache/
