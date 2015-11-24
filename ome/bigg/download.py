@@ -9,6 +9,9 @@ def _add_url_prefix(path):
 def download_model(model_id):
     """Download a COBRA model from the BiGG Models database.
 
+    TODO warn that the unicode downloaded from bigg_models will not play nice
+    with libsbml. Ask Ali about this.
+
     Arguments
     ---------
 
