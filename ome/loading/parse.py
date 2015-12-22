@@ -14,13 +14,18 @@ import logging
 from collections import defaultdict
 
 
-def hash_reaction(reaction, string_only=False):
+def hash_metabolite_dictionary(met_dict, string_only=False):
     """Generate a unique hash for the metabolites and coefficients of the
     reaction.
 
+    met_dict: A dictionary where keys are metabolite IDs and values and
+    coefficients.
+
+    string_only: If True, return the string that would be hashed.
+
     """
-    def sorted_mets(reaction):
-        return sorted([(m.id, v) for m, v in reaction.metabolites.iteritems()],
+    def sorted_mets():
+        return sorted([(m, v) for m, v in met_dict.iteritems()],
                       key=lambda x: x[0])
 
     if string_only:
@@ -28,7 +33,20 @@ def hash_reaction(reaction, string_only=False):
     else:
         hash_fn = lambda s: hashlib.md5(s).hexdigest()
 
-    return hash_fn(''.join(['%s%.3f' % t for t in sorted_mets(reaction)]))
+    return hash_fn(''.join(['%s%.3f' % t for t in sorted_mets()]))
+
+
+def hash_reaction(reaction, string_only=False):
+    """Generate a unique hash for the metabolites and coefficients of the
+    reaction.
+
+    reaction: A COBRA Reaction.
+
+    string_only: If True, return the string that would be hashed.
+
+    """
+    return hash_metabolite_dictionary({m.id: v for m, v in
+                                       reaction.metabolites.iteritems()})
 
 
 def load_and_normalize(model_filepath):

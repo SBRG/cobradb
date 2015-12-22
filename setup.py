@@ -56,7 +56,7 @@ setup(
     keywords='systems biology',
     packages=['ome'],
     install_requires=['SQLAlchemy>=0.9.8',
-                      'cobra>=0.3.0',
+                      'cobra>=0.4.0b5',
                       'escher>=1.0.0', # could be optional
                       'numpy>=1.9.1',
                       'pandas>=0.15.2', # could be optional
