@@ -174,15 +174,6 @@ class EscherMapMatrix(Base):
     )
 
 
-class Comments(Base):
-    __tablename__ = 'comments'
-    id= Column(Integer, primary_key=True)
-    email = Column(String)
-    text = Column(String)
-    date_created = Column(DateTime)
-    type = Column(String)
-    url = Column(String)
-
 class ModelCount(Base):
     __tablename__='model_count'
     id = Column(Integer, primary_key=True)
