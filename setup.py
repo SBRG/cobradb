@@ -18,7 +18,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='0.0.1-bigg',
+    version='0.1.0',
 
     description='The OME Framework',
     long_description=long_description,
@@ -55,18 +55,12 @@ setup(
     ],
     keywords='systems biology',
     packages=['ome'],
-    install_requires=['SQLAlchemy>=0.9.8',
-                      'cobra>=0.4.0b5',
-                      'escher>=1.0.0', # could be optional
+    install_requires=['SQLAlchemy>=1.0.12',
+                      'cobra>=0.4.0',
                       'numpy>=1.9.1',
-                      'pandas>=0.15.2', # could be optional
-                      'pysam>=0.8.1', # could be optional
-                      'pyzmq>=14.4.1', # could be optional
-                      'scipy>=0.15.0', # could be optional
-                      'simplejson>=3.6.5',
                       'psycopg2>=2.5.4',
-                      'biopython>=1.65'], # could be optional
-    extras_require = {'all': ['pymongo >=2.7.2, <3.0',
-                              'ipython>=2.3.1',
-                              'pytest>=2.6.4']},
+                      'biopython>=1.65',
+                      'scipy>=0.17.0',
+                      'lxml>=3.6.0',
+                      'pytest>=2.6.4'],
     package_data={'ome': ['data/*']})

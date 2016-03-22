@@ -6,8 +6,6 @@ from sqlalchemy import Table, MetaData, create_engine, Column, Integer, \
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.schema import UniqueConstraint,PrimaryKeyConstraint
 
-import simplejson as json
-
 
 class Gene(GenomeRegion):
     __tablename__ = 'gene'

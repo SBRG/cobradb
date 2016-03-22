@@ -12,7 +12,7 @@ from sqlalchemy.sql.expression import join
 from sqlalchemy import func
 
 from math import ceil
-import simplejson as json
+
 
 class ExpandedEnvironments:
     """
@@ -789,8 +789,3 @@ def query_reaction_data():
 
 def query_metabolite_data():
     return
-
-
-
-
-
