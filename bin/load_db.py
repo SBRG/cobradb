@@ -23,9 +23,8 @@ configure_logger('%s OME load_db.log' % time.strftime('%Y-%m-%d %H:%M:%S'),
                  level=logging.INFO)
 
 
-from ome import base, settings, components, datasets, models, timing, util
+from ome import base, settings, util
 from ome.loading import AlreadyLoadedError
-from ome.loading import dataset_loading
 from ome.loading import component_loading
 from ome.loading.component_loading import BadGenomeError, get_genbank_accessions
 from ome.loading import model_loading
