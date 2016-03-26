@@ -36,7 +36,7 @@ _enum_l = [
          name='old_id_synonym_type'),
     Enum('is_version', name='is_version')
 ]
-custom_enums = {x.name: x for x in _enum_l}
+custom_enums = { x.name: x for x in _enum_l }
 
 
 # exceptions
@@ -166,15 +166,19 @@ class DataSource(Base):
     __tablename__ = 'data_source'
 
     id = Column(Integer, Sequence('wids'), primary_key=True)
+    bigg_id = Column(String, nullable=False)
     name = Column(String(100))
     url_prefix = Column(String)
 
     __table_args__ = (
-        UniqueConstraint('name'),
+        UniqueConstraint('bigg_id'),
     )
 
     def __repr__(self):
-        return '<ome DataSource(id={self.id}, name={self.name}, url_prefix={self.url_prefix})>'.format(self=self)
+        return (
+            '<ome DataSource(id={self.id}, bigg_id={self.bigg_id}, '
+            'name={self.name}, url_prefix={self.url_prefix})>'
+        ).format(self=self)
 
 
 class Synonym(Base):

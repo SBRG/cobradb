@@ -180,59 +180,59 @@ def load_new_model(session, model, genome_db_id, pub_ref, published_filename):
     return model_db.id
 
 
-def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id):
-    """Load new linkouts even ones that are pointing to previously created universal
-    metabolites.
+# def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id):
+#     """Load new linkouts even ones that are pointing to previously created universal
+#     metabolites.
 
-    The only scenario where we don't load a linkout is if the external id and
-    metabolite is exactly the same as a previous linkout.
+#     The only scenario where we don't load a linkout is if the external id and
+#     metabolite is exactly the same as a previous linkout.
 
-    """
+#     """
 
-    # parse the notes
-    def parse_linkout_str(id):
-        if id is None:
-            return None
-        id_string = str(id)
-        for s in ['{', '}', '[', ']', '&apos;', "'",]:
-            id_string = id_string.replace(s, '')
-        return id_string.strip()
+#     # parse the notes
+#     def parse_linkout_str(id):
+#         if id is None:
+#             return None
+#         id_string = str(id)
+#         for s in ['{', '}', '[', ']', '&apos;', "'",]:
+#             id_string = id_string.replace(s, '')
+#         return id_string.strip()
 
-    data_source_fix = {'KEGG_ID' : 'KEGGID', 'CHEBI_ID': 'CHEBI'}
+#     data_source_fix = {'KEGG_ID' : 'KEGGID', 'CHEBI_ID': 'CHEBI'}
 
-    for external_source, v in cobra_metabolite.notes.iteritems():
-        # ignore formulas
-        if external_source.lower() in ['formula', 'formula1', 'none', 'charge']:
-            continue
+#     for external_source, v in cobra_metabolite.notes.iteritems():
+#         # ignore formulas
+#         if external_source.lower() in ['formula', 'formula1', 'none', 'charge']:
+#             continue
 
-        # check if linkout matches the list
-        external_source = external_source.upper()
-        v = v[0]
-        if external_source in data_source_fix:
-            external_source = data_source_syn[external_source]
-        if '&apos' in v:
-            ids = [parse_linkout_str(x) for x in v.split(',')]
-        else:
-            ids = [parse_linkout_str(v)]
+#         # check if linkout matches the list
+#         external_source = external_source.upper()
+#         v = v[0]
+#         if external_source in data_source_fix:
+#             external_source = data_source_syn[external_source]
+#         if '&apos' in v:
+#             ids = [parse_linkout_str(x) for x in v.split(',')]
+#         else:
+#             ids = [parse_linkout_str(v)]
 
-        for external_id in ids:
-            if external_id.lower() in ['na', 'none']:
-                continue
-            data_source_id = get_or_create_data_source(session, external_source)
-            synonym_db = (session
-                          .query(Synonym)
-                          .filter(Synonym.synonym == external_id)
-                          .filter(Synonym.type == 'component')
-                          .filter(Synonym.ome_id == metabolite_database_id)
-                          .filter(Synonym.data_source_id == data_source_id)
-                          .first())
-            if synonym_db is None:
-                synonym_db = Synonym(synonym=external_id,
-                                     type = 'component',
-                                     ome_id = metabolite_database_id,
-                                     data_source_id=data_source_id)
-                session.add(synonym_db)
-                session.commit()
+#         for external_id in ids:
+#             if external_id.lower() in ['na', 'none']:
+#                 continue
+#             data_source_id = get_or_create_data_source(session, external_source)
+#             synonym_db = (session
+#                           .query(Synonym)
+#                           .filter(Synonym.synonym == external_id)
+#                           .filter(Synonym.type == 'component')
+#                           .filter(Synonym.ome_id == metabolite_database_id)
+#                           .filter(Synonym.data_source_id == data_source_id)
+#                           .first())
+#             if synonym_db is None:
+#                 synonym_db = Synonym(synonym=external_id,
+#                                      type = 'component',
+#                                      ome_id = metabolite_database_id,
+#                                      data_source_id=data_source_id)
+#                 session.add(synonym_db)
+#                 session.commit()
 
 
 def load_metabolites(session, model_id, model, compartment_names,
@@ -254,7 +254,7 @@ def load_metabolites(session, model_id, model, compartment_names,
     """
 
     # only grab this once
-    data_source_id = get_or_create_data_source(session, 'old_id')
+    data_source_id = get_or_create_data_source(session, 'old_bigg_id')
 
     # for each metabolite in the model
     for metabolite in model.metabolites:
@@ -304,7 +304,7 @@ def load_metabolites(session, model_id, model, compartment_names,
             session.commit()
 
         # load the linkouts for the universal metabolite
-        _load_metabolite_linkouts(session, metabolite, metabolite_db.id)
+        # _load_metabolite_linkouts(session, metabolite, metabolite_db.id)
 
         # if there is no compartment, add a new one
         compartment_db = (session
@@ -468,7 +468,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
     """
 
     # only grab this once
-    data_source_id = get_or_create_data_source(session, 'old_id')
+    data_source_id = get_or_create_data_source(session, 'old_bigg_id')
 
     # get reaction id_prefs
     id_prefs = load_tsv(settings.reaction_id_prefs)
@@ -796,16 +796,16 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
 
     """
     # only grab this once
-    data_source_id = get_or_create_data_source(session, 'old_id')
+    data_source_id = get_or_create_data_source(session, 'old_bigg_id')
 
     # find the model in the db
     model_db = session.query(Model).get(model_db_id)
 
     # find the chromosomes in the db
     chromosome_ids = (session
-                       .query(Chromosome.id)
-                       .filter(Chromosome.genome_id == model_db.genome_id)
-                       .all())
+                      .query(Chromosome.id)
+                      .filter(Chromosome.genome_id == model_db.genome_id)
+                      .all())
     if len(chromosome_ids) == 0:
         logging.warn('No chromosomes for model %s' % model_db.bigg_id)
 

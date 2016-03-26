@@ -14,7 +14,7 @@ from sqlalchemy import func, or_, and_
 from IPython import embed
 
 import pysam
-import simplejson as json
+import json
 
 
 def count_coverage(samfile, flip=False, include_insert=False):
