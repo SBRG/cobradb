@@ -33,8 +33,6 @@ from ome.components import *
 from ome.loading import component_loading
 from ome import gpr_rpn_tree as GPRTools
 
-import pdb
-
 '''
 This is the module that enables you to pull stuff from the DB in an efficient manner. Hopefully.
 There are were originally modes :

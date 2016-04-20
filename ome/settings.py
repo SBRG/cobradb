@@ -2,14 +2,15 @@
 
 from ConfigParser import SafeConfigParser, NoOptionError
 import os as os
-from os.path import join, split, abspath, isfile, expanduser
+from os.path import join, split, abspath, isfile, expanduser, dirname
 from sys import modules
 
 self = modules[__name__]
 
 # define various filepaths
-omelib_directory = join(split(abspath(__file__))[0], "")
+omelib_directory = join(dirname(abspath(__file__)), "")
 ome_directory = join(abspath(join(omelib_directory, "..")), "")
+
 
 def which(program):
     """returns path to an executable if it is found in the path"""
@@ -26,7 +27,8 @@ def which(program):
                 return exe_file
     if os.name == "nt" and not program.endswith(".exe"):
         return which(program + ".exe")
-    return None
+    return program
+
 
 def _escape_space(program):
     """escape spaces in for windows"""
@@ -40,10 +42,10 @@ config = SafeConfigParser()
 
 # set the default settings
 config.add_section("DATABASE")
-config.set("DATABASE", "postgres_host", "localhost")
+config.set("DATABASE", "postgres_host", "")
 config.set("DATABASE", "postgres_port", "5432")
 config.set("DATABASE", "postgres_database", "ome_stage_2")
-config.set("DATABASE", "postgres_user", "dbuser")
+config.set("DATABASE", "postgres_user", "")
 config.set("DATABASE", "postgres_password", "")
 config.set("DATABASE", "postgres_test_database", "ome_test")
 
@@ -66,15 +68,12 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
     """
     if in_ome_dir:
         filepath = join(ome_directory, filepath)
-    config.read(filepath)
+    if isfile(filepath):
+        config.read(filepath)
 
     # attempt to intellegently determine more difficult settings
-    if not config.has_option("DATABASE", "user"):
-        if "USERNAME" in os.environ:  # windows
-            user = os.environ["USERNAME"]
-        elif "USER" in os.environ:  # unix
-            user = os.environ["USER"]
-        config.set("DATABASE", "user", user)
+    if not config.has_option("DATABASE", "posgtres_user"):
+        config.set("DATABASE", "postgres_user", "")
 
     # executables
     if not config.has_option("EXECUTABLES", "psql"):
@@ -90,7 +89,8 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
         config.set("EXECUTABLES", "Rscript", Rscript)
     if not config.has_option("EXECUTABLES", "primer3"):
         primer3 = which("primer3_core")
-        config.set("EXECUTABLES", "primer3", primer3)
+        if primer3 is not None:
+            config.set("EXECUTABLES", "primer3", primer3)
     if not config.has_option("EXECUTABLES", "cufflinks"):
         cufflinks = which("cufflinks")
         config.set("EXECUTABLES", "cufflinks", cufflinks)
@@ -108,21 +108,37 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
     self.postgres_port = config.get("DATABASE", "postgres_port")
     self.postgres_test_database = config.get("DATABASE", "postgres_test_database")
     self.psql = _escape_space(config.get("EXECUTABLES", "psql"))
+
+    if self.postgres_host == "" and self.postgres_password == "" \
+            and self.postgres_user == "":
+        self.db_connection_string = "postgresql:///%s" % self.postgres_database
+    else:
+        self.db_connection_string = "postgresql://%s:%s@%s/%s" % \
+            (self.postgres_user, self.postgres_password,
+             self.postgres_host, self.postgres_database)
+
     self.R = _escape_space(config.get("EXECUTABLES", "R"))
     self.Rscript = _escape_space(config.get("EXECUTABLES", "Rscript"))
     self.primer3 = _escape_space(config.get("EXECUTABLES", "primer3"))
     self.cufflinks = config.get("EXECUTABLES", "cufflinks")
     self.java = config.get("EXECUTABLES", "java")
 
-    # make a psql string with the database options included
-    self.psql_full = "%s --host=%s --username=%s --port=%s " % \
-                     (self.psql, self.postgres_host, self.postgres_user, self.postgres_port)
 
     # these are required
     try:
         self.model_directory = expanduser(config.get('DATA', 'model_directory'))
     except NoOptionError:
         raise Exception('model_directory was not supplied in settings.ini')
+    # make a psql string with the database options included
+    self.psql_full = self.psql
+    if self.postgres_host != "":
+        self.psql_full += " --host=" + self.postgres_host
+    if self.postgres_user != "":
+        self.psql_full += " --user=" + self.postgres_user
+    if self.postgres_host != "":
+        self.psql_full += " --port=" + self.postgres_port
+    self.psql_full += self.postgres_database
+
     try:
         self.refseq_directory = expanduser(config.get('DATA', 'refseq_directory'))
     except NoOptionError:
@@ -140,6 +156,9 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
             setattr(self, data_pref, expanduser(config.get('DATA', data_pref)))
         except NoOptionError:
             setattr(self, data_pref, None)
+    with open(filepath, "wb") as outfile:
+        config.write(outfile)
+
 
 load_settings_from_file()
 

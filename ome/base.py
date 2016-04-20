@@ -16,11 +16,7 @@ import logging
 
 
 # connect to postgres
-engine = create_engine(('postgresql://{user}:{password}@{host}/{database}'
-                        .format(user=settings.postgres_user,
-                                password=settings.postgres_password,
-                                host=settings.postgres_host,
-                                database=settings.postgres_database)))
+engine = create_engine(settings.db_connection_string)
 Base = declarative_base(bind=engine)
 metadata = MetaData(bind=engine)
 Session = sessionmaker(bind=engine, class_=_SA_Session)
