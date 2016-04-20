@@ -207,4 +207,6 @@ def dump_model(bigg_id):
     session.commit()
     session.close()
 
+    cobra.manipulation.annotate.add_SBO(model)
+
     return model
