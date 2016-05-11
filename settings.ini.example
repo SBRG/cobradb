@@ -1,8 +1,8 @@
 [DATABASE]
-postgres_host =
+postgres_host = localhost
 postgres_port = 5432
 postgres_database = bigg
-postgres_user =
+postgres_user = user
 postgres_password =
 postgres_test_database = bigg_test
 
@@ -19,11 +19,11 @@ model_genome = ~/path/to/ome_data/model-genome.txt
 compartment_names = ~/path/to/ome_data/compartment-names.txt
 reaction_id_prefs = ~/path/to/ome_data/reaction-id-prefs.txt
 reaction_hash_prefs = ~/path/to/ome_data/reaction-hash-prefs.txt
-model_dump_directory = ~/path/to/bigg_static/dumped_models
-model_polished_directory = ~/path/to/bigg_static/polished_models
-model_published_directory = ~/path/to/bigg_static/published_models
 data_source_preferences = /Users/dbuser/ome_data/annotation/data-source-prefs.txt
 # This file should be a tab-delimited text file where each row contains an
 # original gene_reaction_rule followed by a tab and a fixed
 # gene_reaction_rule.
 gene_reaction_rule_prefs = ~/path/to/ome_data/gene-reaction-rule-prefs.txt
+
+[EXECUTABLES]
+java = /bin/java

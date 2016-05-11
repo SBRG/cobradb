@@ -11,7 +11,6 @@ self = modules[__name__]
 omelib_directory = join(dirname(abspath(__file__)), "")
 ome_directory = join(abspath(join(omelib_directory, "..")), "")
 
-
 def which(program):
     """returns path to an executable if it is found in the path"""
     fpath, fname = split(program)
@@ -28,7 +27,6 @@ def which(program):
     if os.name == "nt" and not program.endswith(".exe"):
         return which(program + ".exe")
     return program
-
 
 def _escape_space(program):
     """escape spaces in for windows"""
@@ -71,29 +69,7 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
     if isfile(filepath):
         config.read(filepath)
 
-    # attempt to intellegently determine more difficult settings
-    if not config.has_option("DATABASE", "posgtres_user"):
-        config.set("DATABASE", "postgres_user", "")
-
     # executables
-    if not config.has_option("EXECUTABLES", "psql"):
-        psql = which("psql91")
-        if psql is None:
-            psql = which("psql")
-        config.set("EXECUTABLES", "psql", psql)
-    if not config.has_option("EXECUTABLES", "R"):
-        R = which("R")
-        config.set("EXECUTABLES", "R", R)
-    if not config.has_option("EXECUTABLES", "Rscript"):
-        Rscript = which("Rscript")
-        config.set("EXECUTABLES", "Rscript", Rscript)
-    if not config.has_option("EXECUTABLES", "primer3"):
-        primer3 = which("primer3_core")
-        if primer3 is not None:
-            config.set("EXECUTABLES", "primer3", primer3)
-    if not config.has_option("EXECUTABLES", "cufflinks"):
-        cufflinks = which("cufflinks")
-        config.set("EXECUTABLES", "cufflinks", cufflinks)
     if not config.has_option("EXECUTABLES", "java"):
         java = which("java")
         config.set("EXECUTABLES", "java", java)
@@ -101,13 +77,10 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
     # save options as variables
     self.postgres_user = config.get("DATABASE", "postgres_user")
     self.postgres_password = config.get("DATABASE", "postgres_password")
-    if len(self.postgres_password) > 0:
-        os.environ["PGPASSWORD"] = self.postgres_password
     self.postgres_database = config.get("DATABASE", "postgres_database")
     self.postgres_host = config.get("DATABASE", "postgres_host")
     self.postgres_port = config.get("DATABASE", "postgres_port")
     self.postgres_test_database = config.get("DATABASE", "postgres_test_database")
-    self.psql = _escape_space(config.get("EXECUTABLES", "psql"))
 
     if self.postgres_host == "" and self.postgres_password == "" \
             and self.postgres_user == "":
@@ -117,27 +90,13 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
             (self.postgres_user, self.postgres_password,
              self.postgres_host, self.postgres_database)
 
-    self.R = _escape_space(config.get("EXECUTABLES", "R"))
-    self.Rscript = _escape_space(config.get("EXECUTABLES", "Rscript"))
-    self.primer3 = _escape_space(config.get("EXECUTABLES", "primer3"))
-    self.cufflinks = config.get("EXECUTABLES", "cufflinks")
     self.java = config.get("EXECUTABLES", "java")
-
 
     # these are required
     try:
         self.model_directory = expanduser(config.get('DATA', 'model_directory'))
     except NoOptionError:
         raise Exception('model_directory was not supplied in settings.ini')
-    # make a psql string with the database options included
-    self.psql_full = self.psql
-    if self.postgres_host != "":
-        self.psql_full += " --host=" + self.postgres_host
-    if self.postgres_user != "":
-        self.psql_full += " --user=" + self.postgres_user
-    if self.postgres_host != "":
-        self.psql_full += " --port=" + self.postgres_port
-    self.psql_full += self.postgres_database
 
     try:
         self.refseq_directory = expanduser(config.get('DATA', 'refseq_directory'))
@@ -159,8 +118,5 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
     with open(filepath, "wb") as outfile:
         config.write(outfile)
 
-
+# load
 load_settings_from_file()
-
-
-del SafeConfigParser, modules
