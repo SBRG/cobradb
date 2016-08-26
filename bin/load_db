@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 # configure the logger before imports so other packages do not override this
 # setup
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     # load the date
     version_loading.load_version_date(session)
 
-    # get the models and genomes
+    # get the models and genomes from the model_genome file
     model_dir = settings.model_directory
     model_genome_path = settings.model_genome
     logging.info('Loading models and genomes using %s' % model_genome_path)
@@ -109,12 +109,14 @@ if __name__ == "__main__":
     models_list = []
 
     def _check_for_additional_gb_filenames(ref_string_plus):
+        """Get the extra genbank files from a genome reference."""
         spl = [x.strip() for x in ref_string_plus.split(',')]
         if len(spl) == 1:
             return spl[0], None
         else:
             return spl[0], spl[1:]
 
+    # parse the model_genome file
     for line in lines:
         model_filename, pub_ref_string, genome_ref_string_plus = line
         if genome_ref_string_plus is None:
@@ -123,7 +125,7 @@ if __name__ == "__main__":
         else:
             genome_ref_string, additional_gb_filenames = _check_for_additional_gb_filenames(genome_ref_string_plus)
             genome_ref = util.ref_str_to_tuple(genome_ref_string)
-        if pub_ref_string is None:
+        if pub_ref_string is None or pub_ref_string.strip() == 'None':
             pub_ref = None
         else:
             pub_ref = util.ref_str_to_tuple(pub_ref_string)
@@ -132,6 +134,7 @@ if __name__ == "__main__":
                             'genome_ref': genome_ref,
                             'additional_gb_filenames': additional_gb_filenames})
 
+    # load the genome
     genomes_for_models = {}
     if not args.skip_genomes:
         # find the accessions for the genbank files
@@ -145,7 +148,7 @@ if __name__ == "__main__":
         genome_ref_additions = {}
         for d in models_list:
             genome_ref = d['genome_ref']
-            if genome_ref is None:
+            if genome_ref is None or genome_ref[0] == 'organism':
                 continue
             genome_refs.add(genome_ref)
             additional_gb_filenames = d['additional_gb_filenames']

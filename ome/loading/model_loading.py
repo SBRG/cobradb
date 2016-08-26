@@ -58,7 +58,10 @@ def load_model(model_filepath, pub_ref, genome_ref, session):
 
         ('pmid', '21988831')
 
-    genome_ref: A tuple specifying the genome accession type and value.
+        Can be None
+
+    genome_ref: A tuple specifying the genome accession type and value. The
+    first element can be ncbi_accession, ncbi_assembly, or organism.
 
     session: An instance of base.Session.
 
@@ -73,7 +76,10 @@ def load_model(model_filepath, pub_ref, genome_ref, session):
         raise AlreadyLoadedError('Model %s already loaded' % model_bigg_id)
 
     # check for a genome annotation for this model
-    if genome_ref is not None:
+    if genome_ref is not None and genome_ref[0] == 'organism':
+        genome_id = None
+        organism = genome_ref[1]
+    elif genome_ref is not None and genome_ref[0] in ['ncbi_accession', 'ncbi_assembly']:
         genome_db = (session
                      .query(Genome)
                      .filter(Genome.accession_type==genome_ref[0])
@@ -83,15 +89,17 @@ def load_model(model_filepath, pub_ref, genome_ref, session):
             raise GenbankNotFound('Genome for model {} not found with genome_ref {}'
                                   .format(model_bigg_id, genome_ref))
         genome_id = genome_db.id
+        organism = genome_db.organism
     else:
-        logging.info('No Genome reference provided for model {}'.format(model_bigg_id))
+        logging.info('No Genome reference or organism provided for model {}'.format(model_bigg_id))
         genome_id = None
+        organism = None
 
     # Load the model objects. Remember: ORDER MATTERS! So don't mess around.
     logging.debug('Loading objects for model {}'.format(model.id))
     published_filename = os.path.basename(model_filepath)
     model_database_id = load_new_model(session, model, genome_id, pub_ref,
-                                       published_filename)
+                                       published_filename, organism)
 
     # metabolites/components and linkouts
     # get compartment names
@@ -126,7 +134,8 @@ def load_model(model_filepath, pub_ref, genome_ref, session):
     return model_bigg_id
 
 
-def load_new_model(session, model, genome_db_id, pub_ref, published_filename):
+def load_new_model(session, model, genome_db_id, pub_ref, published_filename,
+                   organism):
     """Load the model.
 
     Arguments:
@@ -146,6 +155,8 @@ def load_new_model(session, model, genome_db_id, pub_ref, published_filename):
 
         Can be None
 
+    organism: The organism. Can be None.
+
     Returns:
     -------
 
@@ -153,7 +164,7 @@ def load_new_model(session, model, genome_db_id, pub_ref, published_filename):
 
     """
     model_db = Model(bigg_id=model.id, genome_id=genome_db_id,
-                     published_filename=published_filename)
+                     published_filename=published_filename, organism=organism)
     session.add(model_db)
     if pub_ref is not None:
         ref_type, ref_id = pub_ref

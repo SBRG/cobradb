@@ -15,6 +15,7 @@ class Model(Base):
     bigg_id = Column(String, nullable=False)
     genome_id = Column(Integer, ForeignKey('genome.id', onupdate="CASCADE", ondelete="CASCADE"))
     genome = relationship('Genome', backref='model')
+    organism = Column(String(200), nullable=True)
     published_filename = Column(String, nullable=True)
 
     __table_args__ = (
