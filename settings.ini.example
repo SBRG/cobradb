@@ -1,38 +1,40 @@
 [DATABASE]
 postgres_host = localhost
 postgres_port = 5432
-postgres_database = bigg
 postgres_user = user
 postgres_password =
-postgres_test_database = bigg_test
+postgres_database = cobradb
+postgres_test_database = cobradb_test
 
 [DATA]
 # The directory containing the genome-scale models
-model_directory = ~/path/to/ome_data/models
+model_directory = ~/path/to/cobradb_data/models
 
 # The directory containing the reference sequences (as Genbank files)
-refseq_directory = ~/path/to/ome_data/refseq
+refseq_directory = ~/path/to/cobradb_data/refseq
 
 # A tab-delimited text file containing models, reference sequences, and
 # publication IDs
-model_genome = ~/path/to/ome_data/model-genome.txt
+model_genome = ~/path/to/cobradb_data/model-genome.txt
 
 # A tab-delimited text file containing compartment IDs and their corresponding
 # names
-compartment_names = ~/path/to/ome_data/compartment-names.txt
+compartment_names = ~/path/to/cobradb_data/compartment-names.txt
 
-reaction_hash_prefs = ~/path/to/ome_data/reaction-hash-prefs.txt
+
+reaction_hash_prefs = ~/path/to/cobradb_data/reaction-hash-prefs.txt
 
 # A tab-delimited text file where column 1 is the preferred metabolite ID and
 # the following columns are duplicates.
 metabolite_duplicates = ~/path/to/ome_data/metabolite-duplicates.txt
 
-data_source_preferences = /Users/dbuser/ome_data/annotation/data-source-prefs.txt
+data_source_preferences = ~/path/to/cobradb_data/annotation/data-source-prefs.txt
 
 # This file should be a tab-delimited text file where each row contains an
 # original gene_reaction_rule followed by a tab and a fixed
 # gene_reaction_rule.
-gene_reaction_rule_prefs = ~/path/to/ome_data/gene-reaction-rule-prefs.txt
+gene_reaction_rule_prefs = ~/path/to/cobradb_data/gene-reaction-rule-prefs.txt
+
 
 metabolite_duplicates = ~/path/to/ome_data/metabolite-duplicates.txt
 

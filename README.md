@@ -16,7 +16,7 @@ in `setup.py`.
 2. Set up your configuration. Copy the file `settings.ini.example` and rename it
    `settings.ini`. The example file includes descriptions of each setting.
 
-3. Install OME and dependencies.
+3. Install COBRAdb and dependencies.
 
 ```
 python setup.py install
