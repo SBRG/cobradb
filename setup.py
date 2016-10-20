@@ -1,16 +1,27 @@
 # -*- coding: utf-8 -*-
 
+from os.path import abspath, dirname
+from sys import path
+
+# To temporarily modify sys.path
+SETUP_DIR = abspath(dirname(__file__))
+
 try:
-    from setuptools import setup, Command
-except:
-    from distutils.core import setup, Command
+    from setuptools import setup, find_packages
+except ImportError:
+    path.insert(0, SETUP_DIR)
+    import ez_setup
+    path.pop(0)
+    ez_setup.use_setuptools()
+    from setuptools import setup, find_packages
+
 
 setup(
-    name='ome',
+    name='cobradb',
     version='0.2.0',
     description="""COBRAdb loads genome-scale metabolic models and genome
                    annotations into a relational database.""",
-    url='https://github.com/SBRG/ome',
+    url='https://github.com/SBRG/cobradb',
     author='Zachary King',
     author_email='zaking@ucsd.edu',
     license='MIT',
@@ -20,7 +31,7 @@ setup(
         'Programming Language :: Python :: 2.7',
     ],
     keywords='systems biology, genome-scale model',
-    packages=['ome'],
+    packages=find_packages(),
     install_requires=['SQLAlchemy>=1.0.12',
                       'cobra>=0.4.0',
                       'numpy>=1.9.1',

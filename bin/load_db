@@ -19,17 +19,17 @@ def configure_logger(log_file=None, level=logging.INFO, overwrite_log=True,
         console.setLevel(level)
         console.setFormatter(logging.Formatter(format))
         logging.getLogger("").addHandler(console)
-configure_logger('%s OME load_db.log' % time.strftime('%Y-%m-%d %H:%M:%S'),
+configure_logger('%s COBRAdb load_db.log' % time.strftime('%Y-%m-%d %H:%M:%S'),
                  level=logging.INFO)
 
 
-from ome import base, settings, util
-from ome.loading import AlreadyLoadedError
-from ome.loading import component_loading
-from ome.loading.component_loading import BadGenomeError, get_genbank_accessions
-from ome.loading import model_loading
-from ome.loading import map_loading
-from ome.loading import version_loading
+from cobradb import base, settings, util
+from cobradb.loading import AlreadyLoadedError
+from cobradb.loading import component_loading
+from cobradb.loading.component_loading import BadGenomeError, get_genbank_accessions
+from cobradb.loading import model_loading
+from cobradb.loading import map_loading
+from cobradb.loading import version_loading
 
 import os
 from os import listdir
