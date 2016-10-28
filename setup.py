@@ -29,6 +29,8 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
     ],
     keywords='systems biology, genome-scale model',
     packages=find_packages(),
@@ -39,5 +41,7 @@ setup(
                       'biopython>=1.65',
                       'scipy>=0.17.0',
                       'lxml>=3.6.0',
-                      'pytest>=2.6.4'],
+                      'pytest>=2.6.4',
+                      'six>=1.10.0',
+                      'configparser>=3.5.0'],
 )

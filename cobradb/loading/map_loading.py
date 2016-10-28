@@ -10,6 +10,7 @@ import escher
 import logging
 import sys
 import re
+import six
 
 def load_maps_from_server(session, drop_maps=False):
     if drop_maps:
@@ -79,7 +80,7 @@ def load_the_map(session, model_id, map_name, map_json):
 
     logging.info('Adding reactions')
     reaction_warnings = 0
-    for element_id, reaction in map_object[1]['reactions'].iteritems():
+    for element_id, reaction in six.iteritems(map_object[1]['reactions']):
         # deal with reaction copies
         map_reaction_bigg_id = re.sub(r'_copy[0-9]+$', '', reaction['bigg_id'])
         # check for an existing mat row
@@ -116,7 +117,7 @@ def load_the_map(session, model_id, map_name, map_json):
 
     logging.info('Adding metabolites')
     comp_comp_warnings = 0
-    for element_id, node in map_object[1]['nodes'].iteritems():
+    for element_id, node in six.iteritems(map_object[1]['nodes']):
         if node['node_type'] != 'metabolite':
             continue
         metabolite = node

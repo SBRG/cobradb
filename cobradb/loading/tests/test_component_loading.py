@@ -37,7 +37,7 @@ class TestWithGenomes():
         assert (session.query(Synonym)
                 .join(DataSource)
                 .join(Gene, Gene.id == Synonym.ome_id)
-                .filter(DataSource.name == 'locus_tag')
+                .filter(DataSource.name == 'refseq_locus_tag')
                 .filter(Synonym.synonym == 'b0114')
                 .filter(Gene.bigg_id == 'b0114')
                 .count()) == 2
@@ -74,7 +74,7 @@ class TestWithGenomes():
     def test_genome_synonyms_db_xref(self, session):
         assert (session.query(Synonym)
                 .join(DataSource)
-                .filter(DataSource.name == 'GI')
+                .filter(DataSource.name == 'ncbigi')
                 .filter(Synonym.synonym == '16128107')
                 .count()) == 2
 

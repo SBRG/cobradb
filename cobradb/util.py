@@ -195,12 +195,14 @@ def timing(function):
         arg_str = str(args)
         if arg_str[-2] == ',': # trailing comma
             arg_str = arg_str[:-2] + ')'
-        logging.debug('starting %s' % function.func_name)
+        try:
+            name = function.__name__
+        except AttributeError:
+            name = function.func_name
+        logging.debug('starting %s' % name)
         stdout.flush()
-        l = len(function.func_name)
         start = time()
         res = function(*args, **kwargs)
-        logging.debug('%s complete (%.2f sec)'% (function.func_name, time() - start))
+        logging.debug('%s complete (%.2f sec)'% (name, time() - start))
         return res
-    wrapper.func_doc = function.func_doc
     return wrapper

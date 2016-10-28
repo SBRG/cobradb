@@ -5,6 +5,7 @@ from cobradb.loading.parse import (_has_gene_reaction_rule,
 from cobra.core import Reaction, Metabolite
 from cobra.io import read_sbml_model
 import pytest
+import six
 
 
 @pytest.fixture(scope='session')
@@ -54,7 +55,7 @@ def test__normalize_pseudoreaction_exchange_reversed():
     assert reaction.id == 'EX_glu__L_e'
     assert reaction.lower_bound == -1000
     assert reaction.upper_bound == 0
-    assert reaction.metabolites.values() == [-1]
+    assert list(reaction.metabolites.values()) == [-1]
 
 
 def test__normalize_pseudoreaction_exchange_error_bad_coeff():
@@ -99,7 +100,7 @@ def test__normalize_pseudoreaction_demand_reversed():
     reaction.lower_bound = -1000
     reaction.upper_bound = 0
     _normalize_pseudoreaction(reaction)
-    assert reaction.metabolites.values() == [-1]
+    assert list(reaction.metabolites.values()) == [-1]
     assert reaction.lower_bound == 0
     assert reaction.upper_bound == 1000
     assert reaction.id == 'DM_glu__L_c'
@@ -111,7 +112,7 @@ def test__normalize_pseudoreaction_demand_reversed_prefer_sink_name():
     reaction.lower_bound = -1000
     reaction.upper_bound = 0
     _normalize_pseudoreaction(reaction)
-    assert reaction.metabolites.values() == [-1]
+    assert list(reaction.metabolites.values()) == [-1]
     assert reaction.lower_bound == 0
     assert reaction.upper_bound == 1000
     assert reaction.id == 'SK_glu__L_c'
@@ -143,7 +144,7 @@ def test__normalize_pseudoreaction_sink_reversed():
     reaction.lower_bound = 0
     reaction.upper_bound = 50
     _normalize_pseudoreaction(reaction)
-    assert reaction.metabolites.values() == [-1]
+    assert list(reaction.metabolites.values()) == [-1]
     assert reaction.lower_bound == -50
     assert reaction.upper_bound == 0
     assert reaction.id == 'SK_glu__L_c'
@@ -319,5 +320,5 @@ def test_hash_reaction(test_model_files):
     assert len(set(hashes.values())) == 20
 
     # repeatable
-    k1, h1 = hashes.iteritems().next()
+    k1, h1 = next(six.iteritems(hashes))
     assert h1 == hash_reaction(model.reactions.get_by_id(k1))

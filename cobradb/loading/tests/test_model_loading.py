@@ -325,47 +325,6 @@ class TestsWithModels:
                 .filter(Metabolite.bigg_id == '_13dpg')
                 .first()) is None
 
-    def test_linkout_urls(self, session):
-        # with url
-        res_db = (session
-                  .query(DataSource)
-                  .filter(DataSource.name == 'KEGGID')
-                  .all())
-        assert len(res_db) == 1
-        assert res_db[0].url_prefix == 'http://identifiers.org/kegg.compound/'
-
-    def test_linkout_no_url(self, session):
-        # with url
-        res_db = (session
-                  .query(DataSource)
-                  .filter(DataSource.name == 'BIOPATH')
-                  .all())
-        assert len(res_db) == 1
-        assert res_db[0].url_prefix is None
-
-    def tests_linkouts(self, session):
-        assert (session
-                .query(Synonym)
-                .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.data_source_id)
-                .filter(Metabolite.bigg_id == '13dpg')
-                .filter(DataSource.name == 'KEGGID')
-                .count()) == 2
-        assert (session
-                .query(Synonym)
-                .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.data_source_id)
-                .filter(Metabolite.bigg_id == '13dpg')
-                .filter(DataSource.name == 'BIOPATH')
-                .count()) == 1
-        assert (session
-                .query(Synonym)
-                .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.data_source_id)
-                .filter(Metabolite.bigg_id == '13dpg')
-                .filter(DataSource.name  == 'CHEBI')
-                .count()) == 5
-
     def tests_reaction_attributes(self, session):
         r_db =  (session.query(ModelReaction)
                 .join(Reaction)

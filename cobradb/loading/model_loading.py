@@ -18,8 +18,12 @@ import logging
 from collections import defaultdict
 import os
 from os.path import join, basename, abspath, dirname
-from itertools import ifilter
+try:
+    import itertools.ifilter as filter
+except ImportError:
+    pass
 import cobra.io
+import six
 
 
 class GenbankNotFound(Exception):
@@ -211,7 +215,7 @@ def load_new_model(session, model, genome_db_id, pub_ref, published_filename,
 
 #     data_source_fix = {'KEGG_ID' : 'KEGGID', 'CHEBI_ID': 'CHEBI'}
 
-#     for external_source, v in cobra_metabolite.notes.iteritems():
+#     for external_source, v in six.iteritems(cobra_metabolite.notes):
 #         # ignore formulas
 #         if external_source.lower() in ['formula', 'formula1', 'none', 'charge']:
 #             continue
@@ -295,7 +299,7 @@ def load_metabolites(session, model_id, model, compartment_names,
         values = (ignore_empty_str(strip_str_or_none(formula_fn(metabolite)))
                   for formula_fn in formula_fns)
         # Get the first non-null result. Otherwise _formula = None.
-        _formula = format_formula(next(ifilter(None, values), None))
+        _formula = format_formula(next(filter(None, values), None))
 
         # get charge
         try:
@@ -409,7 +413,7 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
     session.commit
 
     # for each reactant, add to the reaction matrix
-    for metabolite, stoich in reaction.metabolites.iteritems():
+    for metabolite, stoich in six.iteritems(reaction.metabolites):
         try:
             component_bigg_id, compartment_bigg_id = parse.split_compartment(metabolite.id)
         except NotFoundError:
