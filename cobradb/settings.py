@@ -39,13 +39,10 @@ for setting_name, env_name in six.iteritems(env_names):
         setattr(self, setting_name, config.get('DATABASE', setting_name))
 
 # set up the database connection string
-if self.postgres_host == '' and self.postgres_password == '' \
-        and self.postgres_user == '':
-    self.db_connection_string = 'postgresql:///%s' % self.postgres_database
-else:
-    self.db_connection_string = 'postgresql://%s:%s@%s/%s' % \
-        (self.postgres_user, self.postgres_password,
-            self.postgres_host, self.postgres_database)
+self.db_connection_string = ('postgresql://%s:%s@%s:%s/%s' %
+                             (self.postgres_user, self.postgres_password,
+                              self.postgres_host, self.postgres_port,
+                              self.postgres_database))
 
 # get the java executable (optional, for running Model Polisher)
 if config.has_option('EXECUTABLES', 'java'):
