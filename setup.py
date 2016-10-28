@@ -44,5 +44,6 @@ setup(
                       'pytest>=2.6.4',
                       'six>=1.10.0',
                       'tornado>=4.4.2',
+                      'escher>=1.5.0',
                       'configparser>=3.5.0'],
 )
