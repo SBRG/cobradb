@@ -43,5 +43,6 @@ setup(
                       'lxml>=3.6.0',
                       'pytest>=2.6.4',
                       'six>=1.10.0',
+                      'tornado>=4.4.2',
                       'configparser>=3.5.0'],
 )
