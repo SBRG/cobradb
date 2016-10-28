@@ -7,9 +7,10 @@ from cobradb.util import increment_id, make_reaction_copy_id, timing
 
 import cobra.core
 import logging
-from itertools import izip, repeat
+from itertools import repeat
 from collections import defaultdict
 from copy import copy
+import six
 
 try:
     from ipy_progressbar import ProgressBar
@@ -100,8 +101,8 @@ def dump_model(bigg_id):
             # add to duplicates
             tups_by_bigg_id[d['bigg_id']].append(d)
         # duplicates have multiple ModelReactions
-        duplicates = {k: v for k, v in tups_by_bigg_id.iteritems() if len(v) > 1}
-        for bigg_id, dup_dicts in duplicates.iteritems():
+        duplicates = {k: v for k, v in six.iteritems(tups_by_bigg_id) if len(v) > 1}
+        for bigg_id, dup_dicts in six.iteritems(duplicates):
             # add _copy1, copy2, etc. to the bigg ids for the duplicates
             for d in dup_dicts:
                 d['bigg_id'] = make_reaction_copy_id(bigg_id, d['copy_number'])

@@ -2,10 +2,11 @@
 
 """Retrive local user settings"""
 
-from ConfigParser import SafeConfigParser, NoOptionError
+from configparser import SafeConfigParser, NoOptionError
 import os
 from os.path import join, split, abspath, isfile, expanduser, dirname
 from sys import modules
+import six
 
 self = modules[__name__]
 
@@ -29,7 +30,7 @@ env_names = {
     'postgres_database': 'COBRADB_POSTGRES_DATABASE',
     'postgres_test_database': 'COBRADB_POSTGRES_TEST_DATABASE',
 }
-for setting_name, env_name in env_names.iteritems():
+for setting_name, env_name in six.iteritems(env_names):
     if env_name in os.environ:
         print('Setting %s with environment variable %s' % (setting_name,
                                                            env_name))

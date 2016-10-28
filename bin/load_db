@@ -1,10 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 # configure the logger before imports so other packages do not override this
 # setup
 import logging
 import time
 import sys
+import six
 
 def configure_logger(log_file=None, level=logging.INFO, overwrite_log=True,
                      format=logging.BASIC_FORMAT):
@@ -175,7 +177,7 @@ if __name__ == '__main__':
                 continue
             # look for matching ids from the model-genome file
             found = False
-            for genome_ref in ids.iteritems():
+            for genome_ref in six.iteritems(ids):
                 # Ignore assembly and bioproject and force users to provide all
                 # genbank files by accession
                 if genome_ref[0] != 'ncbi_accession':

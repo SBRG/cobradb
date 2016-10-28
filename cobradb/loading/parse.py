@@ -12,11 +12,19 @@ from os.path import join
 import hashlib
 import logging
 from collections import defaultdict
+import six
 
 
-def hash_metabolite_dictionary(met_dict, string_only=False):
+def _hash_fn(s):
+    to_hash = s if isinstance(s, six.binary_type) else s.encode('utf8')
+    # python 2: md5(bytes).hexdigest() => Py2 bytes str
+    # python 3: md5(bytes).hexdigest() => Py3 unicode str
+    return hashlib.md5(to_hash).hexdigest()
+
+
+def hash_metabolite_dictionary(met_dict, string_only):
     """Generate a unique hash for the metabolites and coefficients of the
-    reaction.
+    reaction. Returns the native str type for Python 2 or 3.
 
     met_dict: A dictionary where keys are metabolite IDs and values and
     coefficients.
@@ -24,16 +32,13 @@ def hash_metabolite_dictionary(met_dict, string_only=False):
     string_only: If True, return the string that would be hashed.
 
     """
-    def sorted_mets():
-        return sorted([(m, v) for m, v in met_dict.iteritems()],
-                      key=lambda x: x[0])
-
+    sorted_mets = sorted([(m, v) for m, v in six.iteritems(met_dict)],
+                         key=lambda x: x[0])
+    sorted_mets_str = ''.join(['%s%.3f' % t for t in sorted_mets])
     if string_only:
-        hash_fn = lambda s: s
+        return sorted_mets_str
     else:
-        hash_fn = lambda s: hashlib.md5(s).hexdigest()
-
-    return hash_fn(''.join(['%s%.3f' % t for t in sorted_mets()]))
+        return _hash_fn(sorted_mets_str)
 
 
 def reverse_reaction(reaction):
@@ -51,8 +56,8 @@ def hash_reaction(reaction, string_only=False):
     string_only: If True, return the string that would be hashed.
 
     """
-    d = {m.id: v for m, v in reaction.metabolites.iteritems()}
-    return hash_metabolite_dictionary(d, string_only=string_only)
+    the_dict = {m.id: v for m, v in six.iteritems(reaction.metabolites)}
+    return hash_metabolite_dictionary(the_dict, string_only)
 
 
 def load_and_normalize(model_filepath):
@@ -124,13 +129,13 @@ def _has_gene_reaction_rule(reaction):
 
 def _reaction_single_met_coeff(reaction):
     if len(reaction.metabolites) == 1:
-        return reaction.metabolites.iteritems().next()
+        return next(six.iteritems(reaction.metabolites))
     return None
 
 
 def _reverse_reaction(reaction):
     """Reverse the metabolite coefficients and the upper & lower bounds."""
-    reaction.add_metabolites({k: -v for k, v in reaction.metabolites.iteritems()},
+    reaction.add_metabolites({k: -v for k, v in six.iteritems(reaction.metabolites)},
                              combine=False)
     reaction.upper_bound, reaction.lower_bound = -reaction.lower_bound, -reaction.upper_bound
     logging.debug('Reversing pseudoreaction %s' % reaction.id)
@@ -233,7 +238,7 @@ def _fix_biomass(reaction):
 def _fix_atpm(reaction):
     """Returns new ID if the reaction was treated as a biomass."""
     # does it look like a atpm?
-    mets = {k.id: v for k, v in reaction.metabolites.iteritems()}
+    mets = {k.id: v for k, v in six.iteritems(reaction.metabolites)}
     subsystem = 'Biomass and maintenance functions'
     if mets == {'atp_c': -1, 'h2o_c': -1, 'pi_c': 1, 'h_c': 1, 'adp_c': 1}:
         return 'ATPM', subsystem
@@ -439,7 +444,7 @@ def setup_model(model, substrate_reactions, aerobic=True, sur=10, max_our=10,
     else: raise Exception('Invalid id_style')
 
     if isinstance(substrate_reactions, dict):
-        for r, v in substrate_reactions.iteritems():
+        for r, v in six.iteritems(substrate_reactions):
             model.reactions.get_by_id(r).lower_bound = -abs(v)
     elif isinstance(substrate_reactions, list):
         for r in substrate_reactions:
@@ -461,7 +466,7 @@ def setup_model(model, substrate_reactions, aerobic=True, sur=10, max_our=10,
     if fix_iJO1366 and str(model)=='iJO1366':
         for r in ['ACACT2r']:
             model.reactions.get_by_id(r).upper_bound = 0
-        print 'made ACACT2r irreversible'
+        print('made ACACT2r irreversible')
 
     # TODO hydrogen reaction for ijo
 
@@ -487,7 +492,7 @@ def carbons_for_exchange_reaction(reaction):
     if len(reaction._metabolites) > 1:
         raise Exception('%s not an exchange reaction' % str(reaction))
 
-    metabolite = reaction._metabolites.iterkeys().next()
+    metabolite = next(reaction._metabolites.iterkeys())
     try:
         return metabolite.formula.elements['C']
     except KeyError:

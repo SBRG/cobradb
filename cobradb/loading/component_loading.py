@@ -11,6 +11,7 @@ from os.path import basename
 from warnings import warn
 from sqlalchemy import text, or_, and_, func
 import logging
+import six
 
 
 class BadGenomeError(Exception):
@@ -65,15 +66,15 @@ def get_genbank_accessions(genbank_filepath, fast=False):
         # the full SeqIO.read
         line_limit = 100
         regex_dict = {
-            k: re.compile(v) for k, v in {
+            k: re.compile(v) for k, v in six.iteritems({
                 'ncbi_accession': r'VERSION\s+([\w.-]+)[^\w.-]',
                 'ncbi_assembly': r'Assembly:\s*([\w.-]+)[^\w.-]',
                 'ncbi_bioproject': r'BioProject:\s*([\w.-]+)[^\w.-]'
-            }.iteritems()
+            })
         }
         with open(genbank_filepath, 'r') as f:
             for i, line in enumerate(f.readlines()):
-                for key, regex in regex_dict.iteritems():
+                for key, regex in six.iteritems(regex_dict):
                     match = regex.search(line)
                     if match is not None:
                         out[key] = match.group(1)
