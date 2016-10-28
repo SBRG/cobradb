@@ -1,7 +1,9 @@
-"""retrive local user settings"""
+# -*- coding: utf-8 -*-
+
+"""Retrive local user settings"""
 
 from ConfigParser import SafeConfigParser, NoOptionError
-import os as os
+import os
 from os.path import join, split, abspath, isfile, expanduser, dirname
 from sys import modules
 
@@ -18,14 +20,24 @@ if isfile(filepath):
 else:
     raise Exception('No settings files at path: %s' % filepath)
 
-# save options as variables
-self.postgres_user = config.get('DATABASE', 'postgres_user')
-self.postgres_password = config.get('DATABASE', 'postgres_password')
-self.postgres_database = config.get('DATABASE', 'postgres_database')
-self.postgres_host = config.get('DATABASE', 'postgres_host')
-self.postgres_port = config.get('DATABASE', 'postgres_port')
-self.postgres_test_database = config.get('DATABASE', 'postgres_test_database')
+# prefer environment variables for database settings
+env_names = {
+    'postgres_host': 'COBRADB_POSTGRES_HOST',
+    'postgres_port': 'COBRADB_POSTGRES_PORT',
+    'postgres_user': 'COBRADB_POSTGRES_USER',
+    'postgres_password': 'COBRADB_POSTGRES_PASSWORD',
+    'postgres_database': 'COBRADB_POSTGRES_DATABASE',
+    'postgres_test_database': 'COBRADB_POSTGRES_TEST_DATABASE',
+}
+for setting_name, env_name in env_names.iteritems():
+    if env_name in os.environ:
+        print('Setting %s with environment variable %s' % (setting_name,
+                                                           env_name))
+        setattr(self, setting_name, os.environ[env_name])
+    else:
+        setattr(self, setting_name, config.get('DATABASE', setting_name))
 
+# set up the database connection string
 if self.postgres_host == '' and self.postgres_password == '' \
         and self.postgres_user == '':
     self.db_connection_string = 'postgresql:///%s' % self.postgres_database
@@ -34,7 +46,14 @@ else:
         (self.postgres_user, self.postgres_password,
             self.postgres_host, self.postgres_database)
 
-self.java = config.get('EXECUTABLES', 'java')
+# get the java executable (optional, for running Model Polisher)
+if config.has_option('EXECUTABLES', 'java'):
+    self.java = config.get('EXECUTABLES', 'java')
+else:
+    print('No Java executable provided.')
+
+if not config.has_section('DATA'):
+    raise Exception('DATA section was not found in settings.ini')
 
 # these are required
 try:

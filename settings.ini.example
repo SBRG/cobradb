@@ -1,9 +1,21 @@
 [DATABASE]
+# Set host here or set environment variable COBRADB_POSTGRES_HOST
 postgres_host = localhost
+
+# Set port here or set environment variable COBRADB_POSTGRES_PORT
 postgres_port = 5432
+
+# Set user here or set environment variable COBRADB_POSTGRES_USER
 postgres_user = user
+
+# Set password here or set environment variable COBRADB_POSTGRES_PASSWORD
 postgres_password =
+
+# Set database here or set environment variable COBRADB_POSTGRES_DATABASE
 postgres_database = cobradb
+
+# Set test database here or set environment variable
+# COBRADB_POSTGRES_TEST_DATABASE
 postgres_test_database = cobradb_test
 
 [DATA]
@@ -36,4 +48,5 @@ data_source_preferences = ~/path/to/cobradb_data/annotation/data-source-prefs.tx
 gene_reaction_rule_prefs = ~/path/to/cobradb_data/gene-reaction-rule-prefs.txt
 
 [EXECUTABLES]
+# Optionally provide a Java executable for running ModelPolisher
 java = /bin/java

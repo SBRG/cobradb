@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# use `source` to run this
+
+export COBRADB_POSTGRES_HOST=localhost
+export COBRADB_POSTGRES_PORT=5432
+export COBRADB_POSTGRES_USER=
+export COBRADB_POSTGRES_PASSWORD=
+export COBRADB_POSTGRES_DATABASE=cobradb
+export COBRADB_POSTGRES_TEST_DATABASE=cobradb_test
