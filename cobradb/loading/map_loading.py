@@ -62,8 +62,10 @@ def load_the_map(session, model_id, map_name, map_json):
                      .first())
     if escher_map_db is None:
         logging.info('Creating map %s' % map_name)
+        map_data = (bytes(map_json) if isinstance(map_json, six.binary_type)
+                    else map_json.encode('utf8'))
         escher_map_db = EscherMap(map_name=map_name, model_id=model_id,
-                                  priority=priority, map_data=bytes(map_json))
+                                  priority=priority, map_data=map_data)
         session.add(escher_map_db)
         session.commit()
     else:
