@@ -123,6 +123,16 @@ def _get_qual(feat, name, get_first=False):
         return [y for y in (nonempty_str(x) for x in qual)
                 if y is not None]
 
+def _get_geneid(feature):
+    """Get the value of GeneID from db_xref, or else return None."""
+    db_xref = _get_qual(feature, 'db_xref')
+    if not db_xref:
+        return None
+    for ref in db_xref:
+        splitrefs = [x.strip() for x in ref.split(':')]
+        if len(splitrefs) == 2 and splitrefs[0].lower() == 'geneid':
+            return splitrefs[1]
+    return None
 
 @timing
 def load_genome(genome_ref, genome_file_paths, session):
@@ -177,11 +187,11 @@ def load_chromosome(gb_file, genome_db, session):
 
         # update genome with the source information
         if genome_db.taxon_id is None and feature.type == 'source':
-                for ref in _get_qual(feature, 'db_xref'):
-                    if 'taxon' == ref.split(':')[0]:
-                        genome_db.taxon_id = ref.split(':')[1]
-                        break
-                continue
+            for ref in _get_qual(feature, 'db_xref'):
+                if 'taxon' == ref.split(':')[0]:
+                    genome_db.taxon_id = ref.split(':')[1]
+                    break
+            continue
 
         # only read in CDSs
         if feature.type != 'CDS':
@@ -193,16 +203,22 @@ def load_chromosome(gb_file, genome_db, session):
         refseq_name = None
         locus_tag = None
 
-        t = _get_qual(feature, 'locus_tag', True)
-        if t is not None:
-            locus_tag = t
-            bigg_id = scrub_gene_id(t)
+        # get bigg_id if possible from locus_tag or and GeneID
+        found_tag = _get_qual(feature, 'locus_tag', True)
+        found_gene_id = _get_geneid(feature)
+        if found_tag is not None:
+            locus_tag = found_tag
+            bigg_id = scrub_gene_id(found_tag)
+        elif found_gene_id is not None:
+            bigg_id = scrub_gene_id(found_gene_id)
 
-        t = _get_qual(feature, 'gene', True)
-        if t is not None:
-            gene_name = t
-            refseq_name = t
+        # get name
+        found_name = _get_qual(feature, 'gene', True)
+        if found_name is not None:
+            gene_name = found_name
+            refseq_name = found_name
 
+        # warn about no locus_tag / bigg_id
         if gene_name is not None and bigg_id is None:
             if bigg_id_warnings <= warning_num:
                 msg = 'No locus_tag for gene. Using Gene name as bigg_id: %s' % gene_name

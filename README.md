@@ -1,8 +1,8 @@
 # COBRAdb
 
 COBRAdb loads genome-scale metabolic models and genome annotations into a
-relational database. It is the software that powers
-[BiGG Models](http://bigg.ucsd.edu).
+relational database. It already powers [BiGG Models](http://bigg.ucsd.edu), and
+it is available under the MIT license.
 
 ## Installation
 

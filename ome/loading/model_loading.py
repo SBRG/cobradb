@@ -191,61 +191,6 @@ def load_new_model(session, model, genome_db_id, pub_ref, published_filename,
     return model_db.id
 
 
-# def _load_metabolite_linkouts(session, cobra_metabolite, metabolite_database_id):
-#     """Load new linkouts even ones that are pointing to previously created universal
-#     metabolites.
-
-#     The only scenario where we don't load a linkout is if the external id and
-#     metabolite is exactly the same as a previous linkout.
-
-#     """
-
-#     # parse the notes
-#     def parse_linkout_str(id):
-#         if id is None:
-#             return None
-#         id_string = str(id)
-#         for s in ['{', '}', '[', ']', '&apos;', "'",]:
-#             id_string = id_string.replace(s, '')
-#         return id_string.strip()
-
-#     data_source_fix = {'KEGG_ID' : 'KEGGID', 'CHEBI_ID': 'CHEBI'}
-
-#     for external_source, v in cobra_metabolite.notes.iteritems():
-#         # ignore formulas
-#         if external_source.lower() in ['formula', 'formula1', 'none', 'charge']:
-#             continue
-
-#         # check if linkout matches the list
-#         external_source = external_source.upper()
-#         v = v[0]
-#         if external_source in data_source_fix:
-#             external_source = data_source_syn[external_source]
-#         if '&apos' in v:
-#             ids = [parse_linkout_str(x) for x in v.split(',')]
-#         else:
-#             ids = [parse_linkout_str(v)]
-
-#         for external_id in ids:
-#             if external_id.lower() in ['na', 'none']:
-#                 continue
-#             data_source_id = get_or_create_data_source(session, external_source)
-#             synonym_db = (session
-#                           .query(Synonym)
-#                           .filter(Synonym.synonym == external_id)
-#                           .filter(Synonym.type == 'component')
-#                           .filter(Synonym.ome_id == metabolite_database_id)
-#                           .filter(Synonym.data_source_id == data_source_id)
-#                           .first())
-#             if synonym_db is None:
-#                 synonym_db = Synonym(synonym=external_id,
-#                                      type = 'component',
-#                                      ome_id = metabolite_database_id,
-#                                      data_source_id=data_source_id)
-#                 session.add(synonym_db)
-#                 session.commit()
-
-
 def load_metabolites(session, model_id, model, compartment_names,
                      old_metabolite_ids):
     """Load the metabolites as components and model components.
