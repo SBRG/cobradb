@@ -150,7 +150,10 @@ def format_formula(formula):
     """Remove unnecessary characters from formula."""
     if formula is None:
         return formula
-    return formula.strip("'[]")
+    formula = formula.strip("'[]").replace('FULLR', 'R')
+    if formula.strip() in ['Fe1SO', 'UK', 'HP']:
+        return 'R'
+    return formula
 
 
 def scrub_gene_id(the_id):
