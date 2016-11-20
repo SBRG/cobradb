@@ -212,6 +212,15 @@ def load_metabolites(session, model_id, model, compartment_names,
     # only grab this once
     data_source_id = get_or_create_data_source(session, 'old_bigg_id')
 
+    # get metabolite id duplicates
+    met_dups = load_tsv(settings.metabolite_duplicates)
+    def _check_metabolite_duplicates(bigg_id):
+        """Return a new ID if there is a preferred ID, otherwise None."""
+        for row in met_dups:
+            if bigg_id in row[1:]:
+                return row[0]
+        return None
+
     # for each metabolite in the model
     for metabolite in model.metabolites:
         try:
@@ -221,14 +230,13 @@ def load_metabolites(session, model_id, model, compartment_names,
                             'model %s' % (metabolite.id, model.id)))
             continue
 
-        # If there is no metabolite, add a new one.
-        # TODO we could also double check these ID matches with linkouts and formula
-        metabolite_db = (session
-                         .query(Metabolite)
-                         .filter(Metabolite.bigg_id == component_bigg_id)
-                         .first())
+        original_id = None
+        preferred = _check_metabolite_duplicates(component_bigg_id)
+        if preferred:
+            component_bigg_id = preferred
+            original_id = component_bigg_id
 
-        # Look for the formula in these places
+        # look for the formula in these places
         formula_fns = [lambda m: getattr(m, 'formula', None), # support cobra v0.3 and 0.4
                        lambda m: m.notes.get('FORMULA', None),
                        lambda m: m.notes.get('FORMULA1', None)]
@@ -251,6 +259,12 @@ def load_metabolites(session, model_id, model, compartment_names,
                               .format(metabolite.id, model.id, metabolite.charge))
             charge = None
 
+        # If there is no metabolite, add a new one.
+        metabolite_db = (session
+                            .query(Metabolite)
+                            .filter(Metabolite.bigg_id == component_bigg_id)
+                            .first())
+
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
             # make the new metabolite
@@ -259,8 +273,11 @@ def load_metabolites(session, model_id, model, compartment_names,
             session.add(metabolite_db)
             session.commit()
 
-        # load the linkouts for the universal metabolite
-        # _load_metabolite_linkouts(session, metabolite, metabolite_db.id)
+        # add the deprecated id if necessary
+        if original_id:
+            deprecated_db = DeprecatedID(bigg_id=original_id, type='component',
+                                         ome_id=metabolite_db.id)
+            session.add(deprecated_db)
 
         # if there is no compartment, add a new one
         compartment_db = (session

@@ -26,7 +26,7 @@ reaction_id_prefs = ~/path/to/ome_data/reaction-id-prefs.txt
 reaction_hash_prefs = ~/path/to/ome_data/reaction-hash-prefs.txt
 
 # A tab-delimited text file where column 1 is the preferred metabolite ID and
-# column 2 is the duplicate.
+# the following columns are duplicates.
 metabolite_duplicates = ~/path/to/ome_data/metabolite-duplicates.txt
 
 data_source_preferences = /Users/dbuser/ome_data/annotation/data-source-prefs.txt

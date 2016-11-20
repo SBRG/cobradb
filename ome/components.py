@@ -196,17 +196,6 @@ class TU(RNA):
         return "TU (#%d, %s)" % \
             (self.id, self.name)
 
-
-class Protein(Component):
-    __tablename__ = 'protein'
-
-    __mapper_args__ ={ 'polymorphic_identity': 'protein'}
-
-    id = Column(Integer, ForeignKey('component.id'), primary_key=True)
-    gene_id = Column(Integer, ForeignKey('gene.id'))
-    gene = relationship('Gene', backref='protein')
-
-
 class Metabolite(Component):
     __tablename__ = 'metabolite'
 
@@ -219,7 +208,6 @@ class Metabolite(Component):
     def __repr__(self):
         return ('<ome Metabolite(id={self.id}, bigg_id={self.bigg_id}>'
                 .format(self=self))
-
 
 class GeneGrouping(Base):
     __tablename__ = 'gene_grouping'

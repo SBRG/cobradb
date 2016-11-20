@@ -30,7 +30,7 @@ _enum_l = [
     Enum('model_reaction', 'model_compartmentalized_component', 'model_gene',
          name='old_id_synonym_type'),
     Enum('is_version', name='is_version'),
-    Enum('component', 'reaction', name='used_ids_type'),
+    Enum('component', 'reaction', name='deprecated_id_types'),
 ]
 custom_enums = { x.name: x for x in _enum_l }
 
@@ -251,16 +251,18 @@ class GenomeRegionMap(Base):
         def __repr__(self):
             return "GenomeRegionMap (%d <--> %d) distance:%d" % (self.genome_region_id_1, self.genome_region_id_2, self.distance)
 
-class UsedId(Base):
-    __tablename__ = 'used_ids'
+class DeprecatedID(Base):
+    __tablename__ = 'deprecated_id'
 
     id = Column(Integer, primary_key=True)
-    type = Column(custom_enums['is_version'])
-    bigg_id = Column(String)
+    type = Column(custom_enums['deprecated_id_types'])
+    deprecated_id = Column(String)
+    ome_id = Column(Integer)
+
     __table_args__ = (
-        UniqueConstraint('type', 'bigg_id'),
+        UniqueConstraint('type', 'deprecated_id'),
     )
 
     def __repr__(self):
-        return ('<ome UsedId(id=%d, type="%s", bigg_id="%s")>' %
-                (self.id, self.type, self.bigg_id))
+        return ('<ome DeprecatedID(type="%s", deprecated_id="%s", component_id=%d)>' %
+                (self.type, self.deprecated_id, self.component_id))

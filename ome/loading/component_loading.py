@@ -2,7 +2,7 @@
 
 from ome import settings, timing, base
 from ome.base import *
-from ome.components import Gene, Protein
+from ome.components import Gene
 from ome.util import scrub_gene_id, get_or_create_data_source, get_or_create
 from ome.loading import AlreadyLoadedError
 
