@@ -9,17 +9,28 @@ postgres_test_database = bigg_test
 [DATA]
 # The directory containing the genome-scale models
 model_directory = ~/path/to/ome_data/models
+
 # The directory containing the reference sequences (as Genbank files)
 refseq_directory = ~/path/to/ome_data/refseq
+
 # A tab-delimited text file containing models, reference sequences, and
 # publication IDs
 model_genome = ~/path/to/ome_data/model-genome.txt
+
 # A tab-delimited text file containing compartment IDs and their corresponding
 # names
 compartment_names = ~/path/to/ome_data/compartment-names.txt
+
 reaction_id_prefs = ~/path/to/ome_data/reaction-id-prefs.txt
+
 reaction_hash_prefs = ~/path/to/ome_data/reaction-hash-prefs.txt
+
+# A tab-delimited text file where column 1 is the preferred metabolite ID and
+# column 2 is the duplicate.
+metabolite_duplicates = ~/path/to/ome_data/metabolite-duplicates.txt
+
 data_source_preferences = /Users/dbuser/ome_data/annotation/data-source-prefs.txt
+
 # This file should be a tab-delimited text file where each row contains an
 # original gene_reaction_rule followed by a tab and a fixed
 # gene_reaction_rule.

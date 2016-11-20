@@ -3,7 +3,6 @@ from sqlalchemy import (create_engine, ForeignKey, Column, Integer, String,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import UniqueConstraint
-from sqlalchemy.schema import Sequence
 from ome.base import *
 from ome.components import *
 
@@ -11,7 +10,7 @@ from ome.components import *
 class Model(Base):
     __tablename__='model'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     bigg_id = Column(String, nullable=False)
     genome_id = Column(Integer, ForeignKey('genome.id', onupdate="CASCADE", ondelete="CASCADE"))
     genome = relationship('Genome', backref='model')
@@ -29,7 +28,7 @@ class Model(Base):
 class ModelGene(Base):
     __tablename__='model_gene'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     model_id = Column(Integer,
                       ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"),
                       nullable=False)
@@ -45,7 +44,7 @@ class ModelGene(Base):
 class ModelReaction(Base):
     __tablename__='model_reaction'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     reaction_id = Column(Integer,
                          ForeignKey('reaction.id', onupdate="CASCADE", ondelete="CASCADE"),
                          nullable=False)
@@ -73,7 +72,7 @@ class ModelReaction(Base):
 class GeneReactionMatrix(Base):
     __tablename__ = 'gene_reaction_matrix'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     model_gene_id = Column(Integer,
                            ForeignKey('model_gene.id', onupdate="CASCADE", ondelete="CASCADE"),
                            nullable=False)
@@ -92,7 +91,7 @@ class GeneReactionMatrix(Base):
 
 class CompartmentalizedComponent(Base):
     __tablename__='compartmentalized_component'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     component_id = Column(Integer,
                           ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"),
                           nullable=False)
@@ -107,7 +106,7 @@ class CompartmentalizedComponent(Base):
 
 class ModelCompartmentalizedComponent(Base):
     __tablename__='model_compartmentalized_component'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     model_id = Column(Integer,
                       ForeignKey('model.id', onupdate="CASCADE", ondelete="CASCADE"),
                       nullable=False)
@@ -124,7 +123,7 @@ class ModelCompartmentalizedComponent(Base):
 
 class Compartment(Base):
     __tablename__ = 'compartment'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     bigg_id  = Column(String, unique = True)
     name = Column(String)
 
@@ -135,7 +134,7 @@ class Compartment(Base):
 
 class ReactionMatrix(Base):
     __tablename__ = 'reaction_matrix'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     reaction_id = Column(Integer, ForeignKey('reaction.id'), nullable=False)
     compartmentalized_component_id = Column(Integer,
                                             ForeignKey('compartmentalized_component.id',
@@ -150,7 +149,7 @@ class ReactionMatrix(Base):
 
 class EscherMap(Base):
     __tablename__ = 'escher_map'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     map_name = Column(String, nullable=False)
     map_data = Column(LargeBinary, nullable=False)
     model_id = Column(Integer, ForeignKey(Model.id), nullable=False)
@@ -163,7 +162,7 @@ class EscherMap(Base):
 
 class EscherMapMatrix(Base):
     __tablename__ = 'escher_map_matrix'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     ome_id = Column(Integer, nullable=False)
     escher_map_id = Column(Integer, ForeignKey(EscherMap.id), nullable=False)
     # the reaction id or node id

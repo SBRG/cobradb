@@ -11,7 +11,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from types import MethodType
 from os import system
 from contextlib import contextmanager
-from sqlalchemy.schema import Sequence
 import logging
 
 
@@ -30,7 +29,8 @@ _enum_l = [
          name='reference_type'),
     Enum('model_reaction', 'model_compartmentalized_component', 'model_gene',
          name='old_id_synonym_type'),
-    Enum('is_version', name='is_version')
+    Enum('is_version', name='is_version'),
+    Enum('component', 'reaction', name='used_ids_type'),
 ]
 custom_enums = { x.name: x for x in _enum_l }
 
@@ -58,7 +58,7 @@ class DatabaseVersion(Base):
 class Genome(Base):
     __tablename__ = 'genome'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     accession_type = Column(String(200), nullable=False)
     accession_value = Column(String(200), nullable=False)
     organism = Column(String(200), nullable=True)
@@ -77,7 +77,7 @@ class Genome(Base):
 class Chromosome(Base):
     __tablename__ = 'chromosome'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     ncbi_accession = Column(String(200))
     genome_id = Column(Integer, ForeignKey('genome.id'))
 
@@ -92,7 +92,7 @@ class Chromosome(Base):
 
 class GenomeRegion(Base):
     __tablename__ = 'genome_region'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     chromosome_id = Column(Integer, ForeignKey('chromosome.id'))
     bigg_id = Column(String, nullable=False)
     leftpos = Column(Integer, nullable=True)
@@ -117,7 +117,7 @@ class GenomeRegion(Base):
 class Component(Base):
     __tablename__ = 'component'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     bigg_id = Column(String)
     name = Column(String, nullable=True)
     type = Column(String(20))
@@ -137,7 +137,7 @@ class Component(Base):
 class Reaction(Base):
     __tablename__ = 'reaction'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     type = Column(String(20))
     bigg_id = Column(String, nullable=False)
     name = Column(String, nullable=True)
@@ -161,7 +161,7 @@ class Reaction(Base):
 class DataSource(Base):
     __tablename__ = 'data_source'
 
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     bigg_id = Column(String, nullable=False)
     name = Column(String(100))
     url_prefix = Column(String)
@@ -179,7 +179,7 @@ class DataSource(Base):
 
 class Synonym(Base):
     __tablename__ = 'synonym'
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     ome_id = Column(Integer)
     synonym = Column(String)
     type = Column(custom_enums['synonym_type'])
@@ -196,7 +196,7 @@ class Synonym(Base):
 
 class Publication(Base):
     __tablename__ = "publication"
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     reference_type = Column(custom_enums['reference_type'])
     reference_id = Column(String)
 
@@ -221,7 +221,7 @@ class PublicationModel(Base):
 
 class OldIDSynonym(Base):
     __tablename__ = "old_id_model_synonym"
-    id = Column(Integer, Sequence('wids'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     type = Column(custom_enums['old_id_synonym_type'])
     synonym_id = Column(Integer,
                         ForeignKey('synonym.id', ondelete='CASCADE'),
@@ -244,8 +244,23 @@ class GenomeRegionMap(Base):
         genome_region_id_2 = Column(Integer, ForeignKey('genome_region.id'), primary_key=True)
         distance = Column(Integer)
 
-        __table_args__ = (UniqueConstraint('genome_region_id_1','genome_region_id_2'),{})
-
+        __table_args__ = (
+            UniqueConstraint('genome_region_id_1','genome_region_id_2'),
+        )
 
         def __repr__(self):
             return "GenomeRegionMap (%d <--> %d) distance:%d" % (self.genome_region_id_1, self.genome_region_id_2, self.distance)
+
+class UsedId(Base):
+    __tablename__ = 'used_ids'
+
+    id = Column(Integer, primary_key=True)
+    type = Column(custom_enums['is_version'])
+    bigg_id = Column(String)
+    __table_args__ = (
+        UniqueConstraint('type', 'bigg_id'),
+    )
+
+    def __repr__(self):
+        return ('<ome UsedId(id=%d, type="%s", bigg_id="%s")>' %
+                (self.id, self.type, self.bigg_id))

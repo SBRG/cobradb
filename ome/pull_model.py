@@ -23,7 +23,6 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, backref, joinedload
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
-from sqlalchemy.schema import Sequence
 
 from ome import base, settings, components, timing
 #from ome.base import *
@@ -128,9 +127,9 @@ class PullModel:
             if metaboliteObject.short_name \
             else metaboliteObject.long_name
         cobra_metabolite = cobra.core.Metabolite(
-            id = mid, 
-            name = name, 
-            formula = formula, 
+            id = mid,
+            name = name,
+            formula = formula,
             compartment = compartmentObject.name)
         cobra_metabolite.notes={}
         cobra_metabolite.notes['CHEBI'] = metaboliteObject.chebi
@@ -192,7 +191,7 @@ class PullModel:
                 cobra_rxn = cobra.core.Reaction(name = name)
                 cobra_rxn.id = rid
                 cobra_rxn.lower_bound = r.lowerbound
-                cobra_rxn.upper_bound = r.upperbound 
+                cobra_rxn.upper_bound = r.upperbound
                 cobra_rxn.add_metabolites(rdict)
                 gpr = self.pull_gpr(r.gpr_id, standard_names)
                 if gpr:
