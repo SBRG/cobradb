@@ -9,7 +9,7 @@ from ome.components import *
 from ome.loading import parse
 from ome.util import (increment_id, check_pseudoreaction, load_tsv,
                       get_or_create_data_source, format_formula, scrub_name,
-                      check_none)
+                      check_none, get_or_create)
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy import func
@@ -115,12 +115,14 @@ def load_model(model_filepath, pub_ref, genome_ref, session):
     else:
         logging.warn('No compartment names file')
         compartment_names = {}
-    load_metabolites(session, model_database_id, model, compartment_names,
-                     old_parsed_ids['metabolites'])
+    comp_comp_db_ids = load_metabolites(session, model_database_id, model,
+                                        compartment_names,
+                                        old_parsed_ids['metabolites'])
 
     # reactions
     model_db_rxn_ids = load_reactions(session, model_database_id, model,
-                                      old_parsed_ids['reactions'])
+                                      old_parsed_ids['reactions'],
+                                      comp_comp_db_ids)
 
     # genes
     load_genes(session, model_database_id, model, model_db_rxn_ids,
@@ -207,7 +209,15 @@ def load_metabolites(session, model_id, model, compartment_names,
     old_metabolite_ids: A dictionary where keys are new IDs and values are old
     IDs for compartmentalized metabolites.
 
+    Returns
+    -------
+
+    comp_comp_db_ids: A dictionary where keys are the original compartmentalized
+    metabolite ids and the values are the database IDs for the compartmentalized
+    components.
+
     """
+    comp_comp_db_ids = {}
 
     # only grab this once
     data_source_id = get_or_create_data_source(session, 'old_bigg_id')
@@ -261,9 +271,9 @@ def load_metabolites(session, model_id, model, compartment_names,
 
         # If there is no metabolite, add a new one.
         metabolite_db = (session
-                            .query(Metabolite)
-                            .filter(Metabolite.bigg_id == component_bigg_id)
-                            .first())
+                         .query(Metabolite)
+                         .filter(Metabolite.bigg_id == component_bigg_id)
+                         .first())
 
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
@@ -275,9 +285,8 @@ def load_metabolites(session, model_id, model, compartment_names,
 
         # add the deprecated id if necessary
         if original_id:
-            deprecated_db = DeprecatedID(bigg_id=original_id, type='component',
-                                         ome_id=metabolite_db.id)
-            session.add(deprecated_db)
+            get_or_create(session, DeprecatedID, deprecated_id=original_id,
+                          type='component', ome_id=metabolite_db.id)
 
         # if there is no compartment, add a new one
         compartment_db = (session
@@ -305,6 +314,9 @@ def load_metabolites(session, model_id, model, compartment_names,
                                                            compartment_id=compartment_db.id)
             session.add(comp_component_db)
             session.commit()
+
+        # remember for adding the reaction
+        comp_comp_db_ids[metabolite.id] = comp_component_db.id
 
         # if there is no model compartmentalized compartment, add a new one
         model_comp_comp_db = (session
@@ -357,9 +369,10 @@ def load_metabolites(session, model_id, model, compartment_names,
                 session.add(old_id_db)
                 session.commit()
 
+    return comp_comp_db_ids
 
 def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
-                  is_pseudoreaction):
+                  is_pseudoreaction, comp_comp_db_ids):
     """Add a new universal reaction with reaction matrix rows."""
 
     # name is optional in cobra 0.4b2. This will probably change back.
@@ -379,32 +392,22 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
             continue
 
         # get the component in the model
-        comp_comp_db = (session
-                        .query(CompartmentalizedComponent)
-                        .join(Component,
-                              Component.id == CompartmentalizedComponent.component_id)
-                        .join(Compartment,
-                              Compartment.id == CompartmentalizedComponent.compartment_id)
-                        .join(ModelCompartmentalizedComponent,
-                              ModelCompartmentalizedComponent.compartmentalized_component_id == CompartmentalizedComponent.id)
-                        .filter(Component.bigg_id == component_bigg_id)
-                        .filter(Compartment.bigg_id == compartment_bigg_id)
-                        .filter(ModelCompartmentalizedComponent.model_id == model_db_id)
-                        .first())
-        if comp_comp_db is None:
+        try:
+            comp_comp_db_id = comp_comp_db_ids[metabolite.id]
+        except KeyError:
             logging.error('Could not find metabolite {!s} for model {!s} in the database'
-                        .format(metabolite.id, model.id))
+                          .format(metabolite.id, model.id))
             continue
 
         # check if the reaction matrix row already exists
         found_reaction_matrix = (session
                                 .query(ReactionMatrix)
                                 .filter(ReactionMatrix.reaction_id == reaction_db.id)
-                                .filter(ReactionMatrix.compartmentalized_component_id == comp_comp_db.id)
+                                .filter(ReactionMatrix.compartmentalized_component_id == comp_comp_db_id)
                                 .count() > 0)
         if not found_reaction_matrix:
             new_object = ReactionMatrix(reaction_id=reaction_db.id,
-                                        compartmentalized_component_id=comp_comp_db.id,
+                                        compartmentalized_component_id=comp_comp_db_id,
                                         stoichiometry=stoich)
             session.add(new_object)
         else:
@@ -413,7 +416,7 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
 
     return reaction_db
 
-def load_reactions(session, model_db_id, model, old_reaction_ids):
+def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_ids):
     """Load the reactions and stoichiometries into the model.
 
     TODO if the reaction is already loaded, we need to check the stoichometry
@@ -431,6 +434,10 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
 
     old_reaction_ids: A dictionary where keys are new IDs and values are old IDs
     for reactions.
+
+    comp_comp_db_ids: A dictionary where keys are the original compartmentalized
+    metabolite ids and the values are the database IDs for the compartmentalized
+    components.
 
     Returns
     -------
@@ -527,14 +534,14 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                 # make a new reaction for the preferred_id
                 reaction_db = _new_reaction(session, reaction, preferred_id,
                                             reaction_hash, model_db_id, model,
-                                            is_pseudoreaction)
+                                            is_pseudoreaction, comp_comp_db_ids)
 
         # (1) no bigg_id matches, no stoichiometry match or pseudoreaction, then
         # make a new reaction
         elif reaction_db is None and hash_db is None:
             reaction_db = _new_reaction(session, reaction, reaction.id,
                                         reaction_hash, model_db_id, model,
-                                        is_pseudoreaction)
+                                        is_pseudoreaction, comp_comp_db_ids)
 
         # (2) bigg_id matches, but not the hash, then increment the BIGG_ID
         elif reaction_db is not None and hash_db is None:
@@ -544,7 +551,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids):
                         .format(reaction.id, new_id, model.id))
             reaction_db = _new_reaction(session, reaction, new_id,
                                         reaction_hash, model_db_id, model,
-                                        is_pseudoreaction)
+                                        is_pseudoreaction, comp_comp_db_ids)
 
         # (3) but found a stoichiometry match, then use the hash reaction match.
         elif hash_db is not None:

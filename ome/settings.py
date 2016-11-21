@@ -102,6 +102,7 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
         self.refseq_directory = expanduser(config.get('DATA', 'refseq_directory'))
     except NoOptionError:
         raise Exception('refseq_directory was not supplied in settings.ini')
+
     try:
         self.model_genome = expanduser(config.get('DATA', 'model_genome'))
     except NoOptionError:
@@ -110,7 +111,7 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
     # these are optional
     for data_pref in ['compartment_names', 'reaction_id_prefs',
                       'reaction_hash_prefs', 'gene_reaction_rule_prefs',
-                      'data_source_preferences']:
+                      'data_source_preferences', 'metabolite_duplicates']:
         try:
             setattr(self, data_pref, expanduser(config.get('DATA', data_pref)))
         except NoOptionError:

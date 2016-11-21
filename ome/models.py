@@ -164,13 +164,13 @@ class EscherMapMatrix(Base):
     __tablename__ = 'escher_map_matrix'
     id = Column(Integer, primary_key=True)
     ome_id = Column(Integer, nullable=False)
+    type = Column(custom_enums['escher_map_matrix_type'], nullable=False)
     escher_map_id = Column(Integer, ForeignKey(EscherMap.id), nullable=False)
     # the reaction id or node id
     escher_map_element_id = Column(String(50))
-    type = Column(String, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint('ome_id', 'escher_map_id'),
+        UniqueConstraint('ome_id', 'type', 'escher_map_id'),
     )
 
 

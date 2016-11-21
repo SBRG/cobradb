@@ -31,6 +31,8 @@ _enum_l = [
          name='old_id_synonym_type'),
     Enum('is_version', name='is_version'),
     Enum('component', 'reaction', name='deprecated_id_types'),
+    Enum('model_compartmentalized_component', 'model_reaction',
+         name='escher_map_matrix_type')
 ]
 custom_enums = { x.name: x for x in _enum_l }
 
