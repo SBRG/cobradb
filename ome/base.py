@@ -266,5 +266,5 @@ class DeprecatedID(Base):
     )
 
     def __repr__(self):
-        return ('<ome DeprecatedID(type="%s", deprecated_id="%s", component_id=%d)>' %
-                (self.type, self.deprecated_id, self.component_id))
+        return ('<ome DeprecatedID(type="%s", deprecated_id="%s", ome_id=%d)>' %
+                (self.type, self.deprecated_id, self.ome_id))
