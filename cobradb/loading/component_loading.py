@@ -230,7 +230,7 @@ def load_chromosome(gb_file, genome_db, session):
                 strand = '+'
             elif feature.strand == -1:
                 strand = '-'
-            leftpos = int(feature.location.start)
+            leftpos = int(feature.location.start)+1
             rightpos = int(feature.location.end)
 
             # finally, create the gene
