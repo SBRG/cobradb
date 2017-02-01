@@ -17,8 +17,8 @@ import logging
 
 # connect to postgres
 engine = create_engine(settings.db_connection_string)
-Base = declarative_base(bind=engine)
-metadata = MetaData(bind=engine)
+metadata = MetaData(bind=engine, schema='cobradb')
+Base = declarative_base(bind=engine, metadata=metadata)
 Session = sessionmaker(bind=engine, class_=_SA_Session)
 
 
