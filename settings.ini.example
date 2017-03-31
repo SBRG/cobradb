@@ -36,5 +36,7 @@ data_source_preferences = /Users/dbuser/ome_data/annotation/data-source-prefs.tx
 # gene_reaction_rule.
 gene_reaction_rule_prefs = ~/path/to/ome_data/gene-reaction-rule-prefs.txt
 
+metabolite_duplicates = ~/path/to/ome_data/metabolite-duplicates.txt
+
 [EXECUTABLES]
 java = /bin/java
