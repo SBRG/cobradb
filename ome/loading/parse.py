@@ -45,8 +45,8 @@ def hash_reaction(reaction, string_only=False):
     string_only: If True, return the string that would be hashed.
 
     """
-    return hash_metabolite_dictionary({m.id: v for m, v in
-                                       reaction.metabolites.iteritems()})
+    d = {m.id: v for m, v in reaction.metabolites.iteritems()}
+    return hash_metabolite_dictionary(d, string_only=string_only)
 
 
 def load_and_normalize(model_filepath):
