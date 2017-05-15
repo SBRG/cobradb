@@ -34,20 +34,20 @@ def setup_logger():
 
 @pytest.fixture(scope='session')
 def test_genbank_files():
-    return [(('primary_type', 'core'), join(test_data_dir, 'core.gb')),
-            (('primary_type', 'core_2'), join(test_data_dir, 'core_2.gb'))]
+    return [(('ncbi_accession', 'core'), join(test_data_dir, 'core.gb')),
+            (('ncbi_accession', 'core_2'), join(test_data_dir, 'core_2.gb'))]
 
 
 @pytest.fixture(scope='session')
 def test_model_files():
     return [{'path': join(test_data_dir, 'ecoli_core_model.xml'),
-             'genome_ref': ('primary_type', 'core'),
+             'genome_ref': ('ncbi_accession', 'core'),
              'pmid': ('pmid', '25575024')},
             {'path': join(test_data_dir, 'ecoli_core_model_2.xml'),
-             'genome_ref': ('primary_type', 'core_2'),
+             'genome_ref': ('ncbi_accession', 'core_2'),
              'pmid': ('pmid', '25575024')},
             {'path': join(test_data_dir, 'ecoli_core_model_3.xml'),
-             'genome_ref': ('primary_type', 'core'),
+             'genome_ref': ('ncbi_accession', 'core'),
              'pmid': ('pmid', '25575024')}]
 
 

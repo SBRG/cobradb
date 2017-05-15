@@ -40,6 +40,7 @@ def dump_model(bigg_id):
                 .query(Gene.bigg_id, Gene.name, Synonym.synonym)
                 .join(ModelGene, ModelGene.gene_id == Gene.id)
                 .join(OldIDSynonym, OldIDSynonym.ome_id == ModelGene.id)
+                .filter(OldIDSynonym.type == 'model_gene')
                 .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
                 .filter(ModelGene.model_id == model_db.id))
     gene_names = []
@@ -62,6 +63,7 @@ def dump_model(bigg_id):
                     .query(ModelReaction, Reaction, Synonym.synonym)
                     .join(Reaction)
                     .join(OldIDSynonym, OldIDSynonym.ome_id == ModelReaction.id)
+                    .filter(OldIDSynonym.type == 'model_reaction')
                     .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
                     .filter(ModelReaction.model_id == model_db.id))
     reactions_model_reactions = []
@@ -135,6 +137,7 @@ def dump_model(bigg_id):
                       .join(Compartment)
                       .join(ModelCompartmentalizedComponent)
                       .join(OldIDSynonym, OldIDSynonym.ome_id == ModelCompartmentalizedComponent.id)
+                      .filter(OldIDSynonym.type == 'model_compartmentalized_component')
                       .join(Synonym)
                       .filter(ModelCompartmentalizedComponent.model_id == model_db.id))
     metabolite_names = []
