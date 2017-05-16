@@ -33,7 +33,7 @@ class TestsWithModels:
         assert session.query(CompartmentalizedComponent).count() == 73
         assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3 + 1
         assert session.query(Metabolite).count() == 55
-        assert session.query(Gene).count() == 284
+        assert session.query(Gene).count() == 286
         assert session.query(ModelGene).count() == 415
 
     def test_no_charge_in_linkouts(self, session):
@@ -157,6 +157,7 @@ class TestsWithModels:
                 .count() == 3)
         assert (session
                 .query(OldIDSynonym)
+                .filter(OldIDSynonym.type == 'model_reaction')
                 .join(Synonym, OldIDSynonym.synonym_id == Synonym.id)
                 .filter(Synonym.synonym == 'ATPM(NGAM)')
                 .join(ModelReaction, ModelReaction.id == OldIDSynonym.ome_id)
@@ -184,6 +185,7 @@ class TestsWithModels:
                 .count() == 0)
         assert (session
                 .query(OldIDSynonym)
+                .filter(OldIDSynonym.type == 'model_reaction')
                 .join(Synonym, OldIDSynonym.synonym_id == Synonym.id)
                 .filter(Synonym.synonym == 'NTP1')
                 .join(ModelReaction, ModelReaction.id == OldIDSynonym.ome_id)
@@ -261,6 +263,7 @@ class TestsWithModels:
         res = (session
                .query(Synonym.synonym, Component, Compartment)
                .join(OldIDSynonym)
+                .filter(OldIDSynonym.type == 'model_compartmentalized_component')
                .join(ModelCompartmentalizedComponent, ModelCompartmentalizedComponent.id == OldIDSynonym.ome_id)
                .join(CompartmentalizedComponent)
                .join(Component)
@@ -277,6 +280,7 @@ class TestsWithModels:
         res_db = (session
                   .query(Synonym.synonym)
                   .join(OldIDSynonym)
+                  .filter(OldIDSynonym.type == 'model_gene')
                   .join(ModelGene, ModelGene.id == OldIDSynonym.ome_id)
                   .join(Gene)
                   .join(Model)
@@ -287,6 +291,7 @@ class TestsWithModels:
     def test_old_reaction_id(self, session):
         assert (session
                 .query(OldIDSynonym)
+                .filter(OldIDSynonym.type == 'model_reaction')
                 .join(Synonym, OldIDSynonym.synonym_id == Synonym.id)
                 .filter(Synonym.synonym == 'ACALD')
                 .join(ModelReaction, ModelReaction.id == OldIDSynonym.ome_id)
@@ -297,6 +302,7 @@ class TestsWithModels:
     def test_old_metabolite_id(self, session):
         assert (session
                 .query(OldIDSynonym)
+                .filter(OldIDSynonym.type == 'model_compartmentalized_component')
                 .join(Synonym, OldIDSynonym.synonym_id == Synonym.id)
                 .filter(Synonym.synonym == 'gln_L_c')
                 .join(ModelCompartmentalizedComponent,
@@ -311,6 +317,7 @@ class TestsWithModels:
     def test_old_gene_id(self, session):
         assert (session
                 .query(OldIDSynonym)
+                .filter(OldIDSynonym.type == 'model_gene')
                 .join(Synonym, OldIDSynonym.synonym_id == Synonym.id)
                 .filter(Synonym.synonym == 'gene_with_period.22')
                 .join(ModelGene, ModelGene.id == OldIDSynonym.ome_id)
@@ -325,46 +332,18 @@ class TestsWithModels:
                 .filter(Metabolite.bigg_id == '_13dpg')
                 .first()) is None
 
-    def test_linkout_urls(self, session):
-        # with url
+    def test_linkout_old_bigg_id(self, session):
         res_db = (session
-                  .query(DataSource)
-                  .filter(DataSource.name == 'KEGGID')
+                  .query(Metabolite, Synonym, DataSource)
+                  .filter(Metabolite.bigg_id == '13dpg')
+                  .join(CompartmentalizedComponent)
+                  .join(Synonym, Synonym.ome_id == CompartmentalizedComponent.id)
+                  .filter(Synonym.type == 'compartmentalized_component')
+                  .join(DataSource)
+                  .filter(DataSource.bigg_id == 'old_bigg_id')
                   .all())
-        assert len(res_db) == 1
-        assert res_db[0].url_prefix == 'http://identifiers.org/kegg.compound/'
-
-    def test_linkout_no_url(self, session):
-        # with url
-        res_db = (session
-                  .query(DataSource)
-                  .filter(DataSource.name == 'BIOPATH')
-                  .all())
-        assert len(res_db) == 1
-        assert res_db[0].url_prefix is None
-
-    def tests_linkouts(self, session):
-        assert (session
-                .query(Synonym)
-                .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.data_source_id)
-                .filter(Metabolite.bigg_id == '13dpg')
-                .filter(DataSource.name == 'KEGGID')
-                .count()) == 2
-        assert (session
-                .query(Synonym)
-                .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.data_source_id)
-                .filter(Metabolite.bigg_id == '13dpg')
-                .filter(DataSource.name == 'BIOPATH')
-                .count()) == 1
-        assert (session
-                .query(Synonym)
-                .join(Metabolite, Metabolite.id == Synonym.ome_id)
-                .join(DataSource, DataSource.id == Synonym.data_source_id)
-                .filter(Metabolite.bigg_id == '13dpg')
-                .filter(DataSource.name  == 'CHEBI')
-                .count()) == 5
+        assert len(res_db) == 2
+        assert set(x[1].synonym for x in res_db) == {'_13dpg_c', '13dpg_c'}
 
     def tests_reaction_attributes(self, session):
         r_db =  (session.query(ModelReaction)

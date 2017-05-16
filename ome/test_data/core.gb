@@ -744,7 +744,6 @@ FEATURES             Location/Qualifiers
      CDS             1038519..1039655
                      /function="putative enzyme; Energy metabolism, carbon:
                      Electron transport"
-                     /locus_tag="b0979"
                      /gene="appB"
                      /GO_component="GO:0019866 - organelle inner membrane;
                      GO:0009274 - peptidoglycan-based cell wall"
@@ -756,7 +755,6 @@ FEATURES             Location/Qualifiers
                      /db_xref="ASAP:ABE-0003302"
                      /db_xref="UniProtKB/Swiss-Prot:P26458"
                      /db_xref="EcoGene:EG11379"
-                     /db_xref="GeneID:947547"
                      /transl_table=11
                      /product="cytochrome bd-II oxidase, subunit II"
                      /protein_id="NP_415498.1"

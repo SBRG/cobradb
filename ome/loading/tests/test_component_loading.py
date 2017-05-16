@@ -37,7 +37,8 @@ class TestWithGenomes():
         assert (session.query(Synonym)
                 .join(DataSource)
                 .join(Gene, Gene.id == Synonym.ome_id)
-                .filter(DataSource.name == 'locus_tag')
+                .filter(Synonym.type == 'gene')
+                .filter(DataSource.bigg_id == 'refseq_locus_tag')
                 .filter(Synonym.synonym == 'b0114')
                 .filter(Gene.bigg_id == 'b0114')
                 .count()) == 2
@@ -54,19 +55,23 @@ class TestWithGenomes():
         around.
 
         """
-        assert session.query(Gene).filter(Gene.bigg_id == 'appC').first().name == 'appC'
+        assert session.query(Gene).filter(Gene.bigg_id == 'appB').first().name == 'appB'
+
+    def test_gene_name_no_locus_id_gene_id(self, session):
+        """Use the Gene ID (ncbigene) if present."""
+        assert session.query(Gene).filter(Gene.bigg_id == '945585').first().name == 'appC'
 
     def test_genome_synonyms_name(self, session):
         assert (session.query(Synonym)
                 .join(DataSource)
-                .filter(DataSource.name == 'refseq_name')
+                .filter(DataSource.bigg_id == 'refseq_name')
                 .filter(Synonym.synonym == 'aceE')
                 .count()) == 2
 
     def test_genome_synonyms_synonyms(self, session):
         assert (session.query(Synonym)
                 .join(DataSource)
-                .filter(DataSource.name == 'refseq_synonym')
+                .filter(DataSource.bigg_id == 'refseq_synonym')
                 .filter(Synonym.synonym == 'ECK0113')
                 .count()) == 2
 
@@ -74,7 +79,7 @@ class TestWithGenomes():
     def test_genome_synonyms_db_xref(self, session):
         assert (session.query(Synonym)
                 .join(DataSource)
-                .filter(DataSource.name == 'GI')
+                .filter(DataSource.bigg_id == 'ncbigi')
                 .filter(Synonym.synonym == '16128107')
                 .count()) == 2
 
@@ -83,7 +88,7 @@ class TestWithGenomes():
         # this causes an error when we are not dealing with duplicates correctly
         assert (session.query(Synonym)
                 .join(DataSource)
-                .filter(DataSource.name == 'tests_dup_syn')
+                .filter(DataSource.bigg_id == 'tests_dup_syn')
                 .filter(Synonym.synonym == 'b0114')
                 .count()) == 1
 
@@ -92,7 +97,7 @@ class TestWithGenomes():
     def test_genome_synonyms_old_locus_tag(self, session):
         assert (session.query(Synonym)
                 .join(DataSource)
-                .filter(DataSource.name == 'refseq_old_locus_tag')
+                .filter(DataSource.bigg_id == 'refseq_old_locus_tag')
                 .filter(Synonym.synonym == 'test_b0114')
                 .count()) == 1
 
@@ -101,6 +106,6 @@ class TestWithGenomes():
     def test_genome_synonyms_orf_id(self, session):
         assert (session.query(Synonym)
                 .join(DataSource)
-                .filter(DataSource.name == 'refseq_orf_id')
+                .filter(DataSource.bigg_id == 'refseq_orf_id')
                 .filter(Synonym.synonym == 'test_orf')
                 .count()) == 1

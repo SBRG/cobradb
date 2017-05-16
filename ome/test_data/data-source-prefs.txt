@@ -1,1 +1,1 @@
-KEGGID	http://identifiers.org/kegg.compound/
+ncbigi	NCBI GI	http://identifiers.org/ncbigi/	GI
