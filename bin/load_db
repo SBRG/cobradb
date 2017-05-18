@@ -77,12 +77,12 @@ def drop_all_tables(engine, enums_to_drop=None):
             engine.execute(text('DROP TYPE IF EXISTS %s CASCADE' % enum))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     if args.drop_all:
-        logging.info("Dropping everything from the database")
+        logging.info('Dropping everything from the database')
         drop_all_tables(base.engine, base.custom_enums.keys())
 
-    logging.info("Building the database models")
+    logging.info('Building the database models')
     base.Base.metadata.create_all()
 
     if args.drop_models:
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         connection = base.engine.connect()
         trans = connection.begin()
         try:
-            connection.execute('TRUNCATE model, reaction, component, compartment CASCADE;')
+            connection.execute('TRUNCATE model, reaction, component, compartment, deprecated_id CASCADE;')
             trans.commit()
         except:
             trans.rollback()
