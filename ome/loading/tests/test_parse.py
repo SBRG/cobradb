@@ -2,7 +2,7 @@ from ome.loading.parse import *
 from ome.loading.parse import (_has_gene_reaction_rule,
                                _normalize_pseudoreaction)
 
-from cobra.core import Reaction, Metabolite
+from cobra.core import Reaction, Metabolite, Model
 from cobra.io import read_sbml_model
 import pytest
 
@@ -321,3 +321,25 @@ def test_hash_reaction(test_model_files):
     # repeatable
     k1, h1 = hashes.iteritems().next()
     assert h1 == hash_reaction(model.reactions.get_by_id(k1))
+
+def test_custom_hashes():
+    # These hashes are generated from old IDs in models (in reaction strings),
+    # and they match to these corrected BiGG reaction IDs
+    cases = [
+        ('39b5f90a1919aef07473e2f835ce63af', 'EX_frmd_e', 'foam_e <=>'),
+        ('92f1047c72db0a36413d822863be514e', 'EX_phllqne_e', 'phyQ_e <=>'),
+    ]
+    model = Model()
+    for reaction_hash, bigg_id, reaction_string in cases:
+        reaction = Reaction(bigg_id)
+        model.add_reaction(reaction)
+        reaction.build_reaction_from_string(reaction_string)
+        assert hash_reaction(reaction) == reaction_hash
+
+def test_reverse_reaction():
+    model = Model()
+    reaction = Reaction('AB')
+    model.add_reaction(reaction)
+    reaction.build_reaction_from_string('a -> b')
+    reversed_reaction = reverse_reaction(reaction)
+    assert reversed_reaction.reaction == 'b --> a'

@@ -36,6 +36,12 @@ def hash_metabolite_dictionary(met_dict, string_only=False):
     return hash_fn(''.join(['%s%.3f' % t for t in sorted_mets()]))
 
 
+def reverse_reaction(reaction):
+    new_r = reaction.copy()
+    new_r.add_metabolites({k: -2 * v for k, v in new_r.metabolites.items()})
+    return new_r
+
+
 def hash_reaction(reaction, string_only=False):
     """Generate a unique hash for the metabolites and coefficients of the
     reaction.

@@ -491,6 +491,16 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
                    .filter(Reaction.reaction_hash == reaction_hash)
                    .filter(Reaction.pseudoreaction == is_pseudoreaction)
                    .first())
+        # if there wasn't a match for the forward hash, also check the reverse hash
+        if hash_db:
+            reverse_hash_db = None
+        else:
+            reverse_hash = parse.hash_reaction(parse.reverse_reaction(reaction))
+            reverse_hash_db = (session
+                               .query(Reaction)
+                               .filter(Reaction.reaction_hash == reverse_hash)
+                               .filter(Reaction.pseudoreaction == is_pseudoreaction)
+                               .first())
 
         # bigg_id match  hash match b==h  pseudoreaction  example                   function
         #  n               n               n            first GAPD                _new_reaction (1)
@@ -504,6 +514,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
         #  y               y         y     n            second GAPD               reaction = bigg_reaction (3b)
         #  y               y         y     y            second EX_glc_e           reaction = bigg_reaction (3b)
         # NOTE: only check pseudoreaction hash against other pseudoreactions
+        # 4a and 4b are 3a and 3b with a reversed reaction
 
         def _find_new_incremented_id(session, original_id):
             """Look for a reaction bigg_id that is not already taken."""
@@ -513,7 +524,13 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
                     return new_id
                 new_id = increment_id(new_id)
 
+        # Check for a preferred ID in the preferences, based on the forward
+        # hash. Don't check the reverse hash in preferences.
         preferred_id = _check_hash_prefs(reaction_hash)
+
+        # no reversed by default
+        is_reversed = False
+
         # (0) If there is a preferred ID, make that the new ID, and increment any old IDs
         if preferred_id is not None:
             # if the reaction already matches, just continue
@@ -538,13 +555,13 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
 
         # (1) no bigg_id matches, no stoichiometry match or pseudoreaction, then
         # make a new reaction
-        elif reaction_db is None and hash_db is None:
+        elif reaction_db is None and hash_db is None and reverse_hash_db is None:
             reaction_db = _new_reaction(session, reaction, reaction.id,
                                         reaction_hash, model_db_id, model,
                                         is_pseudoreaction, comp_comp_db_ids)
 
         # (2) bigg_id matches, but not the hash, then increment the BIGG_ID
-        elif reaction_db is not None and hash_db is None:
+        elif reaction_db is not None and hash_db is None and reverse_hash_db is None:
             # loop until we find a non-matching find non-matching ID
             new_id = _find_new_incremented_id(session, reaction.id)
             logging.warn('Incrementing bigg_id {} to {} (from model {}) based on conflicting reaction hash'
@@ -563,7 +580,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
                 is_preferred = _check_id_prefs(reaction.id, hash_db.bigg_id)
                 if is_preferred:
                     logging.warn('Switching database reaction {} to bigg_id {} based on reaction hash and id_prefs file'
-                                .format(hash_db.bigg_id, reaction.id, model.id))
+                                .format(hash_db.bigg_id, reaction.id))
                     hash_db.bigg_id = reaction.id
                     session.commit()
                 reaction_db = hash_db
@@ -571,8 +588,35 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
             else:
                 pass
 
+        # (4) but found a stoichiometry match, then use the hash reaction match.
+        elif reverse_hash_db is not None:
+            # WARNING TODO this requires that loaded metabolites always match on
+            # bigg_id, which should be the case.
+
+            # Remember to switch upper and lower bounds
+            is_reversed = True
+            logging.info('Matched {} to {} based on reverse hash'
+                         .format(reaction.id, reverse_hash_db.bigg_id))
+
+            # (4a)
+            if reaction_db is None or reaction_db.id != reverse_hash_db.id:
+                is_preferred = _check_id_prefs(reaction.id, reverse_hash_db.bigg_id)
+                if is_preferred:
+                    logging.warn('Switching database reaction {} to bigg_id {} based on reversed reaction hash and id_prefs file'
+                                .format(reverse_hash_db.bigg_id, reaction.id))
+                    reverse_hash_db.bigg_id = reaction.id
+                    session.commit()
+                reaction_db = reverse_hash_db
+            # (4b) BIGG ID matches a reaction with the same hash, then just continue
+            else:
+                pass
+
         else:
             raise Exception('Should not get here')
+
+        # If the reaction is reversed, then switch upper and lower bound
+        lower_bound = -reaction.upper_bound if is_reversed else reaction.lower_bound
+        upper_bound = -reaction.lower_bound if is_reversed else reaction.upper_bound
 
         # subsystem
         subsystem = check_none(reaction.subsystem.strip())
@@ -582,8 +626,8 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
                              .query(ModelReaction)
                              .filter(ModelReaction.reaction_id == reaction_db.id)
                              .filter(ModelReaction.model_id == model_db_id)
-                             .filter(ModelReaction.lower_bound == reaction.lower_bound)
-                             .filter(ModelReaction.upper_bound == reaction.upper_bound)
+                             .filter(ModelReaction.lower_bound == lower_bound)
+                             .filter(ModelReaction.upper_bound == upper_bound)
                              .filter(ModelReaction.gene_reaction_rule == reaction.gene_reaction_rule)
                              .filter(ModelReaction.objective_coefficient == reaction.objective_coefficient)
                              .filter(ModelReaction.subsystem == subsystem)
@@ -600,8 +644,8 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
                                               reaction_id=reaction_db.id,
                                               gene_reaction_rule=reaction.gene_reaction_rule,
                                               original_gene_reaction_rule=reaction.gene_reaction_rule,
-                                              upper_bound=reaction.upper_bound,
-                                              lower_bound=reaction.lower_bound,
+                                              upper_bound=upper_bound,
+                                              lower_bound=lower_bound,
                                               objective_coefficient=reaction.objective_coefficient,
                                               copy_number=copy_number,
                                               subsystem=subsystem)

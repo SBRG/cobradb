@@ -28,7 +28,7 @@ class TestsWithModels:
         assert session.query(Model).count() == 3
         assert session.query(Genome).count() == 2
         assert session.query(Chromosome).count() == 2
-        assert session.query(Reaction).count() == 98
+        assert session.query(Reaction).count() == 97
         assert session.query(ModelReaction).count() == 288
         assert session.query(CompartmentalizedComponent).count() == 73
         assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3 + 1
@@ -76,12 +76,15 @@ class TestsWithModels:
 
     def test_gene_reaction_rule_handling(self, session):
         # make sure the locus tag b4153 is back in this gene_reaction_rule (in
-        # place of frdB). NOTE: COBRApy now reformats these without extra parens.
-        assert (session
-                .query(ModelReaction)
-                .join(Reaction, Reaction.id == ModelReaction.reaction_id)
-                .filter(Reaction.bigg_id == 'FRD7')
-                .first()).gene_reaction_rule == '904_AT12 and gene_with_period_AT22 and b4153 and b4154'
+        # place of frdB).
+        # NOTE: COBRApy now reformats these without extra parens.
+        # NOTE: FRD7 and SUCDi now map to the same universal reaction
+        res_db = (session
+                  .query(ModelReaction.gene_reaction_rule)
+                  .join(Reaction, Reaction.id == ModelReaction.reaction_id)
+                  .filter(Reaction.bigg_id == 'FRD7')
+                  .all())
+        assert '904_AT12 and gene_with_period_AT22 and b4153 and b4154' in [x[0] for x in res_db]
 
     def tests_reaction_collisions(self, session):
         # (2 ny-n) Model 1 has a different ACALD from models 2 and 3. The
@@ -366,3 +369,31 @@ class TestsWithModels:
                   .first())
         assert res_db.formula == 'C3H4O10P2'
         assert res_db.charge == -4
+
+    def test_reaction_direction_hash_1(self, session):
+        # Use PGI direction from the first model
+        rm_db =  (session
+                  .query(ReactionMatrix)
+                  .join(Reaction)
+                  .join(CompartmentalizedComponent)
+                  .join(Component)
+                  .filter(Reaction.bigg_id == 'PGI')
+                  .filter(Component.bigg_id == 'g6p')
+                  .first())
+        assert rm_db.stoichiometry == 1
+
+    def test_reaction_direction_hash_2(self, session):
+        # No incremented PGI, even though PGI in the two models are in different directions
+        assert session.query(Reaction).filter(Reaction.bigg_id == 'PGI_1').count() == 0
+
+    def test_reaction_direction_hash_3(self, session):
+        # The PGI in model 2 should have its upper and lower bounds reversed
+        r_db = (session
+                .query(ModelReaction)
+                .join(Model)
+                .join(Reaction)
+                .filter(Model.bigg_id == 'Ecoli_core_model_2')
+                .filter(Reaction.bigg_id == 'PGI')
+                .first())
+        assert r_db.lower_bound == -1000
+        assert r_db.upper_bound == 0
