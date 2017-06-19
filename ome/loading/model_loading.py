@@ -473,6 +473,17 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
                 return row[1]
         return None
 
+    # Generate reaction hashes, and find reactions in the same model in opposite
+    # directions.
+    reaction_hashes = {r.id: parse.hash_reaction(r) for r in model.reactions}
+    reverse_reaction_hashes = {r.id: parse.hash_reaction(parse.reverse_reaction(r)) for r in model.reactions}
+    reverse_reaction_hashes_rev = {v: k for k, v in reverse_reaction_hashes.iteritems()}
+    reactions_not_to_reverse = set()
+    for r_id, h in reaction_hashes.iteritems():
+        if h in reverse_reaction_hashes_rev:
+            reactions_not_to_reverse.add(r_id)
+            reactions_not_to_reverse.add(reverse_reaction_hashes_rev[h])
+
     model_db_rxn_ids = {}
     for reaction in model.reactions:
         # get the reaction
@@ -485,17 +496,19 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
         is_pseudoreaction = check_pseudoreaction(reaction.id)
 
         # calculate the hash
-        reaction_hash = parse.hash_reaction(reaction)
+        reaction_hash = reaction_hashes[reaction.id]
         hash_db = (session
                    .query(Reaction)
                    .filter(Reaction.reaction_hash == reaction_hash)
                    .filter(Reaction.pseudoreaction == is_pseudoreaction)
                    .first())
-        # if there wasn't a match for the forward hash, also check the reverse hash
+        # If there wasn't a match for the forward hash, also check the reverse
+        # hash. Do not check reverse hash for reactions with both directions
+        # defined in the same model (e.g. SUCDi and FRD7).
         if hash_db:
             reverse_hash_db = None
-        else:
-            reverse_hash = parse.hash_reaction(parse.reverse_reaction(reaction))
+        elif reaction.id not in reactions_not_to_reverse:
+            reverse_hash = reverse_reaction_hashes[reaction.id]
             reverse_hash_db = (session
                                .query(Reaction)
                                .filter(Reaction.reaction_hash == reverse_hash)

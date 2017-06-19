@@ -28,7 +28,7 @@ class TestsWithModels:
         assert session.query(Model).count() == 3
         assert session.query(Genome).count() == 2
         assert session.query(Chromosome).count() == 2
-        assert session.query(Reaction).count() == 97
+        assert session.query(Reaction).count() == 98
         assert session.query(ModelReaction).count() == 288
         assert session.query(CompartmentalizedComponent).count() == 73
         assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3 + 1
@@ -78,7 +78,6 @@ class TestsWithModels:
         # make sure the locus tag b4153 is back in this gene_reaction_rule (in
         # place of frdB).
         # NOTE: COBRApy now reformats these without extra parens.
-        # NOTE: FRD7 and SUCDi now map to the same universal reaction
         res_db = (session
                   .query(ModelReaction.gene_reaction_rule)
                   .join(Reaction, Reaction.id == ModelReaction.reaction_id)
@@ -397,3 +396,8 @@ class TestsWithModels:
                 .first())
         assert r_db.lower_bound == -1000
         assert r_db.upper_bound == 0
+
+    def test_reaction_direction_hash_4(self, session):
+        # ignore reverse hash mapping when reactions are in the same model
+        assert session.query(Reaction).filter(Reaction.bigg_id == 'FRD7').count() == 1
+        assert session.query(Reaction).filter(Reaction.bigg_id == 'SUCDi').count() == 1
