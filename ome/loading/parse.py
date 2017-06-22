@@ -63,6 +63,8 @@ def load_and_normalize(model_filepath):
         model = cobra.io.read_sbml_model(model_filepath)
     elif model_filepath.endswith('.mat'):
         model = cobra.io.load_matlab_model(model_filepath)
+    elif model_filepath.endswith('.json'):
+        model = cobra.io.load_json_model(model_filepath)
     else:
        raise Exception('The %s file is not a valid filetype', model_filepath)
     # convert the ids

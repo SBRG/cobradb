@@ -19,7 +19,6 @@ from collections import defaultdict
 import os
 from os.path import join, basename, abspath, dirname
 from itertools import ifilter
-import cobra.io
 
 
 class GenbankNotFound(Exception):
@@ -505,15 +504,14 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
         # If there wasn't a match for the forward hash, also check the reverse
         # hash. Do not check reverse hash for reactions with both directions
         # defined in the same model (e.g. SUCDi and FRD7).
-        if hash_db:
-            reverse_hash_db = None
-        elif reaction.id not in reactions_not_to_reverse:
-            reverse_hash = reverse_reaction_hashes[reaction.id]
+        if not hash_db and reaction.id not in reactions_not_to_reverse:
             reverse_hash_db = (session
                                .query(Reaction)
-                               .filter(Reaction.reaction_hash == reverse_hash)
+                               .filter(Reaction.reaction_hash == reverse_reaction_hashes[reaction.id])
                                .filter(Reaction.pseudoreaction == is_pseudoreaction)
                                .first())
+        else:
+            reverse_hash_db = None
 
         # bigg_id match  hash match b==h  pseudoreaction  example                   function
         #  n               n               n            first GAPD                _new_reaction (1)

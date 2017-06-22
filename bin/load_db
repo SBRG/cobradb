@@ -156,8 +156,9 @@ if __name__ == '__main__':
                 continue
             if genome_ref in genome_ref_additions and set(genome_ref_additions[genome_ref]) != set(additional_gb_filenames):
                 raise Exception('Conflicting additional files genome ref with %s %s' % genome_ref)
+            # Allow for easy lookup of genome refs based on genbank filename
             for add in additional_gb_filenames:
-                additional_gb_filenames_dict[add].add(genome_ref)
+                additional_gb_filenames_dict[add + '.gb'].add(genome_ref)
             genome_ref_additions[genome_ref] = additional_gb_filenames
 
         # loop through all the files
@@ -175,10 +176,14 @@ if __name__ == '__main__':
             # look for matching ids from the model-genome file
             found = False
             for genome_ref in ids.iteritems():
+                # Ignore assembly and bioproject and force users to provide all
+                # genbank files by accession
+                if genome_ref[0] != 'ncbi_accession':
+                    continue
                 if genome_ref in genome_refs:
                     genome_file_locations[genome_ref].append(refseq_filepath)
                     found = True
-            # also look for additional files
+            # Also look for additional files
             if refseq_filename in additional_gb_filenames_dict:
                 for genome_ref in additional_gb_filenames_dict[refseq_filename]:
                     genome_file_locations[genome_ref].append(refseq_filepath)
@@ -202,7 +207,7 @@ if __name__ == '__main__':
 
 
     if not args.skip_models:
-        logging.info("Loading models")
+        logging.info('Loading models')
         n = len(models_list)
         model_dir = settings.model_directory
         for i, model_dict in enumerate(models_list):
