@@ -109,14 +109,14 @@ def load_settings_from_file(filepath='settings.ini', in_ome_dir=True):
         raise Exception('model_genome path was not supplied in settings.ini')
 
     # these are optional
-    for data_pref in ['compartment_names', 'reaction_id_prefs',
-                      'reaction_hash_prefs', 'gene_reaction_rule_prefs',
-                      'data_source_preferences', 'metabolite_duplicates']:
+    for data_pref in ['compartment_names', 'reaction_hash_prefs',
+                      'gene_reaction_rule_prefs', 'data_source_preferences',
+                      'metabolite_duplicates']:
         try:
             setattr(self, data_pref, expanduser(config.get('DATA', data_pref)))
         except NoOptionError:
             setattr(self, data_pref, None)
-    with open(filepath, "wb") as outfile:
+    with open(filepath, 'wb') as outfile:
         config.write(outfile)
 
 # load

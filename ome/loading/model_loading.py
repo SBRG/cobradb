@@ -449,26 +449,13 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
     # only grab this once
     data_source_id = get_or_create_data_source(session, 'old_bigg_id')
 
-    # get reaction id_prefs
-    id_prefs = load_tsv(settings.reaction_id_prefs)
-    def _check_id_prefs(an_id, versus_id):
-        """Return True if an_id is preferred over versus_id."""
-        for row in id_prefs:
-            try:
-                idx1 = row.index(an_id)
-                idx2 = row.index(versus_id)
-            except ValueError:
-                continue
-
-            return idx1 < idx2
-        return False
-
     # get reaction hash_prefs
     hash_prefs = load_tsv(settings.reaction_hash_prefs)
-    def _check_hash_prefs(a_hash):
+    def _check_hash_prefs(a_hash, is_pseudoreaction):
         """Return the preferred BiGG ID for a_hash, or None."""
         for row in hash_prefs:
-            if row[0] == a_hash:
+            marked_pseudo = len(row) > 2 and row[2] == 'pseudoreaction'
+            if row[0] == a_hash and marked_pseudo == is_pseudoreaction:
                 return row[1]
         return None
 
@@ -537,7 +524,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
 
         # Check for a preferred ID in the preferences, based on the forward
         # hash. Don't check the reverse hash in preferences.
-        preferred_id = _check_hash_prefs(reaction_hash)
+        preferred_id = _check_hash_prefs(reaction_hash, is_pseudoreaction)
 
         # no reversed by default
         is_reversed = False
@@ -588,12 +575,6 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
 
             # (3a)
             if reaction_db is None or reaction_db.id != hash_db.id:
-                is_preferred = _check_id_prefs(reaction.id, hash_db.bigg_id)
-                if is_preferred:
-                    logging.warn('Switching database reaction {} to bigg_id {} based on reaction hash and id_prefs file'
-                                .format(hash_db.bigg_id, reaction.id))
-                    hash_db.bigg_id = reaction.id
-                    session.commit()
                 reaction_db = hash_db
             # (3b) BIGG ID matches a reaction with the same hash, then just continue
             else:
@@ -611,12 +592,6 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
 
             # (4a)
             if reaction_db is None or reaction_db.id != reverse_hash_db.id:
-                is_preferred = _check_id_prefs(reaction.id, reverse_hash_db.bigg_id)
-                if is_preferred:
-                    logging.warn('Switching database reaction {} to bigg_id {} based on reversed reaction hash and id_prefs file'
-                                .format(reverse_hash_db.bigg_id, reaction.id))
-                    reverse_hash_db.bigg_id = reaction.id
-                    session.commit()
                 reaction_db = reverse_hash_db
             # (4b) BIGG ID matches a reaction with the same hash, then just continue
             else:
