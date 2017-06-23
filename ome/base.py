@@ -101,6 +101,8 @@ class GenomeRegion(Base):
     rightpos = Column(Integer, nullable=True)
     strand = Column(String(1), nullable=True)
     type = Column(String(20))
+    dna_sequence = Column(String, nullable=True)
+    protein_sequence = Column(String, nullable=True)
 
     __table_args__ = (
         UniqueConstraint('bigg_id', 'chromosome_id'),

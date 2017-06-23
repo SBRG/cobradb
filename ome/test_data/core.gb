@@ -1,4 +1,4 @@
-LOCUS       NC_000913                  0 bp    DNA              CON 22-JUL-2013
+LOCUS       NC_000913                  1080 bp    DNA              CON 22-JUL-2013
 DEFINITION  Escherichia coli str. K-12 substr. MG1655, complete genome.
 ACCESSION   NC_000913
 VERSION     NC_000913.2  GI:49175990-core
@@ -125,7 +125,7 @@ FEATURES             Location/Qualifiers
                      /strain="K-12"
                      /sub_strain="MG1655"
                      /db_xref="taxon:511145"
-     CDS             8238..9191
+     CDS             1..954
                      /function="enzyme; Central intermediary metabolism:
                      Non-oxidative branch, pentose pathway"
                      /function="1.7.3 metabolism; central intermediary
@@ -147,6 +147,12 @@ FEATURES             Location/Qualifiers
                      non-oxidative branch"
                      /transl_table=11
                      /protein_id="NP_414549.1"
+                     /translation="MTDKLTSLRQYTTVVADTGDIAAMKLYQPQDATTNPSLILNAAQ
+                     IPEYRKLIDDAVAWAKQQSNDRAQQIVDATDKLAVNIGLEILKLVPGRISTEVDARLS
+                     YDTEASIAKAKRLIKLYNDAGISNDRILIKLASTWQGIRAAEQLEKEGINCNLTLLFS
+                     FAQARACAEAGVFLISPFVGRILDWYKANTDKKEYAPAEDPGVVSVSEIYQYYKEHGY
+                     ETVVMGASFRNIGEILELAGCDRLTIAPALLKELAESEGAIERKLSYTGEVKARPARI
+                     TESEFLWQHNQDPMAVDKLAEGIRKFAIDQEKLEKMIGDLL"
      CDS             123017..125680
                      /function="enzyme; Energy metabolism, carbon: Pyruvate
                      dehydrogenase"
@@ -2806,4 +2812,22 @@ FEATURES             Location/Qualifiers
                      /product="phosphatase"
                      /protein_id="NP_418812.1"
 ORIGIN
+        1 agcttttcat tctgactgca acgggcaata tgtctctgtg tggattaaaa aaagagtgtc
+       61 tgatagcagc ttctgaactg gttacctgcc gtgagtaaat taaaatttta ttgacttagg
+      121 tcactaaata ctttaaccaa tataggcata gcgcacagac agataaaaat tacagagtac
+      181 acaacatcca tgaaacgcat tagcaccacc attaccacca ccatcaccat taccacaggt
+      241 aacggtgcgg gctgacgcgt acaggaaaca cagaaaaaag cccgcacctg acagtgcggg
+      301 cttttttttt cgaccaaagg taacgaggta acaaccatgc gagtgttgaa gttcggcggt
+      361 acatcagtgg caaatgcaga acgttttctg cgtgttgccg atattctgga aagcaatgcc
+      421 aggcaggggc aggtggccac cgtcctctct gcccccgcca aaatcaccaa ccacctggtg
+      481 gcgatgattg aaaaaaccat tagcggccag gatgctttac ccaatatcag cgatgccgaa
+      541 cgtatttttg ccgaactttt gacgggactc gccgccgccc agccggggtt cccgctggcg
+      601 caattgaaaa ctttcgtcga tcaggaattt gcccaaataa aacatgtcct gcatggcatt
+      661 agtttgttgg ggcagtgccc ggatagcatc aacgctgcgc tgatttgccg tggcgagaaa
+      721 atgtcgatcg ccattatggc cggcgtatta gaagcgcgcg gtcacaacgt tactgttatc
+      781 gatccggtcg aaaaactgct ggcagtgggg cattacctcg aatctaccgt cgatattgct
+      841 gagtccaccc gccgtattgc ggcaagccgc attccggctg atcacatggt gctgatggca
+      901 ggtttcaccg ccggtaatga aaaaggcgaa ctggtggtgc ttggacgcaa cggttccgac
+      961 tactctgctg cggtgctggc tgcctgttta cgcgccgatt gttgcgagat ttggacggac
+     1021 gttgacgggg tctatacctg cgacccgcgt caggtgcccg atgcgaggtt gttgaagtcg
 //
