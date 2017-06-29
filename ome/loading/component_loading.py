@@ -235,8 +235,8 @@ def load_chromosome(gb_file, genome_db, session):
             bigg_id = scrub_gene_id(gene_name)
             gene_name = bigg_id
         elif bigg_id is None:
-            logging.error(('No locus_tag or gene name for gene %d in chromosome '
-                           '%s' % (i, chromosome.ncbi_accession)))
+            logging.warn(('No locus_tag or gene name for gene %d in chromosome '
+                          '%s' % (i, chromosome.ncbi_accession)))
             continue
 
         gene_db = (session

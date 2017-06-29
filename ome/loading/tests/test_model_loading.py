@@ -266,6 +266,24 @@ class TestsWithModels:
                .query(Synonym.synonym, Component, Compartment)
                .join(OldIDSynonym)
                 .filter(OldIDSynonym.type == 'model_compartmentalized_component')
+               .filter(Synonym.type == 'compartmentalized_component')
+               .join(ModelCompartmentalizedComponent, ModelCompartmentalizedComponent.id == OldIDSynonym.ome_id)
+               .join(CompartmentalizedComponent)
+               .join(Component)
+               .join(Compartment)
+               .join(Model)
+               .filter(Component.bigg_id == 'glc__D')
+               .filter(Compartment.bigg_id == 'e')
+               .filter(Model.bigg_id == 'Ecoli_core_model'))
+        assert res.count() == 2
+
+    def test_multiple_metabolite_copies_2(self, session):
+        # e.g. ID collision
+        res = (session
+               .query(Synonym.synonym, Component, Compartment)
+               .join(OldIDSynonym)
+                .filter(OldIDSynonym.type == 'model_compartmentalized_component')
+               .filter(Synonym.type == 'component')
                .join(ModelCompartmentalizedComponent, ModelCompartmentalizedComponent.id == OldIDSynonym.ome_id)
                .join(CompartmentalizedComponent)
                .join(Component)

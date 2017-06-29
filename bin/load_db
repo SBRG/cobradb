@@ -221,7 +221,7 @@ if __name__ == '__main__':
             except AlreadyLoadedError as e:
                 logging.info(str(e))
             except Exception as e:
-                logging.error('Could not load model %s.' % model_filename)
+                logging.error('Could not load model %s.' % model_dict['model_filename'])
                 logging.exception(e)
 
     if not args.skip_maps:

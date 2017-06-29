@@ -239,11 +239,8 @@ def load_metabolites(session, model_id, model, compartment_names,
                             'model %s' % (metabolite.id, model.id)))
             continue
 
-        original_id = None
         preferred = _check_metabolite_duplicates(component_bigg_id)
-        if preferred:
-            component_bigg_id = preferred
-            original_id = component_bigg_id
+        new_bigg_id = preferred if preferred else component_bigg_id
 
         # look for the formula in these places
         formula_fns = [lambda m: getattr(m, 'formula', None), # support cobra v0.3 and 0.4
@@ -271,20 +268,20 @@ def load_metabolites(session, model_id, model, compartment_names,
         # If there is no metabolite, add a new one.
         metabolite_db = (session
                          .query(Metabolite)
-                         .filter(Metabolite.bigg_id == component_bigg_id)
+                         .filter(Metabolite.bigg_id == new_bigg_id)
                          .first())
 
         # if necessary, add the new metabolite, and keep track of the ID
         if metabolite_db is None:
             # make the new metabolite
-            metabolite_db = Metabolite(bigg_id=component_bigg_id,
+            metabolite_db = Metabolite(bigg_id=new_bigg_id,
                                        name=scrub_name(getattr(metabolite, 'name', None)))
             session.add(metabolite_db)
             session.commit()
 
         # add the deprecated id if necessary
-        if original_id:
-            get_or_create(session, DeprecatedID, deprecated_id=original_id,
+        if metabolite_db.bigg_id != component_bigg_id:
+            get_or_create(session, DeprecatedID, deprecated_id=component_bigg_id,
                           type='component', ome_id=metabolite_db.id)
 
         # if there is no compartment, add a new one
@@ -339,6 +336,7 @@ def load_metabolites(session, model_id, model, compartment_names,
 
         # add synonyms
         for old_bigg_id_c in old_metabolite_ids[metabolite.id]:
+            # Add Synonym and  OldIDSynonym
             synonym_db = (session
                           .query(Synonym)
                           .filter(Synonym.type == 'compartmentalized_component')
@@ -353,8 +351,6 @@ def load_metabolites(session, model_id, model, compartment_names,
                                      data_source_id=data_source_id)
                 session.add(synonym_db)
                 session.commit()
-
-            # add OldIDSynonym
             old_id_db = (session
                          .query(OldIDSynonym)
                          .filter(OldIDSynonym.type == 'model_compartmentalized_component')
@@ -367,6 +363,36 @@ def load_metabolites(session, model_id, model, compartment_names,
                                          synonym_id=synonym_db.id)
                 session.add(old_id_db)
                 session.commit()
+
+            # Also add Synonym and OldIDSynonym for the universal metabolite
+            old_bigg_id_c_without_compartment = parse.split_compartment(old_bigg_id_c)[0]
+            synonym_db_2 = (session
+                          .query(Synonym)
+                          .filter(Synonym.type == 'component')
+                          .filter(Synonym.ome_id == metabolite_db.id)
+                          .filter(Synonym.synonym == old_bigg_id_c_without_compartment)
+                          .filter(Synonym.data_source_id == data_source_id)
+                          .first())
+            if synonym_db_2 is None:
+                synonym_db_2 = Synonym(type='component',
+                                       ome_id=metabolite_db.id,
+                                       synonym=old_bigg_id_c_without_compartment,
+                                       data_source_id=data_source_id)
+                session.add(synonym_db_2)
+                session.commit()
+            old_id_db = (session
+                         .query(OldIDSynonym)
+                         .filter(OldIDSynonym.type == 'model_compartmentalized_component')
+                         .filter(OldIDSynonym.ome_id == model_comp_comp_db.id)
+                         .filter(OldIDSynonym.synonym_id == synonym_db_2.id)
+                         .first())
+            if old_id_db is None:
+                old_id_db = OldIDSynonym(type='model_compartmentalized_component',
+                                         ome_id=model_comp_comp_db.id,
+                                         synonym_id=synonym_db_2.id)
+                session.add(old_id_db)
+                session.commit()
+
 
     return comp_comp_db_ids
 
@@ -414,6 +440,12 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
                         .format(model.id, metabolite.id, reaction.id))
 
     return reaction_db
+
+def _is_deprecated_reaction_id(session, reaction_id):
+    return (session.query(DeprecatedID)
+            .filter(DeprecatedID.type == 'reaction')
+            .filter(DeprecatedID.deprecated_id == reaction_id)
+            .first() is not None)
 
 def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_ids):
     """Load the reactions and stoichiometries into the model.
@@ -518,7 +550,9 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
             """Look for a reaction bigg_id that is not already taken."""
             new_id = increment_id(original_id)
             while True:
-                if session.query(Reaction).filter(Reaction.bigg_id == new_id).first() is None:
+                # Check for existing and deprecated reaction ids
+                if (session.query(Reaction).filter(Reaction.bigg_id == new_id).first() is None and
+                    not _is_deprecated_reaction_id(session, new_id)):
                     return new_id
                 new_id = increment_id(new_id)
 
@@ -554,6 +588,10 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
         # (1) no bigg_id matches, no stoichiometry match or pseudoreaction, then
         # make a new reaction
         elif reaction_db is None and hash_db is None and reverse_hash_db is None:
+            # check that the id is not deprecated
+            if _is_deprecated_reaction_id(session, reaction.id):
+                logging.error('Keeping bigg_id {} (from model {}) even though it is on the deprecated ID list'
+                              .format(reaction.id, model.id))
             reaction_db = _new_reaction(session, reaction, reaction.id,
                                         reaction_hash, model_db_id, model,
                                         is_pseudoreaction, comp_comp_db_ids)
@@ -599,6 +637,11 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
 
         else:
             raise Exception('Should not get here')
+
+        # Add reaction to deprecated ID list if necessary
+        if reaction_db.bigg_id != reaction.id:
+            get_or_create(session, DeprecatedID, deprecated_id=reaction.id,
+                          type='reaction', ome_id=reaction_db.id)
 
         # If the reaction is reversed, then switch upper and lower bound
         lower_bound = -reaction.upper_bound if is_reversed else reaction.lower_bound
