@@ -53,8 +53,7 @@ def test_model_files():
 
 @pytest.fixture(scope='session')
 def test_prefs():
-    return {'reaction_id_prefs': join(test_data_dir, 'reaction-id-prefs.txt'),
-            'reaction_hash_prefs': join(test_data_dir, 'reaction-hash-prefs.txt'),
+    return {'reaction_hash_prefs': join(test_data_dir, 'reaction-hash-prefs.txt'),
             'data_source_preferences': join(test_data_dir, 'data-source-prefs.txt'),
             'gene_reaction_rule_prefs': join(test_data_dir, 'gene-reaction-rule-prefs.txt')}
 
@@ -94,7 +93,6 @@ def test_db(request, test_db_create):
 @pytest.fixture(scope='session')
 def load_genomes(test_db, test_genbank_files, test_prefs, session):
     # preferences
-    settings.reaction_id_prefs = test_prefs['reaction_id_prefs']
     settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
     settings.gene_reaction_rule_prefs = test_prefs['gene_reaction_rule_prefs']
     settings.data_source_preferences = test_prefs['data_source_preferences']

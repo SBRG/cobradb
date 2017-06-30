@@ -114,7 +114,7 @@ class ModelCompartmentalizedComponent(Base):
                                             ForeignKey('compartmentalized_component.id'),
                                             nullable=False)
     formula = Column(String, nullable=True)
-    charge = Column(Integer, nullable=True)
+    charge = Column(Numeric, nullable=True)
 
     __table_args__ = (
         UniqueConstraint('compartmentalized_component_id', 'model_id'),

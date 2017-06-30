@@ -2291,10 +2291,10 @@
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: b4025</p><p>GENE_LIST: b4025</p><p>SUBSYSTEM: Glycolysis/Gluconeogenesis</p></html>
         </notes>
         <listOfReactants>
-          <speciesReference species="M_g6p_c"/>
+          <speciesReference species="M_f6p_c"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="M_f6p_c"/>
+          <speciesReference species="M_g6p_c"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">

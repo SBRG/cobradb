@@ -161,6 +161,12 @@ def load_genome(genome_ref, genome_file_paths, session):
         load_chromosome(gb_file, genome_db, session)
 
 
+def first_uppercase(val):
+    if val is None:
+        return val
+    return str(val[0]).upper()
+
+
 def load_chromosome(gb_file, genome_db, session):
     chromosome = (session
                   .query(base.Chromosome)
@@ -229,8 +235,8 @@ def load_chromosome(gb_file, genome_db, session):
             bigg_id = scrub_gene_id(gene_name)
             gene_name = bigg_id
         elif bigg_id is None:
-            logging.error(('No locus_tag or gene name for gene %d in chromosome '
-                           '%s' % (i, chromosome.ncbi_accession)))
+            logging.warn(('No locus_tag or gene name for gene %d in chromosome '
+                          '%s' % (i, chromosome.ncbi_accession)))
             continue
 
         gene_db = (session
@@ -248,6 +254,9 @@ def load_chromosome(gb_file, genome_db, session):
             leftpos = int(feature.location.start)
             rightpos = int(feature.location.end)
 
+            dna_sequence = str(feature.extract(gb_file.seq)).upper()
+            protein_sequence = first_uppercase(feature.qualifiers.get('translation', None))
+
             # finally, create the gene
             gene_db = Gene(bigg_id=bigg_id,
                            locus_tag=locus_tag,
@@ -256,6 +265,8 @@ def load_chromosome(gb_file, genome_db, session):
                            leftpos=leftpos,
                            rightpos=rightpos,
                            strand=strand,
+                           dna_sequence=dna_sequence,
+                           protein_sequence=protein_sequence,
                            mapped_to_genbank=True)
             session.add(gene_db)
             session.commit()

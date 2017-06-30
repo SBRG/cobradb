@@ -21,8 +21,6 @@ model_genome = ~/path/to/ome_data/model-genome.txt
 # names
 compartment_names = ~/path/to/ome_data/compartment-names.txt
 
-reaction_id_prefs = ~/path/to/ome_data/reaction-id-prefs.txt
-
 reaction_hash_prefs = ~/path/to/ome_data/reaction-hash-prefs.txt
 
 # A tab-delimited text file where column 1 is the preferred metabolite ID and

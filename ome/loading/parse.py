@@ -36,6 +36,12 @@ def hash_metabolite_dictionary(met_dict, string_only=False):
     return hash_fn(''.join(['%s%.3f' % t for t in sorted_mets()]))
 
 
+def reverse_reaction(reaction):
+    new_r = reaction.copy()
+    new_r.add_metabolites({k: -2 * v for k, v in new_r.metabolites.items()})
+    return new_r
+
+
 def hash_reaction(reaction, string_only=False):
     """Generate a unique hash for the metabolites and coefficients of the
     reaction.
@@ -57,6 +63,8 @@ def load_and_normalize(model_filepath):
         model = cobra.io.read_sbml_model(model_filepath)
     elif model_filepath.endswith('.mat'):
         model = cobra.io.load_matlab_model(model_filepath)
+    elif model_filepath.endswith('.json'):
+        model = cobra.io.load_json_model(model_filepath)
     else:
        raise Exception('The %s file is not a valid filetype', model_filepath)
     # convert the ids
