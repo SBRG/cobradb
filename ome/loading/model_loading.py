@@ -258,10 +258,10 @@ def load_metabolites(session, model_id, model, compartment_names,
 
         # get charge
         try:
-            charge = int(metabolite.charge)
+            charge = float(metabolite.charge)
         except Exception:
             if hasattr(metabolite, 'charge') and metabolite.charge is not None:
-                logging.debug('Could not convert charge to integer for metabolite {} in model {}: {}'
+                logging.debug('Could not convert charge to float for metabolite {} in model {}: {}'
                               .format(metabolite.id, model.id, metabolite.charge))
             charge = None
 
@@ -365,33 +365,41 @@ def load_metabolites(session, model_id, model, compartment_names,
                 session.commit()
 
             # Also add Synonym and OldIDSynonym for the universal metabolite
-            old_bigg_id_c_without_compartment = parse.split_compartment(old_bigg_id_c)[0]
-            synonym_db_2 = (session
-                          .query(Synonym)
-                          .filter(Synonym.type == 'component')
-                          .filter(Synonym.ome_id == metabolite_db.id)
-                          .filter(Synonym.synonym == old_bigg_id_c_without_compartment)
-                          .filter(Synonym.data_source_id == data_source_id)
-                          .first())
-            if synonym_db_2 is None:
-                synonym_db_2 = Synonym(type='component',
-                                       ome_id=metabolite_db.id,
-                                       synonym=old_bigg_id_c_without_compartment,
-                                       data_source_id=data_source_id)
-                session.add(synonym_db_2)
-                session.commit()
-            old_id_db = (session
-                         .query(OldIDSynonym)
-                         .filter(OldIDSynonym.type == 'model_compartmentalized_component')
-                         .filter(OldIDSynonym.ome_id == model_comp_comp_db.id)
-                         .filter(OldIDSynonym.synonym_id == synonym_db_2.id)
-                         .first())
-            if old_id_db is None:
-                old_id_db = OldIDSynonym(type='model_compartmentalized_component',
-                                         ome_id=model_comp_comp_db.id,
-                                         synonym_id=synonym_db_2.id)
-                session.add(old_id_db)
-                session.commit()
+            try:
+                new_style_id = parse.id_for_new_id_style(
+                    parse.fix_legacy_id(old_bigg_id_c, use_hyphens=False),
+                    is_metabolite=True
+                )
+                old_bigg_id_c_without_compartment = parse.split_compartment(new_style_id)[0]
+            except Exception as e:
+                logging.warn(e.message)
+            else:
+                synonym_db_2 = (session
+                                .query(Synonym)
+                                .filter(Synonym.type == 'component')
+                                .filter(Synonym.ome_id == metabolite_db.id)
+                                .filter(Synonym.synonym == old_bigg_id_c_without_compartment)
+                                .filter(Synonym.data_source_id == data_source_id)
+                                .first())
+                if synonym_db_2 is None:
+                    synonym_db_2 = Synonym(type='component',
+                                        ome_id=metabolite_db.id,
+                                        synonym=old_bigg_id_c_without_compartment,
+                                        data_source_id=data_source_id)
+                    session.add(synonym_db_2)
+                    session.commit()
+                old_id_db = (session
+                            .query(OldIDSynonym)
+                            .filter(OldIDSynonym.type == 'model_compartmentalized_component')
+                            .filter(OldIDSynonym.ome_id == model_comp_comp_db.id)
+                            .filter(OldIDSynonym.synonym_id == synonym_db_2.id)
+                            .first())
+                if old_id_db is None:
+                    old_id_db = OldIDSynonym(type='model_compartmentalized_component',
+                                            ome_id=model_comp_comp_db.id,
+                                            synonym_id=synonym_db_2.id)
+                    session.add(old_id_db)
+                    session.commit()
 
 
     return comp_comp_db_ids

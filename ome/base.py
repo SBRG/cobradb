@@ -264,7 +264,7 @@ class DeprecatedID(Base):
     ome_id = Column(Integer)
 
     __table_args__ = (
-        UniqueConstraint('type', 'deprecated_id'),
+        UniqueConstraint('type', 'deprecated_id', 'ome_id'),
     )
 
     def __repr__(self):

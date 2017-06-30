@@ -206,7 +206,7 @@ class Metabolite(Component):
                 primary_key=True)
 
     def __repr__(self):
-        return ('<ome Metabolite(id={self.id}, bigg_id={self.bigg_id}>'
+        return ('<ome Metabolite(id={self.id}, bigg_id={self.bigg_id})>'
                 .format(self=self))
 
 class GeneGrouping(Base):

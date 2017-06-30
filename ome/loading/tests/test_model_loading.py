@@ -292,7 +292,7 @@ class TestsWithModels:
                .filter(Component.bigg_id == 'glc__D')
                .filter(Compartment.bigg_id == 'e')
                .filter(Model.bigg_id == 'Ecoli_core_model'))
-        assert res.count() == 2
+        assert res.count() == 1
 
     def test_multiple_gene_copies(self, session):
         # for T. maritima, the genes TM0846 and TM_0846 were the same, so
