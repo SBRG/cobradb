@@ -259,6 +259,11 @@ def load_metabolites(session, model_id, model, compartment_names,
         # get charge
         try:
             charge = int(metabolite.charge)
+            # check for float charge
+            if charge != metabolite.charge:
+                logging.warn('Could not load charge {} for {} in model {}'
+                             .format(metabolite.charge, metabolite.id, model.id))
+                charge = None
         except Exception:
             if hasattr(metabolite, 'charge') and metabolite.charge is not None:
                 logging.debug('Could not convert charge to integer for metabolite {} in model {}: {}'
