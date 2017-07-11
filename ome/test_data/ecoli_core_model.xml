@@ -144,7 +144,7 @@
           <html xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: C3H5O6P</p></html>
         </notes>
       </species>
-      <species id="M_e4p_c" name="D-Erythrose-4-phosphate" compartment="C_c">
+      <species id="M_e4p_c" name="E4P c" compartment="C_c">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: C4H7O7P</p></html>
         </notes>
@@ -734,7 +734,7 @@
           </listOfParameters>
         </kineticLaw>
       </reaction>
-      <reaction id="R_ATPS4r" name="ATP synthase (four protons for one ATP)">
+      <reaction id="R_ATPS4r" name="atps4   z">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>GENE_ASSOCIATION: (((b3736 and b3737 and b3738) and (b3731 and b3732 and b3733 and b3734 and b3735)) or ((b3736 and b3737 and b3738) and (b3731 and b3732 and b3733 and b3734 and b3735) and b3739))</p><p>GENE_LIST: b3731 b3732 b3733 b3734 b3735 b3736 b3737 b3738 b3739</p><p>SUBSYSTEM: Oxidative Phosphorylation</p></html>
         </notes>

@@ -405,18 +405,20 @@ def get_formulas_from_names(model):
     for metabolite in model.metabolites:
         if (metabolite.formula is not None and str(metabolite.formula) != '' and getattr(metabolite, 'formula', None) is not None):
             continue
-        m = reg.match(metabolite.name)
-        if m:
-            try:
-                metabolite.formula = Formula(m.group(1))
-            except TypeError:
-                metabolite.formula = str(m.group(1))
+        name = getattr(metabolite, 'name', None)
+        if name:
+            m = reg.match(name)
+            if m:
+                try:
+                    metabolite.formula = Formula(m.group(1))
+                except TypeError:
+                    metabolite.formula = str(m.group(1))
     return model
 
 
-# --------------------------------------------------------------------
-# model setup
-# --------------------------------------------------------------------
+#-------------
+# Model setup
+#-------------
 
 def setup_model(model, substrate_reactions, aerobic=True, sur=10, max_our=10,
                 id_style='cobrapy', fix_iJO1366=False):

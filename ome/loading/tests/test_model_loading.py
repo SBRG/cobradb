@@ -49,6 +49,16 @@ class TestsWithModels:
     def test_name_scrubbing(self, session):
         assert session.query(Reaction).filter(Reaction.bigg_id == 'ACALD').first().name == 'Acetaldehyde dehydrogenase (acetylating)'
 
+    def test_name_filtering_met(self, session):
+        # Filter for higher quality descriptive names
+        assert session.query(Metabolite).filter(Metabolite.name == 'E4P c').first() is None
+        assert session.query(Metabolite).filter(Metabolite.name == 'D-Erythrose-4-phosphate').first() is not None
+
+    def test_name_filtering_rxn(self, session):
+        # Filter for higher quality descriptive names
+        assert session.query(Reaction).filter(Reaction.name == 'Atps4   z').first() is None
+        assert session.query(Reaction).filter(Reaction.name == 'ATP synthase (four protons for one ATP)').first() is not None
+
     # alternative transcripts
     def test_alternative_transcripts_counts(self, session):
         assert session.query(Synonym).filter(Synonym.synonym == '904').count() == 3 # 3 in first model, 0 in second model

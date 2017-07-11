@@ -19,7 +19,7 @@ from collections import defaultdict
 import os
 from os.path import join, basename, abspath, dirname
 from itertools import ifilter
-
+from difflib import SequenceMatcher
 
 class GenbankNotFound(Exception):
     pass
@@ -40,6 +40,27 @@ def check_for_model(name):
         if min_name(name)==min_name(x):
             return x
     return None
+
+
+def _sim(name1, name2):
+    """Return true if the names are similar"""
+    clean1, clean2 = [n.lower().replace(' ', '') for n in [name1, name2]]
+    return SequenceMatcher(None, clean1, clean2).ratio() > 0.7
+
+
+def improve_name(session, db, new_name):
+    """If the new_name is a better descriptive name for the reaction or metabolite,
+    then update.
+
+    """
+    cur_name = db.name
+    cur_id = db.bigg_id
+    # New name is not None and not similar to bigg_id
+    if (new_name is not None and not _sim(new_name, cur_id) and
+        (cur_name is None or _sim(cur_name, cur_id))):
+        logging.debug('Replacing name %s with %s' % (cur_name, new_name))
+        db.name = new_name
+    session.commit()
 
 
 @timing
@@ -277,12 +298,16 @@ def load_metabolites(session, model_id, model, compartment_names,
                          .first())
 
         # if necessary, add the new metabolite, and keep track of the ID
+        new_name = scrub_name(getattr(metabolite, 'name', None))
         if metabolite_db is None:
             # make the new metabolite
             metabolite_db = Metabolite(bigg_id=new_bigg_id,
-                                       name=scrub_name(getattr(metabolite, 'name', None)))
+                                       name=new_name)
             session.add(metabolite_db)
             session.commit()
+        else:
+            # If the metabolite is not new, consider improving the descriptive name
+            improve_name(session, metabolite_db, new_name)
 
         # add the deprecated id if necessary
         if metabolite_db.bigg_id != component_bigg_id:
@@ -575,6 +600,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
 
         # no reversed by default
         is_reversed = False
+        is_new = False
 
         # (0) If there is a preferred ID, make that the new ID, and increment any old IDs
         if preferred_id is not None:
@@ -597,17 +623,21 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
                 reaction_db = _new_reaction(session, reaction, preferred_id,
                                             reaction_hash, model_db_id, model,
                                             is_pseudoreaction, comp_comp_db_ids)
+                is_new = True
 
         # (1) no bigg_id matches, no stoichiometry match or pseudoreaction, then
         # make a new reaction
         elif reaction_db is None and hash_db is None and reverse_hash_db is None:
             # check that the id is not deprecated
             if _is_deprecated_reaction_id(session, reaction.id):
-                logging.error('Keeping bigg_id {} (from model {}) even though it is on the deprecated ID list'
-                              .format(reaction.id, model.id))
+                logging.error(('Keeping bigg_id {} (hash {} - from model {}) '
+                               'even though it is on the deprecated ID list. '
+                               'You should add it to reaction-hash-prefs.txt')
+                              .format(reaction.id, reaction_hash, model.id))
             reaction_db = _new_reaction(session, reaction, reaction.id,
                                         reaction_hash, model_db_id, model,
                                         is_pseudoreaction, comp_comp_db_ids)
+            is_new = True
 
         # (2) bigg_id matches, but not the hash, then increment the BIGG_ID
         elif reaction_db is not None and hash_db is None and reverse_hash_db is None:
@@ -618,6 +648,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
             reaction_db = _new_reaction(session, reaction, new_id,
                                         reaction_hash, model_db_id, model,
                                         is_pseudoreaction, comp_comp_db_ids)
+            is_new = True
 
         # (3) but found a stoichiometry match, then use the hash reaction match.
         elif hash_db is not None:
@@ -650,6 +681,11 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
 
         else:
             raise Exception('Should not get here')
+
+        # If the reaction is not new, consider improving the descriptive name
+        if not is_new:
+            new_name = scrub_name(check_none(getattr(reaction, 'name', None)))
+            improve_name(session, reaction_db, new_name)
 
         # Add reaction to deprecated ID list if necessary
         if reaction_db.bigg_id != reaction.id:
