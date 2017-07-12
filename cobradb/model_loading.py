@@ -256,11 +256,13 @@ def load_metabolites(session, model_id, model, compartment_names,
 
     # for each metabolite in the model
     for metabolite in model.metabolites:
+        metabolite_id = parse.remove_duplicate_tag(metabolite.id)
+
         try:
-            component_bigg_id, compartment_bigg_id = parse.split_compartment(metabolite.id)
+            component_bigg_id, compartment_bigg_id = parse.split_compartment(metabolite_id)
         except Exception:
             logging.error(('Could not find compartment for metabolite %s in'
-                            'model %s' % (metabolite.id, model.id)))
+                            'model %s' % (metabolite_id, model.id)))
             continue
 
         preferred = _check_metabolite_duplicates(component_bigg_id)
@@ -281,7 +283,7 @@ def load_metabolites(session, model_id, model, compartment_names,
         _formula = format_formula(next(filter(None, values), None))
         # Check for non-valid formulas
         if _formula is not None and re.search(r'[^A-Za-z0-9]', _formula):
-            logging.warn('Invalid formula %s for metabolite %s in model %s' % (_formula, metabolite.id, model.id))
+            logging.warn('Invalid formula %s for metabolite %s in model %s' % (_formula, metabolite_id, model.id))
             _formula = None
 
         # get charge
@@ -290,12 +292,12 @@ def load_metabolites(session, model_id, model, compartment_names,
             # check for float charge
             if charge != metabolite.charge:
                 logging.warn('Could not load charge {} for {} in model {}'
-                             .format(metabolite.charge, metabolite.id, model.id))
+                             .format(metabolite.charge, metabolite_id, model.id))
                 charge = None
         except Exception:
             if hasattr(metabolite, 'charge') and metabolite.charge is not None:
                 logging.debug('Could not convert charge to integer for metabolite {} in model {}: {}'
-                              .format(metabolite.id, model.id, metabolite.charge))
+                              .format(metabolite_id, model.id, metabolite.charge))
             charge = None
 
         # If there is no metabolite, add a new one.
@@ -349,7 +351,7 @@ def load_metabolites(session, model_id, model, compartment_names,
             session.commit()
 
         # remember for adding the reaction
-        comp_comp_db_ids[metabolite.id] = comp_component_db.id
+        comp_comp_db_ids[metabolite_id] = comp_component_db.id
 
         # if there is no model compartmentalized compartment, add a new one
         model_comp_comp_db = (session
@@ -438,8 +440,8 @@ def load_metabolites(session, model_id, model, compartment_names,
                     session.add(old_id_db)
                     session.commit()
 
-
     return comp_comp_db_ids
+
 
 def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
                   is_pseudoreaction, comp_comp_db_ids):
@@ -455,18 +457,20 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
 
     # for each reactant, add to the reaction matrix
     for metabolite, stoich in six.iteritems(reaction.metabolites):
+        metabolite_id = parse.remove_duplicate_tag(metabolite.id)
+
         try:
-            component_bigg_id, compartment_bigg_id = parse.split_compartment(metabolite.id)
+            component_bigg_id, compartment_bigg_id = parse.split_compartment(metabolite_id)
         except NotFoundError:
-            logging.error('Could not split metabolite %s in model %s' % (metabolite.id, model.id))
+            logging.error('Could not split metabolite %s in model %s' % (metabolite_id, model.id))
             continue
 
         # get the component in the model
         try:
-            comp_comp_db_id = comp_comp_db_ids[metabolite.id]
+            comp_comp_db_id = comp_comp_db_ids[metabolite_id]
         except KeyError:
             logging.error('Could not find metabolite {!s} for model {!s} in the database'
-                          .format(metabolite.id, model.id))
+                          .format(metabolite_id, model.id))
             continue
 
         # check if the reaction matrix row already exists
@@ -482,7 +486,7 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
             session.add(new_object)
         else:
             logging.debug('ReactionMatrix row already present for model {!s} metabolite {!s} reaction {!s}'
-                        .format(model.id, metabolite.id, reaction.id))
+                        .format(model.id, metabolite_id, reaction_db.bigg_id))
 
     return reaction_db
 
@@ -549,14 +553,17 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
 
     model_db_rxn_ids = {}
     for reaction in model.reactions:
-        # get the reaction
+        # Drop duplicates label
+        reaction_id = parse.remove_duplicate_tag(reaction.id)
+
+        # Get the reaction
         reaction_db = (session
                        .query(Reaction)
-                       .filter(Reaction.bigg_id == reaction.id)
+                       .filter(Reaction.bigg_id == reaction_id)
                        .first())
 
         # check for pseudoreaction
-        is_pseudoreaction = check_pseudoreaction(reaction.id)
+        is_pseudoreaction = check_pseudoreaction(reaction_id)
 
         # calculate the hash
         reaction_hash = reaction_hashes[reaction.id]
@@ -640,8 +647,8 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
                 logging.error(('Keeping bigg_id {} (hash {} - from model {}) '
                                'even though it is on the deprecated ID list. '
                                'You should add it to reaction-hash-prefs.txt')
-                              .format(reaction.id, reaction_hash, model.id))
-            reaction_db = _new_reaction(session, reaction, reaction.id,
+                              .format(reaction_id, reaction_hash, model.id))
+            reaction_db = _new_reaction(session, reaction, reaction_id,
                                         reaction_hash, model_db_id, model,
                                         is_pseudoreaction, comp_comp_db_ids)
             is_new = True
@@ -651,7 +658,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
             # loop until we find a non-matching find non-matching ID
             new_id = _find_new_incremented_id(session, reaction.id)
             logging.warn('Incrementing bigg_id {} to {} (from model {}) based on conflicting reaction hash'
-                        .format(reaction.id, new_id, model.id))
+                        .format(reaction_id, new_id, model.id))
             reaction_db = _new_reaction(session, reaction, new_id,
                                         reaction_hash, model_db_id, model,
                                         is_pseudoreaction, comp_comp_db_ids)
@@ -677,7 +684,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
             # Remember to switch upper and lower bounds
             is_reversed = True
             logging.info('Matched {} to {} based on reverse hash'
-                         .format(reaction.id, reverse_hash_db.bigg_id))
+                         .format(reaction_id, reverse_hash_db.bigg_id))
 
             # (4a)
             if reaction_db is None or reaction_db.id != reverse_hash_db.id:
@@ -695,8 +702,8 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
             improve_name(session, reaction_db, new_name)
 
         # Add reaction to deprecated ID list if necessary
-        if reaction_db.bigg_id != reaction.id:
-            get_or_create(session, DeprecatedID, deprecated_id=reaction.id,
+        if reaction_db.bigg_id != reaction_id:
+            get_or_create(session, DeprecatedID, deprecated_id=reaction_id,
                           type='reaction', ome_id=reaction_db.id)
 
         # If the reaction is reversed, then switch upper and lower bound
@@ -743,7 +750,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
         # add synonyms
         #
         # get the id from the published model
-        for old_bigg_id in old_reaction_ids[reaction.id]:
+        for old_bigg_id in old_reaction_ids[reaction_id]:
             # add a synonym
             synonym_db = (session
                           .query(Synonym)

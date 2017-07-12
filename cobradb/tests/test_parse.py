@@ -220,10 +220,19 @@ def test_convert_ids_dad_2(convert_ids_model):
 def test_convert_ids_repeats_reactions(convert_ids_model):
     returned, old_ids = convert_ids_model
     assert 'EX_glu__L_e' in returned.reactions
-    assert 'EX_glu__L_e_1' not in returned.reactions
-    assert 'EX_glu__L_e_2' not in returned.reactions
+    assert 'EX_glu__L_e$$DROP' in returned.reactions
+    assert 'EX_glu__L_e$$DROP_1' in returned.reactions
     assert 'EX_gln__L_e' in returned.reactions
-    assert 'EX_gln__L_e_1' not in returned.reactions
+    assert 'EX_gln__L_e$$DROP' in returned.reactions
+
+    old_ids_list = old_ids['reactions'].items()
+    assert (
+        ('EX_gln__L_e', ['EX_gln_L_e']) in old_ids_list and
+        ('EX_gln__L_e$$DROP', ['EX_gln__L_e']) in old_ids_list
+    ) or (
+        ('EX_gln__L_e', ['EX_gln__L_e']) in old_ids_list and
+        ('EX_gln__L_e$$DROP', ['EX_gln_L_e']) in old_ids_list
+    )
 
 
 def test_convert_ids_repeats_metabolites(convert_ids_model):

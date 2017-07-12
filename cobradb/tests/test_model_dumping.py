@@ -28,7 +28,7 @@ def test_cannot_dump_unknown_model(dumped_model, session):
 
 # Model content
 def test_dumped_model(dumped_model):
-    assert len(dumped_model.reactions) == 98
+    assert len(dumped_model.reactions) == 99
     assert len(dumped_model.metabolites) == 73
     assert len(dumped_model.genes) == 141
     assert dumped_model.genes.get_by_id('b0114').name == 'aceE'

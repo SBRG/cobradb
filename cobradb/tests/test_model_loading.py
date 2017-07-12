@@ -25,7 +25,7 @@ class TestsWithModels:
         assert session.query(Genome).count() == 2
         assert session.query(Chromosome).count() == 2
         assert session.query(Reaction).count() == 99
-        assert session.query(ModelReaction).count() == 288
+        assert session.query(ModelReaction).count() == 289
         assert session.query(CompartmentalizedComponent).count() == 73
         assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3 + 1
         assert session.query(Metabolite).count() == 55
@@ -145,14 +145,13 @@ class TestsWithModels:
                 .count()) == 1
         # copies with different bounds should be separated
         res_db = (session
-                  .query(ModelReaction.lower_bound, ModelReaction.upper_bound)
-                  .join(Reaction)
+                  .query(Reaction, ModelReaction)
+                  .join(ModelReaction)
                   .join(Model)
                   .filter(Model.bigg_id == 'Ecoli_core_model')
-                  .filter(Reaction.bigg_id == 'EX_gln__L_e')
-                  .one())
-        assert float(res_db[0]) == 0.0
-        assert float(res_db[1]) == 1000.0
+                  .filter(Reaction.bigg_id == 'EX_gln__L_e'))
+        assert res_db.count() == 2
+        assert {(float(x.lower_bound), float(x.upper_bound)) for x in (y[1] for y in res_db)} == {(0., 50.), (0., 1000.)}
 
     def tests_pseudoreactions(self, session):
         # pseudoreactions. ATPM should be prefered to ATPM_NGAM based on
@@ -301,20 +300,6 @@ class TestsWithModels:
                .filter(Compartment.bigg_id == 'e')
                .filter(Model.bigg_id == 'Ecoli_core_model'))
         assert res.count() == 1
-
-    def test_multiple_metabolite_copies_3(self, session):
-        # make sure reactions get merged: EX_glc_D_e and EX_glc_DASH_D_e
-        res = (session
-               .query(Reaction)
-               .join(ModelReaction)
-               .join(Model)
-               .join(ReactionMatrix)
-               .join(CompartmentalizedComponent)
-               .join(Component)
-               .filter(Component.bigg_id == 'glc__D')
-               .filter(Compartment.bigg_id == 'e')
-               .filter(Model.bigg_id == 'Ecoli_core_model'))
-        assert res.count() == 3
 
     def test_multiple_gene_copies(self, session):
         # for T. maritima, the genes TM0846 and TM_0846 were the same, so

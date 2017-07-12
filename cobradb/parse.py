@@ -111,10 +111,9 @@ def remove_boundary_metabolites(model):
                 break
     model.metabolites._generate_index()
 
-
-# --------------------------------------------------------------------
-# pseudoreactions
-# --------------------------------------------------------------------
+#-----------------
+# Pseudoreactions
+#-----------------
 
 class ConflictingPseudoreaction(Exception):
     pass
@@ -290,6 +289,13 @@ def _normalize_pseudoreaction(new_style_id, reaction):
 # ID fixes
 #----------
 
+def remove_duplicate_tag(the_id):
+    return re.sub(r'\$\$DROP.*', '', the_id)
+
+def add_duplicate_tag(the_id):
+    return '%s$$DROP' % the_id
+
+
 def convert_ids(model):
     """Converts metabolite and reaction ids to the new style.
 
@@ -306,7 +312,6 @@ def convert_ids(model):
     gene_id_dict = defaultdict(list)
 
     # fix metabolites
-    mets_to_delete = []
     for metabolite in model.metabolites:
         new_id = id_for_new_id_style(fix_legacy_id(metabolite.id, use_hyphens=False),
                                      is_metabolite=True)
@@ -314,21 +319,10 @@ def convert_ids(model):
         if new_id != metabolite.id:
             # new_id already exists, then merge
             if new_id in model.metabolites:
-                logging.warn('Merging metabolites %s and %s' % (metabolite.id, new_id))
-                existing_met = model.metabolites.get_by_id(new_id)
-                # merge reactions
-                for r in metabolite.reactions:
-                    replace_stoich = r.metabolites[metabolite]
-                    r.add_metabolites({
-                        metabolite: -replace_stoich,
-                        existing_met: replace_stoich,
-                    })
-                # remove metabolite
-                mets_to_delete.append(metabolite)
-            else:
-                # otherwise, just change the id
-                metabolite.id = new_id
-    model.remove_metabolites(mets_to_delete)
+                new_id = add_duplicate_tag(new_id)
+                while new_id in model.metabolites:
+                    new_id = increment_id(new_id)
+            metabolite.id = new_id
     model.metabolites._generate_index()
 
     # take out the _b metabolites
@@ -338,7 +332,6 @@ def convert_ids(model):
     rule_prefs = _get_rule_prefs()
 
     # separate ids and compartments, and convert to the new_id_style
-    reactions_to_delete = set()
     for reaction in model.reactions:
         # apply new id style
         new_style_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
@@ -353,14 +346,7 @@ def convert_ids(model):
 
         # don't merge reactions with conflicting new_id's
         if new_id != reaction.id and new_id in model.reactions:
-            if pseudo_id:
-                logging.warn('Dropping duplicate pseudoreaction %s and taking largest bounds' % reaction.id)
-                existing = model.reactions.get_by_id(new_id)
-                existing.lower_bound = min(existing.lower_bound, reaction.lower_bound)
-                existing.upper_bound = max(existing.upper_bound, reaction.upper_bound)
-                reactions_to_delete.add(reaction)
-                continue
-
+            new_id = add_duplicate_tag(new_id)
             while new_id in model.reactions:
                 new_id = increment_id(new_id)
 
@@ -370,7 +356,6 @@ def convert_ids(model):
         # fix the gene reaction rules
         reaction.gene_reaction_rule = _check_rule_prefs(rule_prefs, reaction.gene_reaction_rule)
 
-    model.remove_reactions(reactions_to_delete)
     model.reactions._generate_index()
 
     # update the genes
