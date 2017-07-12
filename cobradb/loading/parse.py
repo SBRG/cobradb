@@ -7,7 +7,6 @@ from cobradb import settings
 import re
 import cobra
 import cobra.io
-from cobra.core import Formula
 from os.path import join
 import hashlib
 import logging
@@ -248,20 +247,20 @@ def _fix_atpm(reaction):
     return None
 
 
-def _normalize_pseudoreaction(reaction):
+def _normalize_pseudoreaction(new_style_id, reaction):
     """If the reaction is a pseudoreaction (exchange, demand, sink, biomass, or
     ATPM), then apply standard rules to it."""
 
-    new_id = None; subsystem = None
+    pseudo_id = None; subsystem = None
 
     # check atpm separately because there is a good reason for an atpm-like
     # reaction with a gene_reaction_rule
     is_atpm = False
-    if new_id is None:
-        res = _fix_atpm(reaction)
-        if res is not None:
-            new_id, subsystem = res
-            is_atpm = True
+    res = _fix_atpm(reaction)
+    if res is not None:
+        pseudo_id, subsystem = res
+        reaction.subsystem = subsystem
+        is_atpm = True
 
     # check for other pseudoreactions
     fns = [_fix_exchange, _fix_demand, _fix_sink, _fix_biomass]
@@ -271,9 +270,10 @@ def _normalize_pseudoreaction(reaction):
             break
         res = fn(reaction)
     if res is not None:
-        new_id, subsystem = res
+        pseudo_id, subsystem = res
+        reaction.subsystem = subsystem
 
-    if new_id is not None:
+    if pseudo_id is not None:
         # does it have a gene_reaction_rule? OK if atpm reaction has
         # gene_reaction_rule.
         if _has_gene_reaction_rule(reaction):
@@ -282,17 +282,13 @@ def _normalize_pseudoreaction(reaction):
             raise ConflictingPseudoreaction('Reaction {r.id} looks like a pseudoreaction '
                                             'but it has a gene_reaction_rule: '
                                             '{r.gene_reaction_rule}'.format(r=reaction))
-        # rename
-        if reaction.id != new_id:
-            logging.debug('Renaming pseudoreaction %s to %s' % (reaction.id, new_id))
-            reaction.id = new_id
-            reaction.subsystem = subsystem
-    return
+
+    return pseudo_id
 
 
-# --------------------------------------------------------------------
+#----------
 # ID fixes
-# --------------------------------------------------------------------
+#----------
 
 def convert_ids(model):
     """Converts metabolite and reaction ids to the new style.
@@ -310,11 +306,29 @@ def convert_ids(model):
     gene_id_dict = defaultdict(list)
 
     # fix metabolites
+    mets_to_delete = []
     for metabolite in model.metabolites:
         new_id = id_for_new_id_style(fix_legacy_id(metabolite.id, use_hyphens=False),
                                      is_metabolite=True)
         metabolite_id_dict[new_id].append(metabolite.id)
-        metabolite.id = new_id
+        if new_id != metabolite.id:
+            # new_id already exists, then merge
+            if new_id in model.metabolites:
+                logging.warn('Merging metabolites %s and %s' % (metabolite.id, new_id))
+                existing_met = model.metabolites.get_by_id(new_id)
+                # merge reactions
+                for r in metabolite.reactions:
+                    replace_stoich = r.metabolites[metabolite]
+                    r.add_metabolites({
+                        metabolite: -replace_stoich,
+                        existing_met: replace_stoich,
+                    })
+                # remove metabolite
+                mets_to_delete.append(metabolite)
+            else:
+                # otherwise, just change the id
+                metabolite.id = new_id
+    model.remove_metabolites(mets_to_delete)
     model.metabolites._generate_index()
 
     # take out the _b metabolites
@@ -324,22 +338,39 @@ def convert_ids(model):
     rule_prefs = _get_rule_prefs()
 
     # separate ids and compartments, and convert to the new_id_style
+    reactions_to_delete = set()
     for reaction in model.reactions:
-        # save the original id
-        current_id = reaction.id
         # apply new id style
-        reaction.id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
+        new_style_id = id_for_new_id_style(fix_legacy_id(reaction.id, use_hyphens=False))
+
         # normalize pseudoreaction IDs
         try:
-            _normalize_pseudoreaction(reaction)
+            pseudo_id = _normalize_pseudoreaction(new_style_id, reaction)
         except ConflictingPseudoreaction as e:
             logging.warn(str(e))
+
+        new_id = pseudo_id if pseudo_id is not None else new_style_id
+
         # don't merge reactions with conflicting new_id's
-        while reaction.id in reaction_id_dict:
-            reaction.id = increment_id(reaction.id)
-        reaction_id_dict[reaction.id].append(current_id)
+        if new_id != reaction.id and new_id in model.reactions:
+            if pseudo_id:
+                logging.warn('Dropping duplicate pseudoreaction %s and taking largest bounds' % reaction.id)
+                existing = model.reactions.get_by_id(new_id)
+                existing.lower_bound = min(existing.lower_bound, reaction.lower_bound)
+                existing.upper_bound = max(existing.upper_bound, reaction.upper_bound)
+                reactions_to_delete.add(reaction)
+                continue
+
+            while new_id in model.reactions:
+                new_id = increment_id(new_id)
+
+        reaction_id_dict[new_id].append(reaction.id)
+        reaction.id = new_id
+
         # fix the gene reaction rules
         reaction.gene_reaction_rule = _check_rule_prefs(rule_prefs, reaction.gene_reaction_rule)
+
+    model.remove_reactions(reactions_to_delete)
     model.reactions._generate_index()
 
     # update the genes
@@ -414,10 +445,7 @@ def get_formulas_from_names(model):
         if name:
             m = reg.match(name)
             if m:
-                try:
-                    metabolite.formula = Formula(m.group(1))
-                except TypeError:
-                    metabolite.formula = str(m.group(1))
+                metabolite.formula = m.group(1)
     return model
 
 

@@ -28,7 +28,7 @@ class TestsWithModels:
         assert session.query(Model).count() == 3
         assert session.query(Genome).count() == 2
         assert session.query(Chromosome).count() == 2
-        assert session.query(Reaction).count() == 98
+        assert session.query(Reaction).count() == 99
         assert session.query(ModelReaction).count() == 288
         assert session.query(CompartmentalizedComponent).count() == 73
         assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3 + 1
@@ -40,7 +40,7 @@ class TestsWithModels:
         assert (session
                 .query(Synonym)
                 .join(DataSource)
-                .filter(DataSource.name == 'CHARGE')
+                .filter(DataSource.bigg_id == 'CHARGE')
                 .count()) == 0
 
     def test_s0001(self, session):
@@ -149,13 +149,14 @@ class TestsWithModels:
                 .count()) == 1
         # copies with different bounds should be separated
         res_db = (session
-                  .query(Reaction, ModelReaction)
-                  .join(ModelReaction)
+                  .query(ModelReaction.lower_bound, ModelReaction.upper_bound)
+                  .join(Reaction)
                   .join(Model)
                   .filter(Model.bigg_id == 'Ecoli_core_model')
-                  .filter(Reaction.bigg_id == 'EX_gln__L_e'))
-        assert res_db.count() == 2
-        assert {(x.lower_bound, x.upper_bound) for x in (y[1] for y in res_db)} == {(0, 50), (0, 1000)}
+                  .filter(Reaction.bigg_id == 'EX_gln__L_e')
+                  .one())
+        assert float(res_db[0]) == 0.0
+        assert float(res_db[1]) == 1000.0
 
     def tests_pseudoreactions(self, session):
         # pseudoreactions. ATPM should be prefered to ATPM_NGAM based on
@@ -271,7 +272,8 @@ class TestsWithModels:
         assert res[1].lower_bound == 0
 
     def test_multiple_metabolite_copies(self, session):
-        # e.g. ID collision
+        # e.g. ID collision. One of them will get dropped; cobrapy cannot
+        # support multiple metabolites with same id
         res = (session
                .query(Synonym.synonym, Component, Compartment)
                .join(OldIDSynonym)
@@ -303,6 +305,20 @@ class TestsWithModels:
                .filter(Compartment.bigg_id == 'e')
                .filter(Model.bigg_id == 'Ecoli_core_model'))
         assert res.count() == 1
+
+    def test_multiple_metabolite_copies_3(self, session):
+        # make sure reactions get merged: EX_glc_D_e and EX_glc_DASH_D_e
+        res = (session
+               .query(Reaction)
+               .join(ModelReaction)
+               .join(Model)
+               .join(ReactionMatrix)
+               .join(CompartmentalizedComponent)
+               .join(Component)
+               .filter(Component.bigg_id == 'glc__D')
+               .filter(Compartment.bigg_id == 'e')
+               .filter(Model.bigg_id == 'Ecoli_core_model'))
+        assert res.count() == 3
 
     def test_multiple_gene_copies(self, session):
         # for T. maritima, the genes TM0846 and TM_0846 were the same, so
@@ -429,3 +445,16 @@ class TestsWithModels:
         # ignore reverse hash mapping when reactions are in the same model
         assert session.query(Reaction).filter(Reaction.bigg_id == 'FRD7').count() == 1
         assert session.query(Reaction).filter(Reaction.bigg_id == 'SUCDi').count() == 1
+
+    def test_bad_formula(self, session):
+        res_db = (session
+                  .query(ModelCompartmentalizedComponent.formula)
+                  .join(Model)
+                  .join(CompartmentalizedComponent)
+                  .join(Component)
+                  .join(Compartment)
+                  .filter(Model.bigg_id == 'Ecoli_core_model')
+                  .filter(Component.bigg_id == 'acald')
+                  .filter(Compartment.bigg_id == 'c')
+                  .one())
+        assert res_db[0] is None

@@ -12,6 +12,7 @@ from warnings import warn
 from sqlalchemy import text, or_, and_, func
 import logging
 import six
+import itertools as it
 
 
 class BadGenomeError(Exception):
@@ -84,7 +85,7 @@ def get_genbank_accessions(genbank_filepath, fast=False):
         # load the genbank file
         gb_file = _load_gb_file(genbank_filepath)
         out['ncbi_accession'] = gb_file.id
-        for value in gb_file.dbxrefs[0].split():
+        for value in it.chain.from_iterable(x.split() for x in gb_file.dbxrefs):
             if 'Assembly' in value:
                 out['ncbi_assembly'] = value.split(':')[1]
             if 'BioProject' in value:

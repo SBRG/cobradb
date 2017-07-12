@@ -20,7 +20,7 @@ import os
 from os.path import join, basename, abspath, dirname
 from difflib import SequenceMatcher
 try:
-    import itertools.ifilter as filter
+    from itertools import ifilter as filter
 except ImportError:
     pass
 import cobra.io
@@ -282,6 +282,10 @@ def load_metabolites(session, model_id, model, compartment_names,
                   for formula_fn in formula_fns)
         # Get the first non-null result. Otherwise _formula = None.
         _formula = format_formula(next(filter(None, values), None))
+        # Check for non-valid formulas
+        if _formula is not None and re.search(r'[^A-Za-z0-9]', _formula):
+            logging.warn('Invalid formula %s for metabolite %s in model %s' % (_formula, metabolite.id, model.id))
+            _formula = None
 
         # get charge
         try:
@@ -539,9 +543,9 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
     # directions.
     reaction_hashes = {r.id: parse.hash_reaction(r) for r in model.reactions}
     reverse_reaction_hashes = {r.id: parse.hash_reaction(parse.reverse_reaction(r)) for r in model.reactions}
-    reverse_reaction_hashes_rev = {v: k for k, v in reverse_reaction_hashes.iteritems()}
+    reverse_reaction_hashes_rev = {v: k for k, v in six.iteritems(reverse_reaction_hashes)}
     reactions_not_to_reverse = set()
-    for r_id, h in reaction_hashes.iteritems():
+    for r_id, h in six.iteritems(reaction_hashes):
         if h in reverse_reaction_hashes_rev:
             reactions_not_to_reverse.add(r_id)
             reactions_not_to_reverse.add(reverse_reaction_hashes_rev[h])

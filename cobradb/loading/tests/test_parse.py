@@ -41,8 +41,8 @@ def test__normalize_pseudoreaction_exchange():
     reaction.add_metabolites({Metabolite('glu__L_e'): -1})
     reaction.lower_bound = -1000
     reaction.upper_bound = 0
-    _normalize_pseudoreaction(reaction)
-    assert reaction.id == 'EX_glu__L_e'
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
+    assert pseudo_id == 'EX_glu__L_e'
     assert reaction.subsystem == 'Extracellular exchange'
 
 
@@ -51,8 +51,8 @@ def test__normalize_pseudoreaction_exchange_reversed():
     reaction.add_metabolites({Metabolite('glu__L_e'): 1})
     reaction.lower_bound = 0
     reaction.upper_bound = 1000
-    _normalize_pseudoreaction(reaction)
-    assert reaction.id == 'EX_glu__L_e'
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
+    assert pseudo_id == 'EX_glu__L_e'
     assert reaction.lower_bound == -1000
     assert reaction.upper_bound == 0
     assert list(reaction.metabolites.values()) == [-1]
@@ -62,7 +62,7 @@ def test__normalize_pseudoreaction_exchange_error_bad_coeff():
     reaction = Reaction('EX_gone')
     reaction.add_metabolites({Metabolite('glu__L_e'): -2})
     with pytest.raises(ConflictingPseudoreaction) as excinfo:
-        _normalize_pseudoreaction(reaction)
+        _ = _normalize_pseudoreaction(reaction.id, reaction)
     assert 'with coefficient' in str(excinfo.value)
     assert reaction.id == 'EX_gone'
 
@@ -70,8 +70,7 @@ def test__normalize_pseudoreaction_exchange_error_bad_coeff():
 def test__normalize_pseudoreaction_exchange_error_bad_name():
     reaction = Reaction('gone')
     reaction.add_metabolites({Metabolite('glu__L_e'): -1})
-    _normalize_pseudoreaction(reaction)
-    assert reaction.id == 'EX_glu__L_e'
+    assert _normalize_pseudoreaction(reaction.id, reaction) == 'EX_glu__L_e'
 
 
 def test__normalize_pseudoreaction_exchange_error_has_gpr():
@@ -79,7 +78,7 @@ def test__normalize_pseudoreaction_exchange_error_has_gpr():
     reaction.add_metabolites({Metabolite('glu__L_e'): -1})
     reaction.gene_reaction_rule = 'b1779'
     with pytest.raises(ConflictingPseudoreaction) as excinfo:
-        _normalize_pseudoreaction(reaction)
+        _ = _normalize_pseudoreaction(reaction.id, reaction)
     assert 'has a gene_reaction_rule' in str(excinfo.value)
     assert reaction.id == 'EX_gone'
 
@@ -89,8 +88,8 @@ def test__normalize_pseudoreaction_demand():
     reaction.add_metabolites({Metabolite('glu__L_c'): -1})
     reaction.lower_bound = 0
     reaction.upper_bound = 1000
-    _normalize_pseudoreaction(reaction)
-    assert reaction.id == 'DM_glu__L_c'
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
+    assert pseudo_id == 'DM_glu__L_c'
     assert reaction.subsystem == 'Intracellular demand'
 
 
@@ -99,11 +98,11 @@ def test__normalize_pseudoreaction_demand_reversed():
     reaction.add_metabolites({Metabolite('glu__L_c'): 1})
     reaction.lower_bound = -1000
     reaction.upper_bound = 0
-    _normalize_pseudoreaction(reaction)
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
     assert list(reaction.metabolites.values()) == [-1]
     assert reaction.lower_bound == 0
     assert reaction.upper_bound == 1000
-    assert reaction.id == 'DM_glu__L_c'
+    assert pseudo_id == 'DM_glu__L_c'
 
 
 def test__normalize_pseudoreaction_demand_reversed_prefer_sink_name():
@@ -111,11 +110,11 @@ def test__normalize_pseudoreaction_demand_reversed_prefer_sink_name():
     reaction.add_metabolites({Metabolite('glu__L_c'): 1})
     reaction.lower_bound = -1000
     reaction.upper_bound = 0
-    _normalize_pseudoreaction(reaction)
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
     assert list(reaction.metabolites.values()) == [-1]
     assert reaction.lower_bound == 0
     assert reaction.upper_bound == 1000
-    assert reaction.id == 'SK_glu__L_c'
+    assert pseudo_id == 'SK_glu__L_c'
 
 
 def test__normalize_pseudoreaction_demand_error_has_gpr():
@@ -123,7 +122,7 @@ def test__normalize_pseudoreaction_demand_error_has_gpr():
     reaction.add_metabolites({Metabolite('glu__L_c'): -1})
     reaction.gene_reaction_rule = 'b1779'
     with pytest.raises(ConflictingPseudoreaction) as excinfo:
-        _normalize_pseudoreaction(reaction)
+        _ = _normalize_pseudoreaction(reaction.id, reaction)
     assert 'has a gene_reaction_rule' in str(excinfo.value)
     assert reaction.id == 'DM_gone'
 
@@ -133,8 +132,8 @@ def test__normalize_pseudoreaction_sink():
     reaction.add_metabolites({Metabolite('glu__L_c'): -1})
     reaction.lower_bound = -1000
     reaction.upper_bound = 0
-    _normalize_pseudoreaction(reaction)
-    assert reaction.id == 'SK_glu__L_c'
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
+    assert pseudo_id == 'SK_glu__L_c'
     assert reaction.subsystem == 'Intracellular source/sink'
 
 
@@ -143,17 +142,17 @@ def test__normalize_pseudoreaction_sink_reversed():
     reaction.add_metabolites({Metabolite('glu__L_c'): 1})
     reaction.lower_bound = 0
     reaction.upper_bound = 50
-    _normalize_pseudoreaction(reaction)
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
     assert list(reaction.metabolites.values()) == [-1]
     assert reaction.lower_bound == -50
     assert reaction.upper_bound == 0
-    assert reaction.id == 'SK_glu__L_c'
+    assert pseudo_id == 'SK_glu__L_c'
 
 
 def test__normalize_pseudoreaction_biomass():
     reaction = Reaction('my_biomass_2')
-    _normalize_pseudoreaction(reaction)
-    assert reaction.id == 'BIOMASS_my_2'
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
+    assert pseudo_id == 'BIOMASS_my_2'
     assert reaction.subsystem == 'Biomass and maintenance functions'
 
 
@@ -161,7 +160,7 @@ def test__normalize_pseudoreaction_biomass_has_gpr():
     reaction = Reaction('my_biomass_2')
     reaction.gene_reaction_rule = 'b1779'
     with pytest.raises(ConflictingPseudoreaction) as excinfo:
-        _normalize_pseudoreaction(reaction)
+        _ = _normalize_pseudoreaction(reaction.id, reaction)
     assert 'has a gene_reaction_rule' in str(excinfo.value)
     assert reaction.id == 'my_biomass_2'
 
@@ -173,8 +172,8 @@ def test__normalize_pseudoreaction_atpm():
                               Metabolite('pi_c'): 1,
                               Metabolite('h_c'): 1,
                               Metabolite('adp_c'): 1})
-    _normalize_pseudoreaction(reaction)
-    assert reaction.id == 'ATPM'
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
+    assert pseudo_id == 'ATPM'
     assert reaction.subsystem == 'Biomass and maintenance functions'
 
 
@@ -187,8 +186,8 @@ def test__normalize_pseudoreaction_atpm_reversed():
                               Metabolite('adp_c'): -1})
     reaction.lower_bound = -50
     reaction.upper_bound = 100
-    _normalize_pseudoreaction(reaction)
-    assert reaction.id == 'ATPM'
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
+    assert pseudo_id == 'ATPM'
     assert reaction.lower_bound == -100
     assert reaction.upper_bound == 50
 
@@ -201,14 +200,15 @@ def test__normalize_pseudoreaction_atpm_has_gpr():
                               Metabolite('h_c'): 1,
                               Metabolite('adp_c'): 1})
     reaction.gene_reaction_rule = 'b1779'
-    _normalize_pseudoreaction(reaction)
+    pseudo_id = _normalize_pseudoreaction(reaction.id, reaction)
     # should not change
+    assert pseudo_id is None
     assert reaction.id == 'NPT1'
 
 
-# --------------------------------------------------------------------
+#----------
 # ID fixes
-# --------------------------------------------------------------------
+#----------
 
 def test_convert_ids_dad_2(convert_ids_model):
     returned, old_ids = convert_ids_model
@@ -221,19 +221,10 @@ def test_convert_ids_dad_2(convert_ids_model):
 def test_convert_ids_repeats_reactions(convert_ids_model):
     returned, old_ids = convert_ids_model
     assert 'EX_glu__L_e' in returned.reactions
-    assert 'EX_glu__L_e_1' in returned.reactions
-    assert 'EX_glu__L_e_2' in returned.reactions
+    assert 'EX_glu__L_e_1' not in returned.reactions
+    assert 'EX_glu__L_e_2' not in returned.reactions
     assert 'EX_gln__L_e' in returned.reactions
-    assert 'EX_gln__L_e_1' in returned.reactions
-
-    old_ids_list = old_ids['reactions'].items()
-    assert (
-        ('EX_gln__L_e', ['EX_gln_L_e']) in old_ids_list and
-        ('EX_gln__L_e_1', ['EX_gln__L_e']) in old_ids_list
-    ) or (
-        ('EX_gln__L_e', ['EX_gln__L_e']) in old_ids_list and
-        ('EX_gln__L_e_1', ['EX_gln_L_e']) in old_ids_list
-    )
+    assert 'EX_gln__L_e_1' not in returned.reactions
 
 
 def test_convert_ids_repeats_metabolites(convert_ids_model):

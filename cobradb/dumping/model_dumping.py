@@ -113,17 +113,22 @@ def dump_model(bigg_id):
     result_filtered = filter_duplicates(result_dicts)
 
     reactions = []
+    objectives = {}
     for result_dict in result_filtered:
         r = cobra.core.Reaction(result_dict['bigg_id'])
         r.name = result_dict['name']
         r.gene_reaction_rule = result_dict['gene_reaction_rule']
         r.lower_bound = result_dict['lower_bound']
         r.upper_bound = result_dict['upper_bound']
-        r.objective_coefficient = result_dict['objective_coefficient']
         r.notes = {'original_bigg_ids': result_dict['original_bigg_ids']}
         r.subsystem = result_dict['subsystem']
         reactions.append(r)
+
+        objectives[r.id] = result_dict['objective_coefficient']
     model.add_reactions(reactions)
+
+    for k, v in six.iteritems(objectives):
+        model.reactions.get_by_id(k).objective_coefficient = v
 
     # metabolites
     logging.debug('Dumping metabolites')
