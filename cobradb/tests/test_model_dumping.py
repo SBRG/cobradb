@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from cobradb.dumping.model_dumping import dump_model
-from cobradb.loading import load_model, load_genome
-from cobradb.base import *
 from cobradb.models import *
+from cobradb.model_dumping import dump_model
+from cobradb.model_loading import load_model
+from cobradb.component_loading import load_genome
 
 import pytest
 import logging

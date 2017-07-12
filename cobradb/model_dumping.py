@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from cobradb import base, settings, components
-from cobradb.base import Session
 from cobradb.models import *
 from cobradb.util import increment_id, make_reaction_copy_id, timing
 

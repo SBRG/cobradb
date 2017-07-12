@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from cobradb.loading.component_loading import get_genbank_accessions
-
 from cobradb.models import *
-from cobradb.components import *
+from cobradb.component_loading import get_genbank_accessions
 
 import pytest
 

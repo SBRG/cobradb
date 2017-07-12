@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from cobradb import base
 from cobradb.models import *
-from cobradb.loading import parse
+from cobradb import parse
 
 from tornado.escape import url_escape
 import json
@@ -15,7 +14,7 @@ import six
 def load_maps_from_server(session, drop_maps=False):
     if drop_maps:
         logging.info('Dropping Escher maps')
-        connection = base.engine.connect()
+        connection = engine.connect()
         trans = connection.begin()
         try:
             connection.execute('TRUNCATE escher_map, escher_map_matrix CASCADE;')
@@ -181,6 +180,6 @@ def load_the_map(session, model_id, map_name, map_json):
 if __name__=="__main__":
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
-    session = base.Session()
+    session = Session()
     load_maps_from_server(session, drop_maps=True)
     session.close()

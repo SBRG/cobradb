@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from cobradb.base import *
+from cobradb.models import *
 from cobradb import settings
 
 import re

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from cobradb.base import NotFoundError
+from cobradb.models import NotFoundError
 from cobradb.util import scrub_gene_id, load_tsv, increment_id
 from cobradb import settings
 

@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from cobradb.loading.model_loading import load_model, GenbankNotFound
-from cobradb.loading.component_loading import load_genome
-from cobradb.loading import AlreadyLoadedError
-from cobradb import base
 from cobradb.models import *
-from cobradb.components import *
-from cobradb import settings
+from cobradb.model_loading import load_model, GenbankNotFound
+from cobradb.component_loading import load_genome
 
 from sqlalchemy.orm import aliased
 from sqlalchemy import func

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from cobradb import settings, base
-from cobradb.base import *
-from cobradb.components import Gene
-from cobradb.util import scrub_gene_id, get_or_create_data_source, get_or_create, timing
-from cobradb.loading import AlreadyLoadedError
+from cobradb.models import *
+from cobradb import settings
+from cobradb.util import (scrub_gene_id, get_or_create_data_source,
+                          get_or_create, timing)
 
 import sys, os, math, re
 from os.path import basename
@@ -150,8 +149,8 @@ def load_genome(genome_ref, genome_file_paths, session):
         raise AlreadyLoadedError('Genome with %s %s already loaded' % genome_ref)
 
     logging.debug('Adding new genome: {}'.format(genome_ref))
-    genome_db = base.Genome(accession_type=genome_ref[0],
-                            accession_value=genome_ref[1])
+    genome_db = Genome(accession_type=genome_ref[0],
+                       accession_value=genome_ref[1])
     session.add(genome_db)
     session.commit()
 
@@ -171,14 +170,14 @@ def first_uppercase(val):
 
 def load_chromosome(gb_file, genome_db, session):
     chromosome = (session
-                  .query(base.Chromosome)
-                  .filter(base.Chromosome.ncbi_accession == gb_file.id)
-                  .filter(base.Chromosome.genome_id == genome_db.id)
+                  .query(Chromosome)
+                  .filter(Chromosome.ncbi_accession == gb_file.id)
+                  .filter(Chromosome.genome_id == genome_db.id)
                   .first())
     if not chromosome:
         logging.debug('Loading new chromosome: {}'.format(gb_file.id))
-        chromosome = base.Chromosome(ncbi_accession=gb_file.id,
-                                     genome_id=genome_db.id)
+        chromosome = Chromosome(ncbi_accession=gb_file.id,
+                                genome_id=genome_db.id)
         session.add(chromosome)
         session.commit()
     else:

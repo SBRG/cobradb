@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from cobradb.models import *
 from cobradb.util import *
 from cobradb.util import _find_data_source_url
-from cobradb.base import *
 
 import pytest
 

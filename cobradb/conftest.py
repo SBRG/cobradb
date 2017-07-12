@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from cobradb.models import *
 from cobradb import settings
-from cobradb import base
-from cobradb.loading.component_loading import load_genome
-from cobradb.loading.model_loading import load_model
+from cobradb.component_loading import load_genome
+from cobradb.model_loading import load_model
 
 import pytest
 from sqlalchemy import create_engine
@@ -21,10 +21,10 @@ test_data_dir = realpath(join(dirname(__file__), 'test_data'))
 def session(request):
     """Make a session"""
     def teardown():
-        base.Session.close_all()
+        Session.close_all()
     request.addfinalizer(teardown)
 
-    return base.Session()
+    return Session()
 
 
 @pytest.fixture(scope='session')
@@ -76,16 +76,16 @@ def test_db(request, test_db_create):
                                                          settings.postgres_password,
                                                          settings.postgres_host,
                                                          test_db))
-    base.Base.metadata.create_all(engine)
-    base.Session.configure(bind=engine)
+    Base.metadata.create_all(engine)
+    Session.configure(bind=engine)
     logging.info('Loaded database schema')
 
     def teardown():
         # close all sessions. Comment this line out to see if cobradb functions are
         # closing their sessions properly.
-        base.Session.close_all()
+        Session.close_all()
         # clear the db for the next test
-        base.Base.metadata.drop_all(engine)
+        Base.metadata.drop_all(engine)
         logging.info('Dropped database schema')
     request.addfinalizer(teardown)
 

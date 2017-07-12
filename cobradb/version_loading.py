@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from cobradb.base import DatabaseVersion
+from cobradb.models import DatabaseVersion
 
 from datetime import datetime
 

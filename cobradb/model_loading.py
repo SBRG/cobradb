@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from cobradb import base, settings, components
-from cobradb.loading import AlreadyLoadedError
-from cobradb.dumping.model_dumping import dump_model
-from cobradb.base import *
 from cobradb.models import *
-from cobradb.components import *
-from cobradb.loading import parse
+from cobradb import settings
+from cobradb.model_dumping import dump_model
+from cobradb import parse
 from cobradb.util import (increment_id, check_pseudoreaction, load_tsv,
                           get_or_create_data_source, format_formula, scrub_name,
                           check_none, get_or_create, timing)
@@ -89,7 +86,7 @@ def load_model(model_filepath, pub_ref, genome_ref, session):
     genome_ref: A tuple specifying the genome accession type and value. The
     first element can be ncbi_accession, ncbi_assembly, or organism.
 
-    session: An instance of base.Session.
+    session: An instance of Session.
 
     """
     # apply id normalization

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from cobradb.base import DatabaseVersion
-from cobradb.loading.version_loading import *
+from cobradb.models import DatabaseVersion
+from cobradb.version_loading import *
 
 def test_load_version_date(test_db, session):
     load_version_date(session)

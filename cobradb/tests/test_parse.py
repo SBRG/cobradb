@@ -1,6 +1,5 @@
-from cobradb.loading.parse import *
-from cobradb.loading.parse import (_has_gene_reaction_rule,
-                                   _normalize_pseudoreaction)
+from cobradb.parse import *
+from cobradb.parse import _has_gene_reaction_rule, _normalize_pseudoreaction
 
 from cobra.core import Reaction, Metabolite, Model
 from cobra.io import read_sbml_model
