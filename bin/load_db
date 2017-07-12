@@ -214,10 +214,10 @@ if __name__ == '__main__':
             logging.info('Loading model ({} of {}) {}'
                          .format(i + 1, n, model_dict['model_filename']))
             try:
-                model_loading.load_model(join(model_dir, model_dict['model_filename']),
-                                         model_dict['pub_ref'],
-                                         model_dict['genome_ref'],
-                                         session)
+                load_model(join(model_dir, model_dict['model_filename']),
+                           model_dict['pub_ref'],
+                           model_dict['genome_ref'],
+                           session)
             except AlreadyLoadedError as e:
                 logging.info(str(e))
             except Exception as e:

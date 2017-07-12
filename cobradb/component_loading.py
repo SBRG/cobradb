@@ -252,7 +252,7 @@ def load_chromosome(gb_file, genome_db, session):
                 strand = '+'
             elif feature.strand == -1:
                 strand = '-'
-            leftpos = int(feature.location.start)+1
+            leftpos = int(feature.location.start) + 1
             rightpos = int(feature.location.end)
 
             dna_sequence = str(feature.extract(gb_file.seq)).upper()
