@@ -18,27 +18,27 @@ class BadGenomeError(Exception):
     pass
 
 
-def _load_gb_file(genbank_filepath):
+def _load_gb_file(genbank_file_handle):
     """Load the Genbank file.
 
     Arguments
     ---------
 
-    genbank_filepath: The path to the genbank file.
+    genbank_file_handle: The handle to the genbank file.
 
     """
     # imports
     from Bio import SeqIO
 
     # load the genbank file
-    logging.debug('Loading file: %s' % genbank_filepath)
+    logging.debug('Loading file: %s' % genbank_file_handle.name)
     try:
-        gb_file = SeqIO.read(genbank_filepath, 'gb')
+        gb_file = SeqIO.read(genbank_file_handle, 'gb')
     except IOError:
-        raise BadGenomeError("File '%s' not found" % genbank_filepath)
+        raise BadGenomeError("File '%s' not found" % genbank_file_handle.name)
     except Exception as e:
         raise BadGenomeError('BioPython failed to parse %s with error "%s"' %
-                             (genbank_filepath, e.message))
+                             (genbank_file_handle.name, e.message))
     return gb_file
 
 
@@ -82,13 +82,14 @@ def get_genbank_accessions(genbank_filepath, fast=False):
                     break
     else:
         # load the genbank file
-        gb_file = _load_gb_file(genbank_filepath)
-        out['ncbi_accession'] = gb_file.id
-        for value in it.chain.from_iterable(x.split() for x in gb_file.dbxrefs):
-            if 'Assembly' in value:
-                out['ncbi_assembly'] = value.split(':')[1]
-            if 'BioProject' in value:
-                out['ncbi_bioproject'] = value.split(':')[1]
+        with open(genbank_filepath, 'r') as f:
+            gb_file = _load_gb_file(f)
+            out['ncbi_accession'] = gb_file.id
+            for value in it.chain.from_iterable(x.split() for x in gb_file.dbxrefs):
+                if 'Assembly' in value:
+                    out['ncbi_assembly'] = value.split(':')[1]
+                if 'BioProject' in value:
+                    out['ncbi_bioproject'] = value.split(':')[1]
 
     return out
 
@@ -158,8 +159,9 @@ def load_genome(genome_ref, genome_file_paths, session):
     for i, genbank_file_path in enumerate(genome_file_paths):
         logging.info('Loading chromosome [{} of {}] {}'
                      .format(i + 1, n, basename(genbank_file_path)))
-        gb_file = _load_gb_file(genbank_file_path)
-        load_chromosome(gb_file, genome_db, session)
+        with open(genbank_file_path, 'r') as f:
+            gb_file = _load_gb_file(f)
+            load_chromosome(gb_file, genome_db, session)
 
 
 def first_uppercase(val):
