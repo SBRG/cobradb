@@ -543,7 +543,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
     # Generate reaction hashes, and find reactions in the same model in opposite
     # directions.
     reaction_hashes = {r.id: parse.hash_reaction(r) for r in model.reactions}
-    reverse_reaction_hashes = {r.id: parse.hash_reaction(parse.reverse_reaction(r)) for r in model.reactions}
+    reverse_reaction_hashes = {r.id: parse.hash_reaction_reverse(r) for r in model.reactions}
     reverse_reaction_hashes_rev = {v: k for k, v in six.iteritems(reverse_reaction_hashes)}
     reactions_not_to_reverse = set()
     for r_id, h in six.iteritems(reaction_hashes):

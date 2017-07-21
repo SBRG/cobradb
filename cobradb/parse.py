@@ -40,12 +40,6 @@ def hash_metabolite_dictionary(met_dict, string_only):
         return _hash_fn(sorted_mets_str)
 
 
-def reverse_reaction(reaction):
-    new_r = reaction.copy()
-    new_r.add_metabolites({k: -2 * v for k, v in new_r.metabolites.items()})
-    return new_r
-
-
 def hash_reaction(reaction, string_only=False):
     """Generate a unique hash for the metabolites and coefficients of the
     reaction.
@@ -56,6 +50,19 @@ def hash_reaction(reaction, string_only=False):
 
     """
     the_dict = {m.id: v for m, v in six.iteritems(reaction.metabolites)}
+    return hash_metabolite_dictionary(the_dict, string_only)
+
+
+def hash_reaction_reverse(reaction, string_only=False):
+    """Generate a unique hash for the metabolites and coefficients of the
+    reaction, in the reverse direction.
+
+    reaction: A COBRA Reaction.
+
+    string_only: If True, return the string that would be hashed.
+
+    """
+    the_dict = {m.id: -v for m, v in six.iteritems(reaction.metabolites)}
     return hash_metabolite_dictionary(the_dict, string_only)
 
 
@@ -136,7 +143,6 @@ def _reverse_reaction(reaction):
     reaction.add_metabolites({k: -v for k, v in six.iteritems(reaction.metabolites)},
                              combine=False)
     reaction.upper_bound, reaction.lower_bound = -reaction.lower_bound, -reaction.upper_bound
-    logging.debug('Reversing pseudoreaction %s' % reaction.id)
 
 
 def _fix_exchange(reaction):
@@ -146,7 +152,7 @@ def _fix_exchange(reaction):
     if met_coeff is None:
         return None
     met, coeff = met_coeff
-    if split_compartment(met.id)[1] != 'e':
+    if split_compartment(remove_duplicate_tag(met.id))[1] != 'e':
         return None
     # check id
     if not re.search(r'^ex_', reaction.id, re.IGNORECASE):
@@ -160,6 +166,7 @@ def _fix_exchange(reaction):
     # reverse if necessary
     if coeff == 1:
         _reverse_reaction(reaction)
+        logging.debug('Reversing pseudoreaction %s' % reaction.id)
     return 'EX_%s' % met.id, 'Extracellular exchange'
 
 
@@ -196,6 +203,7 @@ def _fix_demand(reaction):
     # reverse if necessary
     if coeff == 1:
         _reverse_reaction(reaction)
+        logging.debug('Reversing pseudoreaction %s' % reaction.id)
     return 'DM_%s' % met.id, 'Intracellular demand'
 
 
@@ -220,6 +228,7 @@ def _fix_sink(reaction):
     # reverse if necessary
     if coeff == 1:
         _reverse_reaction(reaction)
+        logging.debug('Reversing pseudoreaction %s' % reaction.id)
     return 'SK_%s' % met.id, 'Intracellular source/sink'
 
 
@@ -242,6 +251,7 @@ def _fix_atpm(reaction):
         return 'ATPM', subsystem
     elif mets == {'atp_c': 1, 'h2o_c': 1, 'pi_c': -1, 'h_c': -1, 'adp_c': -1}:
         _reverse_reaction(reaction)
+        logging.debug('Reversing pseudoreaction %s' % reaction.id)
         return 'ATPM', subsystem
     return None
 

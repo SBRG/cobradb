@@ -1,5 +1,6 @@
 from cobradb.parse import *
-from cobradb.parse import _has_gene_reaction_rule, _normalize_pseudoreaction
+from cobradb.parse import (_has_gene_reaction_rule, _normalize_pseudoreaction,
+                           _reverse_reaction)
 
 from cobra.core import Reaction, Metabolite, Model
 from cobra.io import read_sbml_model
@@ -322,6 +323,17 @@ def test_hash_reaction(test_model_files):
     k1, h1 = next(six.iteritems(hashes))
     assert h1 == hash_reaction(model.reactions.get_by_id(k1))
 
+
+def test_hash_reaction_reverse(test_model_files):
+    model, _ = load_and_normalize(test_model_files[1]['path'])
+    string = hash_reaction_reverse(model.reactions.GAPD, string_only=True)
+    assert string == '13dpg_c-1.000g3p_c1.000h_c-1.000nad_c1.000nadh_c-1.000pi_c1.000'
+
+    # Not the same as forward
+    assert hash_reaction(model.reactions.GAPD, string_only=False) != \
+        hash_reaction_reverse(model.reactions.GAPD, string_only=False)
+
+
 def test_custom_hashes():
     # These hashes are generated from old IDs in models (in reaction strings),
     # and they match to these corrected BiGG reaction IDs
@@ -340,6 +352,6 @@ def test_reverse_reaction():
     model = Model()
     reaction = Reaction('AB')
     model.add_reaction(reaction)
-    reaction.build_reaction_from_string('a -> b')
-    reversed_reaction = reverse_reaction(reaction)
-    assert reversed_reaction.reaction == 'b --> a'
+    reaction.build_reaction_from_string('a --> b')
+    _reverse_reaction(reaction)
+    assert reaction.reaction == 'b <-- a'
