@@ -151,7 +151,7 @@ class TestsWithModels:
                   .filter(Model.bigg_id == 'Ecoli_core_model')
                   .filter(Reaction.bigg_id == 'EX_gln__L_e'))
         assert res_db.count() == 2
-        assert {(float(x.lower_bound), float(x.upper_bound)) for x in (y[1] for y in res_db)} == {(0., 50.), (0., 1000.)}
+        assert {(x.lower_bound, x.upper_bound) for x in (y[1] for y in res_db)} == {(0, 50), (0, 1000)}
 
     def tests_pseudoreactions(self, session):
         # pseudoreactions. ATPM should be prefered to ATPM_NGAM based on

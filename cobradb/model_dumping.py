@@ -83,12 +83,12 @@ def dump_model(bigg_id):
         d['bigg_id'] = r_db.bigg_id
         d['name'] = r_db.name
         d['gene_reaction_rule'] = mr_db.gene_reaction_rule
-        d['lower_bound'] = float(mr_db.lower_bound)
-        d['upper_bound'] = float(mr_db.upper_bound)
-        d['objective_coefficient'] = float(mr_db.objective_coefficient)
+        d['lower_bound'] = mr_db.lower_bound
+        d['upper_bound'] = mr_db.upper_bound
+        d['objective_coefficient'] = mr_db.objective_coefficient
         d['original_bigg_ids'] = old_reaction_ids_dict[r_db.bigg_id]
         d['subsystem'] = mr_db.subsystem
-        d['copy_number'] = int(mr_db.copy_number)
+        d['copy_number'] = mr_db.copy_number
         result_dicts.append(d)
 
     def filter_duplicates(result_dicts):

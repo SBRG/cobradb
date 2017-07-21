@@ -4,7 +4,7 @@
 
 from cobradb.settings import db_connection_string
 
-from sqlalchemy import (ForeignKey, Column, Integer, String, Numeric, Table,
+from sqlalchemy import (ForeignKey, Column, Integer, String, Float, Table,
                         LargeBinary, Boolean, create_engine, MetaData, Enum,
                         DateTime)
 from sqlalchemy.orm import relationship, backref, sessionmaker, aliased
@@ -327,9 +327,9 @@ class ModelReaction(Base):
                       nullable=False)
     copy_number = Column(Integer, nullable=False)
 
-    objective_coefficient = Column(Numeric, nullable=False)
-    lower_bound = Column(Numeric, nullable=False)
-    upper_bound = Column(Numeric, nullable=False)
+    objective_coefficient = Column(Float, nullable=False)
+    lower_bound = Column(Float, nullable=False)
+    upper_bound = Column(Float, nullable=False)
     gene_reaction_rule = Column(String, nullable=False)
     original_gene_reaction_rule = Column(String, nullable=True)
     subsystem = Column(String, nullable=True)
@@ -414,7 +414,7 @@ class ReactionMatrix(Base):
                                             ForeignKey('compartmentalized_component.id',
                                                        onupdate="CASCADE", ondelete="CASCADE"),
                                             nullable=False)
-    stoichiometry = Column(Numeric)
+    stoichiometry = Column(Float)
 
     __table_args__ = (
         UniqueConstraint('reaction_id', 'compartmentalized_component_id'),
