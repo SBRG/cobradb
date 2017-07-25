@@ -310,28 +310,34 @@ def test_hash_reaction(test_model_files):
     # there are no conflicts in model 2
     model, _ = load_and_normalize(test_model_files[1]['path'])
 
+    lookup_dict = {m.id: 'g3ptest_c' if m.id == 'g3p_c' else m.id
+                   for m in model.metabolites}
+
     # just the string
-    string = hash_reaction(model.reactions.GAPD, string_only=True)
-    assert string == '13dpg_c1.000g3p_c-1.000h_c1.000nad_c-1.000nadh_c1.000pi_c-1.000'
+    string = hash_reaction(model.reactions.GAPD, lookup_dict, string_only=True)
+    assert string == '13dpg_c1.000g3ptest_c-1.000h_c1.000nad_c-1.000nadh_c1.000pi_c-1.000'
 
     # no conflicts
     num = 20
-    hashes = {r.id: hash_reaction(r) for r in model.reactions[:20]}
+    hashes = {r.id: hash_reaction(r, lookup_dict) for r in model.reactions[:20]}
     assert len(set(hashes.values())) == 20
 
     # repeatable
     k1, h1 = next(six.iteritems(hashes))
-    assert h1 == hash_reaction(model.reactions.get_by_id(k1))
+    assert h1 == hash_reaction(model.reactions.get_by_id(k1), lookup_dict)
 
 
 def test_hash_reaction_reverse(test_model_files):
     model, _ = load_and_normalize(test_model_files[1]['path'])
-    string = hash_reaction_reverse(model.reactions.GAPD, string_only=True)
+    lookup_dict = {m.id: m.id for m in model.metabolites}
+    string = hash_reaction(model.reactions.GAPD, lookup_dict, reverse=True,
+                           string_only=True)
     assert string == '13dpg_c-1.000g3p_c1.000h_c-1.000nad_c1.000nadh_c-1.000pi_c1.000'
 
     # Not the same as forward
-    assert hash_reaction(model.reactions.GAPD, string_only=False) != \
-        hash_reaction_reverse(model.reactions.GAPD, string_only=False)
+    assert hash_reaction(model.reactions.GAPD, lookup_dict, string_only=False) != \
+        hash_reaction(model.reactions.GAPD, lookup_dict, reverse=True,
+                      string_only=False)
 
 
 def test_custom_hashes():
@@ -346,7 +352,8 @@ def test_custom_hashes():
         reaction = Reaction(bigg_id)
         model.add_reaction(reaction)
         reaction.build_reaction_from_string(reaction_string)
-        assert hash_reaction(reaction) == reaction_hash
+        lookup_dict = {m.id: m.id for m in model.metabolites}
+        assert hash_reaction(reaction, lookup_dict) == reaction_hash
 
 def test_reverse_reaction():
     model = Model()

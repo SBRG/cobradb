@@ -44,7 +44,7 @@ def test__find_data_source_url_synonym():
     assert _find_data_source_url('KEGG_ID', url_prefs) == ('kegg.compound', 'KEGG Compound', None)
 
 
-def test_get_or_create_data_source(test_db, session, test_prefs, tmpdir):
+def test_get_or_create_data_source(test_db, session, tmpdir):
     prefsfile = str(tmpdir.join('data_source_preferences.txt'))
     with open(prefsfile, 'w') as f:
         f.write('my_data_source\tname\tmy_url_prefix')

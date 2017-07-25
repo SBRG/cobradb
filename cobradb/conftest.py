@@ -52,13 +52,6 @@ def test_model_files():
 
 
 @pytest.fixture(scope='session')
-def test_prefs():
-    return {'reaction_hash_prefs': join(test_data_dir, 'reaction-hash-prefs.txt'),
-            'data_source_preferences': join(test_data_dir, 'data-source-prefs.txt'),
-            'gene_reaction_rule_prefs': join(test_data_dir, 'gene-reaction-rule-prefs.txt')}
-
-
-@pytest.fixture(scope='session')
 def test_db_create(setup_logger):
     user = settings.postgres_user
     test_db = settings.postgres_test_database
@@ -91,11 +84,11 @@ def test_db(request, test_db_create):
 
 
 @pytest.fixture(scope='session')
-def load_genomes(test_db, test_genbank_files, test_prefs, session):
-    # preferences
-    settings.reaction_hash_prefs = test_prefs['reaction_hash_prefs']
-    settings.gene_reaction_rule_prefs = test_prefs['gene_reaction_rule_prefs']
-    settings.data_source_preferences = test_prefs['data_source_preferences']
+def load_genomes(test_db, test_genbank_files, session):
+    settings.reaction_hash_prefs = join(test_data_dir, 'reaction-hash-prefs.txt')
+    settings.data_source_preferences = join(test_data_dir, 'data-source-prefs.txt')
+    settings.gene_reaction_rule_prefs = join(test_data_dir, 'gene-reaction-rule-prefs.txt')
+    settings.metabolite_duplicates = join(test_data_dir, 'metabolite-duplicates.txt')
 
     # load the test genomes
     for genome_ref, gb in test_genbank_files:

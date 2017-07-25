@@ -138,14 +138,14 @@ def load_model(model_filepath, pub_ref, genome_ref, session):
     else:
         logging.warn('No compartment names file')
         compartment_names = {}
-    comp_comp_db_ids = load_metabolites(session, model_database_id, model,
-                                        compartment_names,
-                                        old_parsed_ids['metabolites'])
+    comp_comp_db_ids, final_metabolite_ids = load_metabolites(session, model_database_id, model,
+                                                              compartment_names,
+                                                              old_parsed_ids['metabolites'])
 
     # reactions
     model_db_rxn_ids = load_reactions(session, model_database_id, model,
                                       old_parsed_ids['reactions'],
-                                      comp_comp_db_ids)
+                                      comp_comp_db_ids, final_metabolite_ids)
 
     # genes
     load_genes(session, model_database_id, model, model_db_rxn_ids,
@@ -239,8 +239,13 @@ def load_metabolites(session, model_id, model, compartment_names,
     metabolite ids and the values are the database IDs for the compartmentalized
     components.
 
+    final_metabolite_ids: A new dictionary where keys are original
+    compartmentalized metabolite IDs from the model and values are the new
+    compartmentalized metabolite IDs.
+
     """
     comp_comp_db_ids = {}
+    final_metabolite_ids = {}
 
     # only grab this once
     data_source_id = get_or_create_data_source(session, 'old_bigg_id')
@@ -351,7 +356,8 @@ def load_metabolites(session, model_id, model, compartment_names,
             session.commit()
 
         # remember for adding the reaction
-        comp_comp_db_ids[metabolite_id] = comp_component_db.id
+        comp_comp_db_ids[metabolite.id] = comp_component_db.id
+        final_metabolite_ids[metabolite.id] = '%s_%s' % (new_bigg_id, compartment_bigg_id)
 
         # if there is no model compartmentalized compartment, add a new one
         model_comp_comp_db = (session
@@ -440,7 +446,7 @@ def load_metabolites(session, model_id, model, compartment_names,
                     session.add(old_id_db)
                     session.commit()
 
-    return comp_comp_db_ids
+    return comp_comp_db_ids, final_metabolite_ids
 
 
 def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
@@ -457,20 +463,12 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
 
     # for each reactant, add to the reaction matrix
     for metabolite, stoich in six.iteritems(reaction.metabolites):
-        metabolite_id = parse.remove_duplicate_tag(metabolite.id)
-
-        try:
-            component_bigg_id, compartment_bigg_id = parse.split_compartment(metabolite_id)
-        except NotFoundError:
-            logging.error('Could not split metabolite %s in model %s' % (metabolite_id, model.id))
-            continue
-
         # get the component in the model
         try:
-            comp_comp_db_id = comp_comp_db_ids[metabolite_id]
+            comp_comp_db_id = comp_comp_db_ids[metabolite.id]
         except KeyError:
             logging.error('Could not find metabolite {!s} for model {!s} in the database'
-                          .format(metabolite_id, model.id))
+                          .format(metabolite.id, model.id))
             continue
 
         # check if the reaction matrix row already exists
@@ -496,7 +494,8 @@ def _is_deprecated_reaction_id(session, reaction_id):
             .filter(DeprecatedID.deprecated_id == reaction_id)
             .first() is not None)
 
-def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_ids):
+def load_reactions(session, model_db_id, model, old_reaction_ids,
+                   comp_comp_db_ids, final_metabolite_ids):
     """Load the reactions and stoichiometries into the model.
 
     TODO if the reaction is already loaded, we need to check the stoichometry
@@ -518,6 +517,10 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
     comp_comp_db_ids: A dictionary where keys are the original compartmentalized
     metabolite ids and the values are the database IDs for the compartmentalized
     components.
+
+    final_metabolite_ids: A new dictionary where keys are original
+    compartmentalized metabolite IDs from the model and values are the new
+    compartmentalized metabolite IDs.
 
     Returns
     -------
@@ -542,8 +545,10 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
 
     # Generate reaction hashes, and find reactions in the same model in opposite
     # directions.
-    reaction_hashes = {r.id: parse.hash_reaction(r) for r in model.reactions}
-    reverse_reaction_hashes = {r.id: parse.hash_reaction_reverse(r) for r in model.reactions}
+    reaction_hashes = {r.id: parse.hash_reaction(r, final_metabolite_ids)
+                       for r in model.reactions}
+    reverse_reaction_hashes = {r.id: parse.hash_reaction(r, final_metabolite_ids, reverse=True)
+                               for r in model.reactions}
     reverse_reaction_hashes_rev = {v: k for k, v in six.iteritems(reverse_reaction_hashes)}
     reactions_not_to_reverse = set()
     for r_id, h in six.iteritems(reaction_hashes):
@@ -750,7 +755,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids, comp_comp_db_i
         # add synonyms
         #
         # get the id from the published model
-        for old_bigg_id in old_reaction_ids[reaction_id]:
+        for old_bigg_id in old_reaction_ids[reaction.id]:
             # add a synonym
             synonym_db = (session
                           .query(Synonym)

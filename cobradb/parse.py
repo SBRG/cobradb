@@ -40,29 +40,19 @@ def hash_metabolite_dictionary(met_dict, string_only):
         return _hash_fn(sorted_mets_str)
 
 
-def hash_reaction(reaction, string_only=False):
+def hash_reaction(reaction, metabolite_dict, string_only=False, reverse=False):
     """Generate a unique hash for the metabolites and coefficients of the
     reaction.
 
     reaction: A COBRA Reaction.
 
-    string_only: If True, return the string that would be hashed.
-
-    """
-    the_dict = {m.id: v for m, v in six.iteritems(reaction.metabolites)}
-    return hash_metabolite_dictionary(the_dict, string_only)
-
-
-def hash_reaction_reverse(reaction, string_only=False):
-    """Generate a unique hash for the metabolites and coefficients of the
-    reaction, in the reverse direction.
-
-    reaction: A COBRA Reaction.
+    metabolite_dict: Dictionary to look up new metabolite ids.
 
     string_only: If True, return the string that would be hashed.
 
     """
-    the_dict = {m.id: -v for m, v in six.iteritems(reaction.metabolites)}
+    the_dict = {metabolite_dict[m.id]: (-v if reverse else v)
+                for m, v in six.iteritems(reaction.metabolites)}
     return hash_metabolite_dictionary(the_dict, string_only)
 
 
@@ -388,6 +378,7 @@ def convert_ids(model):
     old_ids = {'metabolites': metabolite_id_dict,
                'reactions': reaction_id_dict,
                'genes': gene_id_dict}
+
     return model, old_ids
 
 

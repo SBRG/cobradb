@@ -395,7 +395,8 @@ class TestsWithModels:
         assert res_db.charge == -4
 
     def test_reaction_direction_hash_1(self, session):
-        # Use PGI direction from the first model
+        # Use PGI direction from the first model. PGI in the second model also
+        # needs to respect settings.metabolite_duplicates.
         rm_db =  (session
                   .query(ReactionMatrix)
                   .join(Reaction)

@@ -146,7 +146,7 @@
           <html xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: C2H6O</p></html>
         </notes>
       </species>
-      <species id="M_f6p_c" name="D-Fructose-6-phosphate" compartment="C_c">
+      <species id="M_f6ptest_c" name="D-Fructose-6-phosphate" compartment="C_c">
         <notes>
           <html xmlns="http://www.w3.org/1999/xhtml"><p>FORMULA: C6H11O9P</p></html>
         </notes>
@@ -703,7 +703,7 @@
           <speciesReference species="M_accoa_c" stoichiometry="3.7478"/>
           <speciesReference species="M_atp_c" stoichiometry="59.81"/>
           <speciesReference species="M_e4p_c" stoichiometry="0.361"/>
-          <speciesReference species="M_f6p_c" stoichiometry="0.0709"/>
+          <speciesReference species="M_f6ptest_c" stoichiometry="0.0709"/>
           <speciesReference species="M_g3p_c" stoichiometry="0.129"/>
           <speciesReference species="M_g6p_c" stoichiometry="0.205"/>
           <speciesReference species="M_gln_L_c" stoichiometry="0.2557"/>
@@ -1354,7 +1354,7 @@
           <speciesReference species="M_h2o_c"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="M_f6p_c"/>
+          <speciesReference species="M_f6ptest_c"/>
           <speciesReference species="M_pi_c"/>
         </listOfProducts>
         <kineticLaw>
@@ -1447,7 +1447,7 @@
           <speciesReference species="M_pep_c"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="M_f6p_c"/>
+          <speciesReference species="M_f6ptest_c"/>
           <speciesReference species="M_pyr_c"/>
         </listOfProducts>
         <kineticLaw>
@@ -2110,7 +2110,7 @@
         </notes>
         <listOfReactants>
           <speciesReference species="M_atp_c"/>
-          <speciesReference species="M_f6p_c"/>
+          <speciesReference species="M_f6ptest_c"/>
         </listOfReactants>
         <listOfProducts>
           <speciesReference species="M_adp_c"/>
@@ -2161,7 +2161,7 @@
           <speciesReference species="M_g6p_c"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="M_f6p_c"/>
+          <speciesReference species="M_f6ptest_c"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -2572,7 +2572,7 @@
         </listOfReactants>
         <listOfProducts>
           <speciesReference species="M_e4p_c"/>
-          <speciesReference species="M_f6p_c"/>
+          <speciesReference species="M_f6ptest_c"/>
         </listOfProducts>
         <kineticLaw>
           <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -2645,7 +2645,7 @@
           <speciesReference species="M_xu5p_D_c"/>
         </listOfReactants>
         <listOfProducts>
-          <speciesReference species="M_f6p_c"/>
+          <speciesReference species="M_f6ptest_c"/>
           <speciesReference species="M_g3p_c"/>
         </listOfProducts>
         <kineticLaw>

@@ -95,7 +95,7 @@ def test_dumped_pseudoreactions(dumped_model):
     assert r2.notes['original_bigg_ids'] == ['ATPM(NGAM)']
 
 
-def test_dump_reaction_multiple_copies(dumped_model):
+def test_dump_multiple_reaction_copies(dumped_model):
     r1 = dumped_model.reactions.get_by_id('ADK1_copy1')
     assert r1.gene_reaction_rule == 'b0474'
     assert r1.lower_bound == -1000
@@ -107,12 +107,19 @@ def test_dump_reaction_multiple_copies(dumped_model):
     assert r2.notes['original_bigg_ids'] == ['ADK1', 'ADK1_copy']
 
 
+def test_dump_multiple_reaction_copies_exchange(dumped_model):
+    r = dumped_model.reactions.get_by_id('EX_glu__L_e')
+    assert set(r.notes['original_bigg_ids']) == {'EX_glu_L_e', 'EX_glu__L_e', 'EX_glu_DASH_L_e'}
+
+
 def test_dump_multiple_metabolite_copies(dumped_model):
     m = dumped_model.metabolites.get_by_id('glc__D_e')
     assert set(m.notes['original_bigg_ids']) == {'glc_D_e', 'glc_DASH_D_e'}
 
-
+#---------
 # Old IDs
+#---------
+
 def test_reaction_notes(dumped_model):
     assert dumped_model.reactions.get_by_id('ATPM').notes['original_bigg_ids'] == ['ATPM(NGAM)']
 
