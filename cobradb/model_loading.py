@@ -287,7 +287,7 @@ def load_metabolites(session, model_id, model, compartment_names,
         # Get the first non-null result. Otherwise _formula = None.
         _formula = format_formula(next(filter(None, values), None))
         # Check for non-valid formulas
-        if _formula is not None and re.search(r'[^A-Za-z0-9]', _formula):
+        if parse.invalid_formula(_formula):
             logging.warn('Invalid formula %s for metabolite %s in model %s' % (_formula, metabolite_id, model.id))
             _formula = None
 
@@ -307,16 +307,15 @@ def load_metabolites(session, model_id, model, compartment_names,
 
         # If there is no metabolite, add a new one.
         metabolite_db = (session
-                         .query(Metabolite)
-                         .filter(Metabolite.bigg_id == new_bigg_id)
+                         .query(Component)
+                         .filter(Component.bigg_id == new_bigg_id)
                          .first())
 
         # if necessary, add the new metabolite, and keep track of the ID
         new_name = scrub_name(getattr(metabolite, 'name', None))
         if metabolite_db is None:
             # make the new metabolite
-            metabolite_db = Metabolite(bigg_id=new_bigg_id,
-                                       name=new_name)
+            metabolite_db = Component(bigg_id=new_bigg_id, name=new_name)
             session.add(metabolite_db)
             session.commit()
         else:
@@ -484,15 +483,17 @@ def _new_reaction(session, reaction, bigg_id, reaction_hash, model_db_id, model,
             session.add(new_object)
         else:
             logging.debug('ReactionMatrix row already present for model {!s} metabolite {!s} reaction {!s}'
-                        .format(model.id, metabolite_id, reaction_db.bigg_id))
+                          .format(model.id, metabolite.id, reaction_db.bigg_id))
 
     return reaction_db
+
 
 def _is_deprecated_reaction_id(session, reaction_id):
     return (session.query(DeprecatedID)
             .filter(DeprecatedID.type == 'reaction')
             .filter(DeprecatedID.deprecated_id == reaction_id)
             .first() is not None)
+
 
 def load_reactions(session, model_db_id, model, old_reaction_ids,
                    comp_comp_db_ids, final_metabolite_ids):

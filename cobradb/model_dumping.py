@@ -132,8 +132,8 @@ def dump_model(bigg_id):
     logging.debug('Dumping metabolites')
     # get original bigg ids (might be multiple)
     metabolites_db = (session
-                      .query(Metabolite.bigg_id,
-                             Metabolite.name,
+                      .query(Component.bigg_id,
+                             Component.name,
                              ModelCompartmentalizedComponent.formula,
                              ModelCompartmentalizedComponent.charge,
                              Compartment.bigg_id,

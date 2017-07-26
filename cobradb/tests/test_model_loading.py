@@ -28,7 +28,7 @@ class TestsWithModels:
         assert session.query(ModelReaction).count() == 289
         assert session.query(CompartmentalizedComponent).count() == 73
         assert session.query(ModelCompartmentalizedComponent).count() == 72 * 3 + 1
-        assert session.query(Metabolite).count() == 55
+        assert session.query(Component).count() == 55
         assert session.query(Gene).count() == 286
         assert session.query(ModelGene).count() == 415
 
@@ -47,8 +47,8 @@ class TestsWithModels:
 
     def test_name_filtering_met(self, session):
         # Filter for higher quality descriptive names
-        assert session.query(Metabolite).filter(Metabolite.name == 'E4P c').first() is None
-        assert session.query(Metabolite).filter(Metabolite.name == 'D-Erythrose-4-phosphate').first() is not None
+        assert session.query(Component).filter(Component.name == 'E4P c').first() is None
+        assert session.query(Component).filter(Component.name == 'D-Erythrose-4-phosphate').first() is not None
 
     def test_name_filtering_rxn(self, session):
         # Filter for higher quality descriptive names
@@ -336,10 +336,30 @@ class TestsWithModels:
                     ModelCompartmentalizedComponent.id == OldIDSynonym.ome_id)
                 .join(CompartmentalizedComponent,
                     CompartmentalizedComponent.id == ModelCompartmentalizedComponent.compartmentalized_component_id)
-                .join(Metabolite,
-                    Metabolite.id == CompartmentalizedComponent.component_id)
-                .filter(Metabolite.bigg_id == 'gln__L')
+                .join(Component,
+                    Component.id == CompartmentalizedComponent.component_id)
+                .filter(Component.bigg_id == 'gln__L')
                 .count()) == 3
+
+    def test_old_metabolite_id_2(self, session):
+        res = (session
+               .query(Synonym.synonym, Synonym.type)
+               .join(OldIDSynonym, OldIDSynonym.synonym_id == Synonym.id)
+               .filter(OldIDSynonym.type == 'model_compartmentalized_component')
+               .join(ModelCompartmentalizedComponent,
+                     ModelCompartmentalizedComponent.id == OldIDSynonym.ome_id)
+               .join(CompartmentalizedComponent,
+                     CompartmentalizedComponent.id == ModelCompartmentalizedComponent.compartmentalized_component_id)
+               .join(Component,
+                     Component.id == CompartmentalizedComponent.component_id)
+               .filter(Component.bigg_id == 'glc__D')
+               .join(Compartment)
+               .filter(Compartment.bigg_id == 'e')
+               .join(Model)
+               .filter(Model.bigg_id == 'Ecoli_core_model')
+               .all())
+        # is this the desired behavior?
+        assert set(res) == {('glc_DASH_D_e', 'compartmentalized_component'), ('glc_D_e', 'compartmentalized_component'), ('glc__D', 'component')}
 
     def test_old_gene_id(self, session):
         assert (session
@@ -355,14 +375,14 @@ class TestsWithModels:
     def test_leading_underscores(self, session):
         # remove leading underscores (_13dpg in Model 1)
         assert (session
-                .query(Metabolite)
-                .filter(Metabolite.bigg_id == '_13dpg')
+                .query(Component)
+                .filter(Component.bigg_id == '_13dpg')
                 .first()) is None
 
     def test_linkout_old_bigg_id(self, session):
         res_db = (session
-                  .query(Metabolite, Synonym, DataSource)
-                  .filter(Metabolite.bigg_id == '13dpg')
+                  .query(Component, Synonym, DataSource)
+                  .filter(Component.bigg_id == '13dpg')
                   .join(CompartmentalizedComponent)
                   .join(Synonym, Synonym.ome_id == CompartmentalizedComponent.id)
                   .filter(Synonym.type == 'compartmentalized_component')

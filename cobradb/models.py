@@ -6,12 +6,9 @@ from cobradb.settings import db_connection_string
 
 from sqlalchemy import (ForeignKey, Column, Integer, String, Float, Table,
                         LargeBinary, Boolean, create_engine, MetaData, Enum,
-                        DateTime)
-from sqlalchemy.orm import relationship, backref, sessionmaker, aliased
-from sqlalchemy.orm.session import Session as _SA_Session
+                        DateTime, UniqueConstraint)
+from sqlalchemy.orm import sessionmaker, Session as _SA_Session
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.schema import UniqueConstraint
 
 
 # Connect to postgres
@@ -286,8 +283,7 @@ class Model(Base):
 
     id = Column(Integer, primary_key=True)
     bigg_id = Column(String, nullable=False)
-    genome_id = Column(Integer, ForeignKey('genome.id', onupdate="CASCADE", ondelete="CASCADE"))
-    genome = relationship('Genome', backref='model')
+    genome_id = Column(Integer, ForeignKey('genome.id', onupdate='CASCADE', ondelete="CASCADE"))
     organism = Column(String(200), nullable=True)
     published_filename = Column(String, nullable=True)
 
@@ -476,18 +472,4 @@ class Gene(GenomeRegion):
 
     def __repr__(self):
         return '<cobradb Gene(id=%d, bigg_id=%s, name=%s)>' % (self.id, self.bigg_id,
-                                                         self.name)
-
-
-class Metabolite(Component):
-    __tablename__ = 'metabolite'
-
-    __mapper_args__ = {'polymorphic_identity': 'metabolite'}
-
-    id = Column(Integer,
-                ForeignKey('component.id', onupdate="CASCADE", ondelete="CASCADE"),
-                primary_key=True)
-
-    def __repr__(self):
-        return ('<cobradb Metabolite(id={self.id}, bigg_id={self.bigg_id})>'
-                .format(self=self))
+                                                               self.name)

@@ -435,6 +435,9 @@ def get_formulas_from_names(model):
     return model
 
 
+def invalid_formula(formula):
+    return formula is not None and re.search(r'[^A-Za-z0-9]', formula)
+
 #-------------
 # Model setup
 #-------------

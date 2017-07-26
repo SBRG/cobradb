@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# configure the logger before imports so other packages do not override this
-# setup
+# Configure the logger before imports so other packages do not override this
+# setup.
 import logging
 import time
 import sys
@@ -19,7 +19,7 @@ def configure_logger(log_file=None, level=logging.INFO, overwrite_log=True,
         console = logging.StreamHandler()
         console.setLevel(level)
         console.setFormatter(logging.Formatter(format))
-        logging.getLogger("").addHandler(console)
+        logging.getLogger('').addHandler(console)
 configure_logger('%s COBRAdb load_db.log' % time.strftime('%Y-%m-%d %H:%M:%S'),
                  level=logging.INFO)
 

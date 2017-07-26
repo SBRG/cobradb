@@ -135,12 +135,12 @@ def load_the_map(session, model_id, map_name, map_json):
                         ModelCompartmentalizedComponent.id == EscherMapMatrix.ome_id)
                   .join(CompartmentalizedComponent,
                         CompartmentalizedComponent.id == ModelCompartmentalizedComponent.compartmentalized_component_id)
-                  .join(Metabolite,
-                        Metabolite.id == CompartmentalizedComponent.component_id)
+                  .join(Component,
+                        Component.id == CompartmentalizedComponent.component_id)
                   .join(Compartment,
                         Compartment.id == CompartmentalizedComponent.compartment_id)
                   .filter(EscherMapMatrix.escher_map_id == escher_map_db.id)
-                  .filter(Metabolite.bigg_id == met_id)
+                  .filter(Component.bigg_id == met_id)
                   .filter(Compartment.bigg_id == comp_id)
                   .first())
         if mat_db is None:
@@ -149,13 +149,13 @@ def load_the_map(session, model_id, map_name, map_json):
                                   .query(ModelCompartmentalizedComponent.id)
                                   .join(CompartmentalizedComponent,
                                         CompartmentalizedComponent.id == ModelCompartmentalizedComponent.compartmentalized_component_id)
-                                  .join(Metabolite,
-                                        Metabolite.id == CompartmentalizedComponent.component_id)
+                                  .join(Component,
+                                        Component.id == CompartmentalizedComponent.component_id)
                                   .join(Compartment,
                                         Compartment.id == CompartmentalizedComponent.compartment_id)
                                   .join(Model)
                                   .filter(Compartment.bigg_id == comp_id)
-                                  .filter(Metabolite.bigg_id == met_id)
+                                  .filter(Component.bigg_id == met_id)
                                   .filter(Model.id == model_id)
                                   .first())
             if model_comp_comp_db is None:
