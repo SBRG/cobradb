@@ -88,6 +88,7 @@ def load_the_map(session, model_id, map_name, map_json):
         mat_db = (session
                   .query(EscherMapMatrix)
                   .join(ModelReaction, ModelReaction.id == EscherMapMatrix.ome_id)
+                  .filter(EscherMapMatrix.type == 'model_reaction')
                   .join(Reaction)
                   .filter(EscherMapMatrix.escher_map_id == escher_map_db.id)
                   .filter(Reaction.bigg_id == map_reaction_bigg_id)
@@ -133,6 +134,7 @@ def load_the_map(session, model_id, map_name, map_json):
                   .query(EscherMapMatrix)
                   .join(ModelCompartmentalizedComponent,
                         ModelCompartmentalizedComponent.id == EscherMapMatrix.ome_id)
+                  .filter(EscherMapMatrix.type == 'model_compartmentalized_component')
                   .join(CompartmentalizedComponent,
                         CompartmentalizedComponent.id == ModelCompartmentalizedComponent.compartmentalized_component_id)
                   .join(Component,
