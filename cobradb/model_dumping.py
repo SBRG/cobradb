@@ -15,6 +15,11 @@ try:
 except ImportError:
     pass
 
+
+def _none_to_str(val):
+    return '' if val is None else val
+
+
 @timing
 def dump_model(bigg_id):
     session = Session()
@@ -51,7 +56,7 @@ def dump_model(bigg_id):
 
     for gene_id, gene_name in gene_names:
         gene = cobra.core.Gene(gene_id)
-        gene.name = gene_name
+        gene.name = _none_to_str(gene_name)
         gene.notes = {'original_bigg_ids': old_gene_ids_dict[gene_id]}
         model.genes.append(gene)
 
@@ -114,7 +119,7 @@ def dump_model(bigg_id):
     objectives = {}
     for result_dict in result_filtered:
         r = cobra.core.Reaction(result_dict['bigg_id'])
-        r.name = result_dict['name']
+        r.name = _none_to_str(result_dict['name'])
         r.gene_reaction_rule = result_dict['gene_reaction_rule']
         r.lower_bound = result_dict['lower_bound']
         r.upper_bound = result_dict['upper_bound']
@@ -161,7 +166,7 @@ def dump_model(bigg_id):
                                       compartment=compartment_id,
                                       formula=formula)
             m.charge = charge
-            m.name = component_name
+            m.name = _none_to_str(component_name)
             m.notes = {'original_bigg_ids': old_metabolite_ids_dict[component_id + '_' + compartment_id]}
             compartments.add(compartment_id)
             metabolites.append(m)

@@ -55,3 +55,4 @@ ome_data
 .#*
 TAGS
 .cache/
+.mypy_cache/
