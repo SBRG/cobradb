@@ -20,6 +20,20 @@ def _none_to_str(val):
     return '' if val is None else val
 
 
+def _make_annotation_lookup(db_links):
+    """Make a lookup dictionary from a list of flat external DB links"""
+    lookup = defaultdict(lambda: defaultdict(set))
+    for res in db_links:
+        # skip old_bigg_id because it will be in notes
+        if res[0] not in ['old_bigg_id', 'deprecated']:
+            lookup[res[2]][res[0]].add(res[1])
+    # return lists instead of sets
+    return {
+        bigg_id: {source: list(vals) for source, vals in links.items()}
+        for bigg_id, links in lookup.items()
+    }
+
+
 @timing
 def dump_model(bigg_id):
     session = Session()
@@ -54,10 +68,20 @@ def dump_model(bigg_id):
             gene_names.append((gene_id, gene_name))
         old_gene_ids_dict[gene_id].append(old_id)
 
+    # get gene annotations
+    gene_db_links = _make_annotation_lookup(
+        session
+        .query(DataSource.bigg_id, Synonym.synonym, Gene.bigg_id)
+        .join(Synonym)
+        .join(Gene, Gene.id == Synonym.ome_id)
+        .filter(Synonym.type == 'gene')
+    )
+
     for gene_id, gene_name in gene_names:
         gene = cobra.core.Gene(gene_id)
         gene.name = _none_to_str(gene_name)
         gene.notes = {'original_bigg_ids': old_gene_ids_dict[gene_id]}
+        gene.annotation = gene_db_links.get(gene_id, {})
         model.genes.append(gene)
 
     # reactions
@@ -81,6 +105,15 @@ def dump_model(bigg_id):
             found_model_reactions.add(model_reaction.id)
         old_reaction_ids_dict[reaction.bigg_id].append(old_id)
 
+    # get reaction annotations
+    reaction_db_links = _make_annotation_lookup(
+        session
+        .query(DataSource.bigg_id, Synonym.synonym, Reaction.bigg_id)
+        .join(Synonym)
+        .join(Reaction, Reaction.id == Synonym.ome_id)
+        .filter(Synonym.type == 'reaction')
+    )
+
     # make dictionaries and cast results
     result_dicts = []
     for mr_db, r_db in reactions_model_reactions:
@@ -93,6 +126,7 @@ def dump_model(bigg_id):
         d['objective_coefficient'] = mr_db.objective_coefficient
         d['original_bigg_ids'] = old_reaction_ids_dict[r_db.bigg_id]
         d['subsystem'] = mr_db.subsystem
+        d['annotation'] = reaction_db_links.get(r_db.bigg_id, {})
         d['copy_number'] = mr_db.copy_number
         result_dicts.append(d)
 
@@ -125,6 +159,7 @@ def dump_model(bigg_id):
         r.upper_bound = result_dict['upper_bound']
         r.notes = {'original_bigg_ids': result_dict['original_bigg_ids']}
         r.subsystem = result_dict['subsystem']
+        r.annotation = result_dict['annotation']
         reactions.append(r)
 
         objectives[r.id] = result_dict['objective_coefficient']
@@ -158,6 +193,15 @@ def dump_model(bigg_id):
             metabolite_names.append((metabolite_id, metabolite_name, formula, charge, compartment_id))
         old_metabolite_ids_dict[metabolite_id + '_' + compartment_id].append(old_id)
 
+    # get metabolite annotations
+    metabolite_db_links = _make_annotation_lookup(
+        session
+        .query(DataSource.bigg_id, Synonym.synonym, Component.bigg_id)
+        .join(Synonym)
+        .join(Component, Component.id == Synonym.ome_id)
+        .filter(Synonym.type == 'component')
+    )
+
     metabolites = []
     compartments = set()
     for component_id, component_name, formula, charge, compartment_id in metabolite_names:
@@ -168,6 +212,7 @@ def dump_model(bigg_id):
             m.charge = charge
             m.name = _none_to_str(component_name)
             m.notes = {'original_bigg_ids': old_metabolite_ids_dict[component_id + '_' + compartment_id]}
+            m.annotation = metabolite_db_links.get(component_id, {})
             compartments.add(compartment_id)
             metabolites.append(m)
     model.add_metabolites(metabolites)
