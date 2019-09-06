@@ -35,7 +35,8 @@ setup(
     keywords='systems biology, genome-scale model',
     packages=find_packages(),
     install_requires=['SQLAlchemy>=1.0.12',
-                      'cobra>=0.6.2',
+                      'cobra==0.13.0',
+                      'python-libsbml==5.17.0',
                       'numpy>=1.9.1',
                       'psycopg2>=2.5.4',
                       'biopython>=1.65',
@@ -44,6 +45,6 @@ setup(
                       'pytest>=2.6.4',
                       'six>=1.10.0',
                       'tornado>=4.4.2',
-                      'escher>=1.5.0',
+                      'escher>=1.5.0,<2',
                       'configparser>=3.5.0'],
 )
