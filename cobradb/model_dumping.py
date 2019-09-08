@@ -25,8 +25,11 @@ def _make_annotation_lookup(db_links):
     lookup = defaultdict(lambda: defaultdict(set))
     for res in db_links:
         # skip old_bigg_id because it will be in notes
-        if res[0] not in ['old_bigg_id', 'deprecated']:
+        if res[0] not in ['old_bigg_id', 'deprecated', 'SBO', 'ec']:
             lookup[res[2]][res[0]].add(res[1])
+        # TODO drop this when we can upgrade to latest cobrapy
+        if res[0] == 'SBO':
+            lookup[res[2]]['sbo'].add(res[1])
     # return lists instead of sets
     return {
         bigg_id: {source: list(vals) for source, vals in links.items()}
@@ -82,6 +85,8 @@ def dump_model(bigg_id):
         gene.name = _none_to_str(gene_name)
         gene.notes = {'original_bigg_ids': old_gene_ids_dict[gene_id]}
         gene.annotation = gene_db_links.get(gene_id, {})
+        # add SBO terms
+        gene.annotation['sbo'] = 'SBO:0000243'
         model.genes.append(gene)
 
     # reactions
@@ -127,6 +132,11 @@ def dump_model(bigg_id):
         d['original_bigg_ids'] = old_reaction_ids_dict[r_db.bigg_id]
         d['subsystem'] = mr_db.subsystem
         d['annotation'] = reaction_db_links.get(r_db.bigg_id, {})
+        # add SBO terms
+        if r_db.bigg_id.startswith('BIOMASS_'):
+            d['annotation']['sbo'] = 'SBO:0000629'
+        # specify bigg id
+        d['annotation']['bigg.reaction'] = r_db.bigg_id
         d['copy_number'] = mr_db.copy_number
         result_dicts.append(d)
 
@@ -213,6 +223,8 @@ def dump_model(bigg_id):
             m.name = _none_to_str(component_name)
             m.notes = {'original_bigg_ids': old_metabolite_ids_dict[component_id + '_' + compartment_id]}
             m.annotation = metabolite_db_links.get(component_id, {})
+            # specify bigg id
+            m.annotation['bigg.metabolite'] = component_id
             compartments.add(compartment_id)
             metabolites.append(m)
     model.add_metabolites(metabolites)
