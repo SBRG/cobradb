@@ -341,6 +341,7 @@ def convert_ids(model):
             pseudo_id = _normalize_pseudoreaction(new_style_id, reaction)
         except ConflictingPseudoreaction as e:
             logging.warn(str(e))
+            continue
 
         new_id = pseudo_id if pseudo_id is not None else new_style_id
 

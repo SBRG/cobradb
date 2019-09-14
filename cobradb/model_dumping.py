@@ -86,7 +86,7 @@ def dump_model(bigg_id):
         gene.notes = {'original_bigg_ids': old_gene_ids_dict[gene_id]}
         gene.annotation = gene_db_links.get(gene_id, {})
         # add SBO terms
-        gene.annotation['sbo'] = 'SBO:0000243'
+        gene.annotation['sbo'] = ['SBO:0000243']
         model.genes.append(gene)
 
     # reactions
@@ -134,9 +134,9 @@ def dump_model(bigg_id):
         d['annotation'] = reaction_db_links.get(r_db.bigg_id, {})
         # add SBO terms
         if r_db.bigg_id.startswith('BIOMASS_'):
-            d['annotation']['sbo'] = 'SBO:0000629'
+            d['annotation']['sbo'] = ['SBO:0000629']
         # specify bigg id
-        d['annotation']['bigg.reaction'] = r_db.bigg_id
+        d['annotation']['bigg.reaction'] = [r_db.bigg_id]
         d['copy_number'] = mr_db.copy_number
         result_dicts.append(d)
 
@@ -224,7 +224,7 @@ def dump_model(bigg_id):
             m.notes = {'original_bigg_ids': old_metabolite_ids_dict[component_id + '_' + compartment_id]}
             m.annotation = metabolite_db_links.get(component_id, {})
             # specify bigg id
-            m.annotation['bigg.metabolite'] = component_id
+            m.annotation['bigg.metabolite'] = [component_id]
             compartments.add(compartment_id)
             metabolites.append(m)
     model.add_metabolites(metabolites)
