@@ -260,7 +260,7 @@ def dump_model(bigg_id):
         try:
             m = model.metabolites.get_by_id(component_id + '_' + compartment_id)
         except KeyError:
-            logging.warn('Metabolite not found %s in compartment %s for reaction %s' % \
+            logging.warning('Metabolite not found %s in compartment %s for reaction %s' % \
                          (component_id, compartment_id, reaction_id))
             continue
         # add to reactions

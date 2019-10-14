@@ -20,7 +20,7 @@ def load_maps_from_server(session, drop_maps=False):
             connection.execute('TRUNCATE escher_map, escher_map_matrix CASCADE;')
             trans.commit()
         except:
-            logging.warn('Could not drop Escher tables')
+            logging.warning('Could not drop Escher tables')
             trans.rollback()
 
     logging.info('Getting index')
@@ -74,7 +74,7 @@ def load_the_map(session, model_id, map_name, map_json):
                              .query(Model.bigg_id)
                              .filter(Model.id == model_id)
                              .first())[0]
-            logging.warn('Map %s does not match model %s' % (map_name,
+            logging.warning('Map %s does not match model %s' % (map_name,
                                                              model_bigg_id))
 
     map_object = json.loads(map_json)
@@ -107,7 +107,7 @@ def load_the_map(session, model_id, map_name, map_json):
                                                                                map_name))
                     if reaction_warnings == warning_num:
                         msg += ' (Warnings limited to %d)' % warning_num
-                    logging.warn(msg)
+                    logging.warning(msg)
                     reaction_warnings += 1
                 continue
             model_reaction_id = model_reaction_db[0]
@@ -128,7 +128,7 @@ def load_the_map(session, model_id, map_name, map_json):
         try:
             met_id, comp_id = parse.split_compartment(metabolite['bigg_id'])
         except Exception:
-            logging.warn('Could not split compartment for metabolite %s' % metabolite['bigg_id'])
+            logging.warning('Could not split compartment for metabolite %s' % metabolite['bigg_id'])
         # check for an existing mat row
         mat_db = (session
                   .query(EscherMapMatrix)
@@ -166,7 +166,7 @@ def load_the_map(session, model_id, map_name, map_json):
                            ('%s_%s' % (met_id, comp_id), map_name))
                     if comp_comp_warnings == warning_num:
                         msg += ' (Warnings limited to %d)' % warning_num
-                    logging.warn(msg)
+                    logging.warning(msg)
                     comp_comp_warnings += 1
                 continue
             model_comp_comp_id = model_comp_comp_db[0]

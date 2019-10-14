@@ -136,7 +136,7 @@ def load_model(model_filepath, pub_ref, genome_ref, session):
                 except IndexError:
                     continue
     else:
-        logging.warn('No compartment names file')
+        logging.warning('No compartment names file')
         compartment_names = {}
     comp_comp_db_ids, final_metabolite_ids = load_metabolites(session, model_database_id, model,
                                                               compartment_names,
@@ -288,7 +288,7 @@ def load_metabolites(session, model_id, model, compartment_names,
         _formula = format_formula(next(filter(None, values), None))
         # Check for non-valid formulas
         if parse.invalid_formula(_formula):
-            logging.warn('Invalid formula %s for metabolite %s in model %s' % (_formula, metabolite_id, model.id))
+            logging.warning('Invalid formula %s for metabolite %s in model %s' % (_formula, metabolite_id, model.id))
             _formula = None
 
         # get charge
@@ -296,7 +296,7 @@ def load_metabolites(session, model_id, model, compartment_names,
             charge = int(metabolite.charge)
             # check for float charge
             if charge != metabolite.charge:
-                logging.warn('Could not load charge {} for {} in model {}'
+                logging.warning('Could not load charge {} for {} in model {}'
                              .format(metabolite.charge, metabolite_id, model.id))
                 charge = None
         except Exception:
@@ -336,7 +336,7 @@ def load_metabolites(session, model_id, model, compartment_names,
             try:
                 name = compartment_names[compartment_bigg_id]
             except KeyError:
-                logging.warn('No name found for compartment %s' % compartment_bigg_id)
+                logging.warning('No name found for compartment %s' % compartment_bigg_id)
                 name = ''
             compartment_db = Compartment(bigg_id=compartment_bigg_id, name=name)
             session.add(compartment_db)
@@ -416,7 +416,7 @@ def load_metabolites(session, model_id, model, compartment_names,
                 )
                 old_bigg_id_c_without_compartment = parse.split_compartment(new_style_id)[0]
             except Exception as e:
-                logging.warn(e.message)
+                logging.warning(e.message)
             else:
                 synonym_db_2 = (session
                                 .query(Synonym)
@@ -634,7 +634,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids,
                 preferred_id_db = session.query(Reaction).filter(Reaction.bigg_id == preferred_id).first()
                 if preferred_id_db is not None:
                     new_id = _find_new_incremented_id(session, preferred_id)
-                    logging.warn('Incrementing database reaction {} to {} and prefering {} (from model {}) based on hash preferences'
+                    logging.warning('Incrementing database reaction {} to {} and prefering {} (from model {}) based on hash preferences'
                                 .format(preferred_id, new_id, preferred_id, model.id))
                     preferred_id_db.bigg_id = new_id
                     session.commit()
@@ -663,7 +663,7 @@ def load_reactions(session, model_db_id, model, old_reaction_ids,
         elif reaction_db is not None and hash_db is None and reverse_hash_db is None:
             # loop until we find a non-matching find non-matching ID
             new_id = _find_new_incremented_id(session, reaction.id)
-            logging.warn('Incrementing bigg_id {} to {} (from model {}) based on conflicting reaction hash'
+            logging.warning('Incrementing bigg_id {} to {} (from model {}) based on conflicting reaction hash'
                         .format(reaction_id, new_id, model.id))
             reaction_db = _new_reaction(session, reaction, new_id,
                                         reaction_hash, model_db_id, model,
@@ -799,7 +799,7 @@ def _match_gene_by_fns(fn_list, session, gene_id, chromosome_ids):
         match, is_alternative_transcript = fn(session, gene_id, chromosome_ids)
         if len(match) > 0:
             if len(match) > 1:
-                logging.warn('Multiple matches for gene {} with function {}. Using the first match.'
+                logging.warning('Multiple matches for gene {} with function {}. Using the first match.'
                             .format(gene_id, fn.__name__))
             return match[0], is_alternative_transcript
     return None, False
@@ -929,7 +929,7 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
                       .filter(Chromosome.genome_id == model_db.genome_id)
                       .all())
     if len(chromosome_ids) == 0:
-        logging.warn('No chromosomes for model %s' % model_db.bigg_id)
+        logging.warning('No chromosomes for model %s' % model_db.bigg_id)
 
     # keep track of the gene-reaction associations
     gene_bigg_id_to_model_reaction_db_ids = defaultdict(set)
@@ -962,7 +962,7 @@ def load_genes(session, model_db_id, model, model_db_rxn_ids, old_gene_ids):
         if not gene_db:
             # add
             if len(chromosome_ids) > 0:
-                logging.warn('Gene not in genbank file: {} from model {}'
+                logging.warning('Gene not in genbank file: {} from model {}'
                             .format(gene.id, model.id))
             gene_db = Gene(bigg_id=gene.id,
                            # name is optional in cobra 0.4b2. This will probably change back.

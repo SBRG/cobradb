@@ -171,7 +171,7 @@ if __name__ == '__main__':
             ids = get_genbank_accessions(refseq_filepath, fast=True)
             # if the ids couldn't be found
             if all(x is None for x in ids.values()):
-                logging.warn('Could not find accessions for genbank file %s' % refseq_filepath)
+                logging.warning('Could not find accessions for genbank file %s' % refseq_filepath)
                 continue
             # look for matching ids from the model-genome file
             found = False
@@ -190,7 +190,7 @@ if __name__ == '__main__':
                 found = True
             # warn about unused files
             if not found:
-                logging.warn('Unused file in the refseq directory: %s' % refseq_filename)
+                logging.warning('Unused file in the refseq directory: %s' % refseq_filename)
 
         # load the genomes
         n = len(genome_refs)
