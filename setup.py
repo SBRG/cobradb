@@ -2,12 +2,10 @@
 
 from os.path import abspath, dirname
 from sys import path
+from setuptools import setup, find_packages
 
 # To temporarily modify sys.path
 SETUP_DIR = abspath(dirname(__file__))
-
-from setuptools import setup, find_packages
-
 
 setup(
     name='cobradb',
@@ -27,7 +25,9 @@ setup(
     packages=find_packages(),
     install_requires=[
         'SQLAlchemy>=1.3.10,<2',
-        'cobra>=0.16.0,<0.17',
+        # Be careful upgrading cobra for use with BiGG; ancient models (e.g.
+        # iND750.xml) cause errors with cobra versions >=0.15
+        'cobra>=0.14.2,<0.15',
         'python-libsbml>=5.18.0,<6',
         'numpy>=1.17.2,<2',
         'psycopg2>=2.8.3,<3',
