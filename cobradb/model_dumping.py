@@ -188,14 +188,17 @@ def dump_model(bigg_id):
                              ModelCompartmentalizedComponent.charge,
                              Compartment.bigg_id,
                              Synonym.synonym)
-                      .join(CompartmentalizedComponent)
-                      .join(Compartment)
-                      .join(ModelCompartmentalizedComponent)
-                      .join(OldIDSynonym, OldIDSynonym.ome_id == ModelCompartmentalizedComponent.id)
-                      .filter(OldIDSynonym.type == 'model_compartmentalized_component')
+                      .join(CompartmentalizedComponent,
+                            CompartmentalizedComponent.component_id == Component.id)  # noqa
+                      .join(Compartment,
+                            Compartment.id == CompartmentalizedComponent.compartment_id)  # noqa
+                      .join(ModelCompartmentalizedComponent,
+                            ModelCompartmentalizedComponent.compartmentalized_component_id == CompartmentalizedComponent.id)  # noqa
+                      .join(OldIDSynonym, OldIDSynonym.ome_id == ModelCompartmentalizedComponent.id)  # noqa
+                      .filter(OldIDSynonym.type == 'model_compartmentalized_component')  # noqa
                       .filter(Synonym.type == 'compartmentalized_component')
                       .join(Synonym)
-                      .filter(ModelCompartmentalizedComponent.model_id == model_db.id))
+                      .filter(ModelCompartmentalizedComponent.model_id == model_db.id))  # noqa
     metabolite_names = []
     old_metabolite_ids_dict = defaultdict(list)
     for metabolite_id, metabolite_name, formula, charge, compartment_id, old_id in metabolites_db:
@@ -240,12 +243,15 @@ def dump_model(bigg_id):
                  .query(ReactionMatrix.stoichiometry, Reaction.bigg_id,
                         Component.bigg_id, Compartment.bigg_id)
                  # component, compartment
-                 .join(CompartmentalizedComponent)
-                 .join(Component)
-                 .join(Compartment)
+                 .join(CompartmentalizedComponent,
+                       CompartmentalizedComponent.id == ReactionMatrix.compartmentalized_component_id)  # noqa
+                 .join(Component,
+                       Component.id == CompartmentalizedComponent.component_id)
+                 .join(Compartment,
+                       Compartment.id == CompartmentalizedComponent.compartment_id)  # noqa
                  # reaction
-                 .join(Reaction)
-                 .join(ModelReaction)
+                 .join(Reaction, Reaction.id == ReactionMatrix.reaction_id)
+                 .join(ModelReaction, ModelReaction.reaction_id == Reaction.id)
                  .filter(ModelReaction.model_id == model_db.id)
                  .distinct())  # make sure we don't duplicate
 
