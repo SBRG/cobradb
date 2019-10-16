@@ -25,11 +25,8 @@ def _make_annotation_lookup(db_links):
     lookup = defaultdict(lambda: defaultdict(set))
     for res in db_links:
         # skip old_bigg_id because it will be in notes
-        if res[0] not in ['old_bigg_id', 'deprecated', 'SBO', 'ec']:
+        if res[0] not in ['old_bigg_id', 'deprecated']:
             lookup[res[2]][res[0]].add(res[1])
-        # TODO drop this when we can upgrade to latest cobrapy
-        if res[0] == 'SBO':
-            lookup[res[2]]['sbo'].add(res[1])
     # return lists instead of sets
     return {
         bigg_id: {source: list(vals) for source, vals in links.items()}
@@ -86,7 +83,7 @@ def dump_model(bigg_id):
         gene.notes = {'original_bigg_ids': old_gene_ids_dict[gene_id]}
         gene.annotation = gene_db_links.get(gene_id, {})
         # add SBO terms
-        gene.annotation['sbo'] = ['SBO:0000243']
+        gene.annotation['sbo'] = 'SBO:0000243'
         model.genes.append(gene)
 
     # reactions
@@ -134,7 +131,16 @@ def dump_model(bigg_id):
         d['annotation'] = reaction_db_links.get(r_db.bigg_id, {})
         # add SBO terms
         if r_db.bigg_id.startswith('BIOMASS_'):
-            d['annotation']['sbo'] = ['SBO:0000629']
+            d['annotation']['sbo'] = 'SBO:0000629'
+        elif r_db.bigg_id.startswith('EX_'):
+            d['annotation']['sbo'] = 'SBO:0000627'
+        elif r_db.bigg_id.startswith('DM_'):
+            d['annotation']['sbo'] = 'SBO:0000628'
+        elif r_db.bigg_id.startswith('SK_'):
+            d['annotation']['sbo'] = 'SBO:0000632'
+        else:
+            d['annotation']['sbo'] = 'SBO:0000375'
+        # TODO identify transport reactions and differentiate 176 vs 185
         # specify bigg id
         d['annotation']['bigg.reaction'] = [r_db.bigg_id]
         d['copy_number'] = mr_db.copy_number
@@ -228,6 +234,7 @@ def dump_model(bigg_id):
             m.annotation = metabolite_db_links.get(component_id, {})
             # specify bigg id
             m.annotation['bigg.metabolite'] = [component_id]
+            m.annotation['sbo'] = 'SBO:0000247'
             compartments.add(compartment_id)
             metabolites.append(m)
     model.add_metabolites(metabolites)
