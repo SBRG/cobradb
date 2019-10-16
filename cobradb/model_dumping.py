@@ -139,8 +139,8 @@ def dump_model(bigg_id):
         elif r_db.bigg_id.startswith('SK_'):
             d['annotation']['sbo'] = 'SBO:0000632'
         else:
-            d['annotation']['sbo'] = 'SBO:0000375'
-        # TODO identify transport reactions and differentiate 176 vs 185
+            # assume non-transport. will update for transporters later
+            d['annotation']['sbo'] = 'SBO:0000176'
         # specify bigg id
         d['annotation']['bigg.reaction'] = [r_db.bigg_id]
         d['copy_number'] = mr_db.copy_number
@@ -263,12 +263,13 @@ def dump_model(bigg_id):
                  .distinct())  # make sure we don't duplicate
 
     # load metabolites
+    compartments_for_reaction = defaultdict(set)
     for stoich, reaction_id, component_id, compartment_id in matrix_db:
         try:
             m = model.metabolites.get_by_id(component_id + '_' + compartment_id)
         except KeyError:
-            logging.warning('Metabolite not found %s in compartment %s for reaction %s' % \
-                         (component_id, compartment_id, reaction_id))
+            logging.warning('Metabolite not found %s in compartment %s for reaction %s' %
+                            (component_id, compartment_id, reaction_id))
             continue
         # add to reactions
         if reaction_id in model.reactions:
@@ -276,6 +277,10 @@ def dump_model(bigg_id):
             r = model.reactions.get_by_id(reaction_id)
             if m not in r.metabolites:
                 r.add_metabolites({m: float(stoich)})
+                # check for transporters and update sbo term
+                compartments_for_reaction[reaction_id].add(m.compartment)
+                if len(compartments_for_reaction[reaction_id]) > 1 and r.annotation['sbo'] == 'SBO:0000176':  # noqa
+                    r.annotation['sbo'] = 'SBO:0000185'
         else:
             # try incremented ids
             while True:
