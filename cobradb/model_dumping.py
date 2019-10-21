@@ -3,6 +3,7 @@
 from cobradb.models import *
 from cobradb.util import increment_id, make_reaction_copy_id, timing
 
+from sqlalchemy import and_
 import cobra.core
 import logging
 from itertools import repeat
@@ -92,10 +93,12 @@ def dump_model(bigg_id):
     reactions_db = (session
                     .query(ModelReaction, Reaction, Synonym.synonym)
                     .join(Reaction)
-                    .join(OldIDSynonym, OldIDSynonym.ome_id == ModelReaction.id)
-                    .filter(OldIDSynonym.type == 'model_reaction')
-                    .filter(Synonym.type == 'reaction')
-                    .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
+                    .outerjoin(OldIDSynonym,
+                               and_(OldIDSynonym.ome_id == ModelReaction.id,
+                                    OldIDSynonym.type == 'model_reaction'))
+                    .outerjoin(Synonym,
+                               and_(Synonym.id == OldIDSynonym.synonym_id,
+                                    Synonym.type == 'reaction'))
                     .filter(ModelReaction.model_id == model_db.id))
     reactions_model_reactions = []
     found_model_reactions = set()
@@ -105,7 +108,8 @@ def dump_model(bigg_id):
         if model_reaction.id not in found_model_reactions:
             reactions_model_reactions.append((model_reaction, reaction))
             found_model_reactions.add(model_reaction.id)
-        old_reaction_ids_dict[reaction.bigg_id].append(old_id)
+        if old_id is not None:
+            old_reaction_ids_dict[reaction.bigg_id].append(old_id)
 
     # get reaction annotations
     reaction_db_links = _make_annotation_lookup(
