@@ -2,7 +2,7 @@
 
 """Retrive local user settings"""
 
-from configparser import SafeConfigParser, NoOptionError
+from configparser import ConfigParser, NoOptionError
 import os
 from os.path import join, split, abspath, isfile, expanduser, dirname
 from sys import modules
@@ -12,7 +12,7 @@ self = modules[__name__]
 
 # define various filepaths
 
-config = SafeConfigParser()
+config = ConfigParser()
 
 # overwrite defaults settings with settings from the file
 filepath = abspath(join(dirname(__file__), '..', 'settings.ini'))
