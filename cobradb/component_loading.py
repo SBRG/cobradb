@@ -233,12 +233,12 @@ def load_chromosome(gb_file, genome_db, session):
                 msg = 'No locus_tag for gene. Using Gene name as bigg_id: %s' % gene_name
                 if bigg_id_warnings == warning_num:
                     msg += ' (Warnings limited to %d)' % warning_num
-                logging.warn(msg)
+                logging.warning(msg)
                 bigg_id_warnings += 1
             bigg_id = scrub_gene_id(gene_name)
             gene_name = bigg_id
         elif bigg_id is None:
-            logging.warn(('No locus_tag or gene name for gene %d in chromosome '
+            logging.warning(('No locus_tag or gene name for gene %d in chromosome '
                           '%s' % (i, chromosome.ncbi_accession)))
             continue
 
@@ -283,7 +283,7 @@ def load_chromosome(gb_file, genome_db, session):
                 msg = 'Duplicate genes %s on chromosome %s' % (bigg_id, chromosome.id)
                 if duplicate_genes_warnings == warning_num:
                     msg += ' (Warnings limited to %d)' % warning_num
-                logging.warn(msg)
+                logging.warning(msg)
                 duplicate_genes_warnings += 1
 
         # load the synonyms for the gene

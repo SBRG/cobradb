@@ -3,6 +3,7 @@
 from cobradb.models import *
 from cobradb.util import increment_id, make_reaction_copy_id, timing
 
+from sqlalchemy import and_
 import cobra.core
 import logging
 from itertools import repeat
@@ -25,11 +26,8 @@ def _make_annotation_lookup(db_links):
     lookup = defaultdict(lambda: defaultdict(set))
     for res in db_links:
         # skip old_bigg_id because it will be in notes
-        if res[0] not in ['old_bigg_id', 'deprecated', 'SBO', 'ec']:
+        if res[0] not in ['old_bigg_id', 'deprecated']:
             lookup[res[2]][res[0]].add(res[1])
-        # TODO drop this when we can upgrade to latest cobrapy
-        if res[0] == 'SBO':
-            lookup[res[2]]['sbo'].add(res[1])
     # return lists instead of sets
     return {
         bigg_id: {source: list(vals) for source, vals in links.items()}
@@ -86,7 +84,7 @@ def dump_model(bigg_id):
         gene.notes = {'original_bigg_ids': old_gene_ids_dict[gene_id]}
         gene.annotation = gene_db_links.get(gene_id, {})
         # add SBO terms
-        gene.annotation['sbo'] = ['SBO:0000243']
+        gene.annotation['sbo'] = 'SBO:0000243'
         model.genes.append(gene)
 
     # reactions
@@ -95,10 +93,12 @@ def dump_model(bigg_id):
     reactions_db = (session
                     .query(ModelReaction, Reaction, Synonym.synonym)
                     .join(Reaction)
-                    .join(OldIDSynonym, OldIDSynonym.ome_id == ModelReaction.id)
-                    .filter(OldIDSynonym.type == 'model_reaction')
-                    .filter(Synonym.type == 'reaction')
-                    .join(Synonym, Synonym.id == OldIDSynonym.synonym_id)
+                    .outerjoin(OldIDSynonym,
+                               and_(OldIDSynonym.ome_id == ModelReaction.id,
+                                    OldIDSynonym.type == 'model_reaction'))
+                    .outerjoin(Synonym,
+                               and_(Synonym.id == OldIDSynonym.synonym_id,
+                                    Synonym.type == 'reaction'))
                     .filter(ModelReaction.model_id == model_db.id))
     reactions_model_reactions = []
     found_model_reactions = set()
@@ -108,7 +108,8 @@ def dump_model(bigg_id):
         if model_reaction.id not in found_model_reactions:
             reactions_model_reactions.append((model_reaction, reaction))
             found_model_reactions.add(model_reaction.id)
-        old_reaction_ids_dict[reaction.bigg_id].append(old_id)
+        if old_id is not None:
+            old_reaction_ids_dict[reaction.bigg_id].append(old_id)
 
     # get reaction annotations
     reaction_db_links = _make_annotation_lookup(
@@ -134,7 +135,16 @@ def dump_model(bigg_id):
         d['annotation'] = reaction_db_links.get(r_db.bigg_id, {})
         # add SBO terms
         if r_db.bigg_id.startswith('BIOMASS_'):
-            d['annotation']['sbo'] = ['SBO:0000629']
+            d['annotation']['sbo'] = 'SBO:0000629'
+        elif r_db.bigg_id.startswith('EX_'):
+            d['annotation']['sbo'] = 'SBO:0000627'
+        elif r_db.bigg_id.startswith('DM_'):
+            d['annotation']['sbo'] = 'SBO:0000628'
+        elif r_db.bigg_id.startswith('SK_'):
+            d['annotation']['sbo'] = 'SBO:0000632'
+        else:
+            # assume non-transport. will update for transporters later
+            d['annotation']['sbo'] = 'SBO:0000176'
         # specify bigg id
         d['annotation']['bigg.reaction'] = [r_db.bigg_id]
         d['copy_number'] = mr_db.copy_number
@@ -188,14 +198,17 @@ def dump_model(bigg_id):
                              ModelCompartmentalizedComponent.charge,
                              Compartment.bigg_id,
                              Synonym.synonym)
-                      .join(CompartmentalizedComponent)
-                      .join(Compartment)
-                      .join(ModelCompartmentalizedComponent)
-                      .join(OldIDSynonym, OldIDSynonym.ome_id == ModelCompartmentalizedComponent.id)
-                      .filter(OldIDSynonym.type == 'model_compartmentalized_component')
+                      .join(CompartmentalizedComponent,
+                            CompartmentalizedComponent.component_id == Component.id)  # noqa
+                      .join(Compartment,
+                            Compartment.id == CompartmentalizedComponent.compartment_id)  # noqa
+                      .join(ModelCompartmentalizedComponent,
+                            ModelCompartmentalizedComponent.compartmentalized_component_id == CompartmentalizedComponent.id)  # noqa
+                      .join(OldIDSynonym, OldIDSynonym.ome_id == ModelCompartmentalizedComponent.id)  # noqa
+                      .filter(OldIDSynonym.type == 'model_compartmentalized_component')  # noqa
                       .filter(Synonym.type == 'compartmentalized_component')
                       .join(Synonym)
-                      .filter(ModelCompartmentalizedComponent.model_id == model_db.id))
+                      .filter(ModelCompartmentalizedComponent.model_id == model_db.id))  # noqa
     metabolite_names = []
     old_metabolite_ids_dict = defaultdict(list)
     for metabolite_id, metabolite_name, formula, charge, compartment_id, old_id in metabolites_db:
@@ -225,6 +238,7 @@ def dump_model(bigg_id):
             m.annotation = metabolite_db_links.get(component_id, {})
             # specify bigg id
             m.annotation['bigg.metabolite'] = [component_id]
+            m.annotation['sbo'] = 'SBO:0000247'
             compartments.add(compartment_id)
             metabolites.append(m)
     model.add_metabolites(metabolites)
@@ -240,22 +254,26 @@ def dump_model(bigg_id):
                  .query(ReactionMatrix.stoichiometry, Reaction.bigg_id,
                         Component.bigg_id, Compartment.bigg_id)
                  # component, compartment
-                 .join(CompartmentalizedComponent)
-                 .join(Component)
-                 .join(Compartment)
+                 .join(CompartmentalizedComponent,
+                       CompartmentalizedComponent.id == ReactionMatrix.compartmentalized_component_id)  # noqa
+                 .join(Component,
+                       Component.id == CompartmentalizedComponent.component_id)
+                 .join(Compartment,
+                       Compartment.id == CompartmentalizedComponent.compartment_id)  # noqa
                  # reaction
-                 .join(Reaction)
-                 .join(ModelReaction)
+                 .join(Reaction, Reaction.id == ReactionMatrix.reaction_id)
+                 .join(ModelReaction, ModelReaction.reaction_id == Reaction.id)
                  .filter(ModelReaction.model_id == model_db.id)
                  .distinct())  # make sure we don't duplicate
 
     # load metabolites
+    compartments_for_reaction = defaultdict(set)
     for stoich, reaction_id, component_id, compartment_id in matrix_db:
         try:
             m = model.metabolites.get_by_id(component_id + '_' + compartment_id)
         except KeyError:
-            logging.warn('Metabolite not found %s in compartment %s for reaction %s' % \
-                         (component_id, compartment_id, reaction_id))
+            logging.warning('Metabolite not found %s in compartment %s for reaction %s' %
+                            (component_id, compartment_id, reaction_id))
             continue
         # add to reactions
         if reaction_id in model.reactions:
@@ -263,6 +281,10 @@ def dump_model(bigg_id):
             r = model.reactions.get_by_id(reaction_id)
             if m not in r.metabolites:
                 r.add_metabolites({m: float(stoich)})
+                # check for transporters and update sbo term
+                compartments_for_reaction[reaction_id].add(m.compartment)
+                if len(compartments_for_reaction[reaction_id]) > 1 and r.annotation['sbo'] == 'SBO:0000176':  # noqa
+                    r.annotation['sbo'] = 'SBO:0000185'
         else:
             # try incremented ids
             while True:

@@ -146,7 +146,7 @@ def _fix_exchange(reaction):
         return None
     # check id
     if not re.search(r'^ex_', reaction.id, re.IGNORECASE):
-        logging.warn('Reaction {r.id} looks like an exchange but it does not start with EX_. Renaming'
+        logging.warning('Reaction {r.id} looks like an exchange but it does not start with EX_. Renaming'
                      .format(r=reaction))
     # check coefficient
     if abs(coeff) != 1:
@@ -183,7 +183,7 @@ def _fix_demand(reaction):
         return None
     # check id
     if not re.search(r'^dm_', reaction.id, re.IGNORECASE):
-        logging.warn('Reaction {r.id} looks like a demand but it does not start with DM_. Renaming.'
+        logging.warning('Reaction {r.id} looks like a demand but it does not start with DM_. Renaming.'
                      .format(r=reaction))
     # check coefficient
     if abs(coeff) != 1:
@@ -208,7 +208,7 @@ def _fix_sink(reaction):
         return None
     # check id
     if not _sink_regex.search(reaction.id):
-        logging.warn('Reaction {r.id} looks like a sink but it does not start with sink_ or SK_. Renaming.'
+        logging.warning('Reaction {r.id} looks like a sink but it does not start with sink_ or SK_. Renaming.'
                      .format(r=reaction))
     # check coefficient
     if abs(coeff) != 1:
@@ -340,8 +340,9 @@ def convert_ids(model):
         try:
             pseudo_id = _normalize_pseudoreaction(new_style_id, reaction)
         except ConflictingPseudoreaction as e:
-            logging.warn(str(e))
-            continue
+            logging.warning(str(e))
+            # keep going despite the warning
+            pass
 
         new_id = pseudo_id if pseudo_id is not None else new_style_id
 

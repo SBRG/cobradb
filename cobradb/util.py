@@ -61,7 +61,7 @@ def load_tsv(filename, required_column_num=None):
     if required_column_num is not None:
         def check_row(row):
             if len(row) != required_column_num:
-                logging.warn('Line in {} should have {} columns, but found {}: {}'
+                logging.warning('Line in {} should have {} columns, but found {}: {}'
                              .format(filename, required_column_num, len(row), row))
                 return None
             return row
@@ -116,9 +116,9 @@ def get_or_create_data_source(session, bigg_id):
                                                url_prefix=url_prefix)
         if not exists:
             if name is None:
-                logging.warn('No name found for data source %s' % bigg_id)
+                logging.warning('No name found for data source %s' % bigg_id)
             if url_prefix is None:
-                logging.warn('No URL found for data source %s' % bigg_id)
+                logging.warning('No URL found for data source %s' % bigg_id)
     return data_source_db.id
 
 
